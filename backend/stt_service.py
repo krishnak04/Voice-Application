@@ -1,0 +1,295 @@
+import os
+import io
+import time
+import tempfile
+import logging
+import ctypes
+import numpy as np
+from faster_whisper import WhisperModel
+import config
+
+# Patch PyAV if installed to prevent 'metadata_errors' TypeError in newer PyAV versions
+try:
+    import av
+    _orig_av_open = av.open
+    def _safe_av_open(*args, **kwargs):
+        kwargs.pop("metadata_errors", None)
+        return _orig_av_open(*args, **kwargs)
+    av.open = _safe_av_open
+except Exception:
+    pass
+
+logger = logging.getLogger("stt_service")
+
+def _preload_cuda_libraries():
+    """Attempt to preload pip-installed nvidia CUDA 12 libraries on Linux."""
+    if os.name != "posix":
+        return
+
+    # 1. Preload nvJitLink (required by cuBLAS 12.9+)
+    try:
+        import nvidia.nvjitlink.lib
+        jit_dir = os.path.dirname(nvidia.nvjitlink.lib.__file__)
+        for fname in sorted(os.listdir(jit_dir)):
+            if fname.startswith("libnvJitLink") and ".so" in fname:
+                try:
+                    ctypes.CDLL(os.path.join(jit_dir, fname), mode=ctypes.RTLD_GLOBAL)
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
+    # 2. Preload cuBLAS Lt and cuBLAS
+    try:
+        import nvidia.cublas.lib
+        cublas_dir = os.path.dirname(nvidia.cublas.lib.__file__)
+        for lib in ["libcublasLt.so.12", "libcublas.so.12"]:
+            path = os.path.join(cublas_dir, lib)
+            if os.path.exists(path):
+                try:
+                    ctypes.CDLL(path, mode=ctypes.RTLD_GLOBAL)
+                    logger.debug(f"Preloaded {lib}")
+                except Exception as e:
+                    logger.debug(f"Could not preload {lib}: {e}")
+    except Exception:
+        pass
+
+    # 3. Preload cuDNN
+    try:
+        import nvidia.cudnn.lib
+        cudnn_dir = os.path.dirname(nvidia.cudnn.lib.__file__)
+        for fname in sorted(os.listdir(cudnn_dir)):
+            if fname.startswith("libcudnn") and ".so" in fname:
+                path = os.path.join(cudnn_dir, fname)
+                try:
+                    ctypes.CDLL(path, mode=ctypes.RTLD_GLOBAL)
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
+from typing import Optional
+
+# 22 Official Indian Languages Mapping (Number, Name, Code)
+INDIAN_LANGUAGES_MAP = {
+    "1": "hi", "hindi": "hi", "hi": "hi",
+    "2": "bn", "bengali": "bn", "bn": "bn",
+    "3": "ta", "tamil": "ta", "ta": "ta",
+    "4": "te", "telugu": "te", "te": "te",
+    "5": "mr", "marathi": "mr", "mr": "mr",
+    "6": "gu", "gujarati": "gu", "gu": "gu",
+    "7": "kn", "kannada": "kn", "kn": "kn",
+    "8": "ml", "malayalam": "ml", "ml": "ml",
+    "9": "pa", "punjabi": "pa", "pa": "pa",
+    "10": "ur", "urdu": "ur", "ur": "ur",
+    "11": "as", "assamese": "as", "as": "as",
+    "12": "or", "odia": "or", "oriya": "or",
+    "13": "ne", "nepali": "ne", "ne": "ne",
+    "14": "sa", "sanskrit": "sa", "sa": "sa",
+    "15": "sd", "sindhi": "sd", "sd": "sd",
+    "16": "ks", "kashmiri": "ks", "ks": "ks",
+    "17": "kok", "konkani": "kok",
+    "18": "mni", "manipuri": "mni", "meitei": "mni",
+    "19": "brx", "bodo": "brx",
+    "20": "doi", "dogri": "doi",
+    "21": "sat", "santali": "sat",
+    "22": "mai", "maithili": "mai",
+}
+
+class STTEngine:
+    def __init__(self):
+        self.device = config.WHISPER_DEVICE
+        self.compute_type = config.WHISPER_COMPUTE_TYPE
+        self.default_model_name = config.WHISPER_MODEL
+        self.models: dict[str, WhisperModel] = {}
+        # Preload the default model on startup
+        self.get_model(self.default_model_name)
+
+    def _fallback_to_cpu(self, model_name: str, reason: str) -> WhisperModel:
+        logger.warning(f"CUDA execution failed for {model_name} ({reason}). Falling back to CPU/int8...")
+        self.device = "cpu"
+        self.compute_type = "int8"
+        cpu_model = WhisperModel(
+            model_name,
+            device="cpu",
+            compute_type="int8"
+        )
+        self.models[model_name] = cpu_model
+        logger.info(f"Loaded fallback model {model_name} on CPU (int8)")
+        return cpu_model
+
+    def get_model(self, model_name: Optional[str] = None) -> tuple[WhisperModel, str]:
+        """Get or dynamically load and cache a Whisper model by name."""
+        name = (model_name or self.default_model_name).strip()
+        if not name:
+            name = self.default_model_name
+
+        if name in self.models:
+            return self.models[name], name
+
+        _preload_cuda_libraries()
+        start = time.perf_counter()
+        logger.info(f"Loading Whisper model '{name}' on {self.device} ({self.compute_type})...")
+        try:
+            model = WhisperModel(
+                name,
+                device=self.device,
+                compute_type=self.compute_type
+            )
+            if self.device == "cuda":
+                # Warm-up verification
+                dummy = np.zeros(1600, dtype=np.float32)
+                _ = list(model.transcribe(dummy, language="en")[0])
+                logger.info(f"CUDA verification & warm-up successful for {name}.")
+            self.models[name] = model
+        except Exception as e:
+            model = self._fallback_to_cpu(name, str(e))
+
+        load_time = time.perf_counter() - start
+        logger.info(f"Model '{name}' ready in {load_time:.3f}s on {self.device} ({self.compute_type})")
+        return model, name
+
+    def get_loaded_models(self) -> list[str]:
+        return list(self.models.keys())
+
+    def transcribe_audio_bytes(
+        self,
+        audio_bytes: bytes,
+        file_ext: str = ".webm",
+        language: Optional[str] = None,
+        model_name: Optional[str] = None
+    ):
+        # 1. High-speed in-memory transcription (avoids disk write/read latency)
+        try:
+            bio = io.BytesIO(audio_bytes)
+            return self.transcribe_file(bio, language=language, model_name=model_name)
+        except Exception as in_mem_err:
+            logger.debug(f"In-memory transcription fallback to tempfile: {in_mem_err}")
+
+        # 2. Resilient temporary file fallback
+        with tempfile.NamedTemporaryFile(suffix=file_ext, delete=False) as tmp:
+            tmp.write(audio_bytes)
+            tmp_path = tmp.name
+
+        try:
+            return self.transcribe_file(tmp_path, language=language, model_name=model_name)
+        finally:
+            if os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except Exception:
+                    pass
+
+    def transcribe_file(
+        self,
+        audio_source,
+        language: Optional[str] = None,
+        model_name: Optional[str] = None
+    ):
+        # Normalize language: None or "auto" triggers Whisper's automatic language detection
+        lang_param = None
+        if language and language.strip().lower() not in ("auto", "none", "0", ""):
+            clean_lang = language.strip().lower()
+            lang_param = INDIAN_LANGUAGES_MAP.get(clean_lang, clean_lang)
+
+        # Resolve requested model
+        req_model = model_name or self.default_model_name
+        if req_model == "sherpa-streaming":
+            try:
+                from sherpa_service import get_sherpa_engine
+                sherpa = get_sherpa_engine()
+                if sherpa.is_available():
+                    return sherpa.transcribe_audio_source(audio_source)
+            except Exception as e:
+                logger.warning(f"Sherpa file transcription failed ({e}). Falling back to {self.default_model_name}...")
+            req_model = self.default_model_name
+
+        # If an English-only model (e.g. base.en) is active but a non-English language is requested,
+        # automatically adapt to the multilingual counterpart (e.g. base)
+        if req_model.endswith(".en") and lang_param and lang_param != "en":
+            multilingual_alt = req_model[:-3]  # strip .en -> base, small, etc.
+            logger.info(f"Language '{lang_param}' requested with English-only model '{req_model}'. Switching to multilingual '{multilingual_alt}'.")
+            req_model = multilingual_alt
+
+        model, active_model_name = self.get_model(req_model)
+
+        start_time = time.perf_counter()
+        try:
+            try:
+                segments, info = model.transcribe(
+                    audio_source,
+                    language=lang_param,
+                    beam_size=1,
+                    vad_filter=False,
+                    condition_on_previous_text=False
+                )
+                segment_list = list(segments)
+            except ValueError as ve:
+                logger.warning(f"Language code '{lang_param}' raised ValueError ({ve}). Retrying with auto-detect...")
+                segments, info = model.transcribe(
+                    audio_source,
+                    language=None,
+                    beam_size=1,
+                    vad_filter=False,
+                    condition_on_previous_text=False
+                )
+                segment_list = list(segments)
+        except Exception as e:
+            if self.device == "cuda":
+                logger.error(f"CUDA transcription error with {active_model_name}: {e}. Switching to CPU fallback...")
+                model = self._fallback_to_cpu(active_model_name, str(e))
+                try:
+                    segments, info = model.transcribe(
+                        audio_source,
+                        language=lang_param,
+                        beam_size=1,
+                        vad_filter=False,
+                        condition_on_previous_text=False
+                    )
+                    segment_list = list(segments)
+                except ValueError:
+                    segments, info = model.transcribe(
+                        audio_source,
+                        language=None,
+                        beam_size=1,
+                        vad_filter=False,
+                        condition_on_previous_text=False
+                    )
+                    segment_list = list(segments)
+            else:
+                raise e
+
+        elapsed_time = time.perf_counter() - start_time
+        transcript = " ".join(s.text.strip() for s in segment_list)
+
+        duration = getattr(info, "duration", 0.0)
+        if duration <= 0.0:
+            duration = max(elapsed_time, 0.01)
+
+        rtf = elapsed_time / duration if duration > 0 else 0.0
+        speed_factor = duration / elapsed_time if elapsed_time > 0 else 0.0
+
+        detected_lang = getattr(info, "language", lang_param or "en")
+        lang_prob = getattr(info, "language_probability", 1.0)
+
+        return {
+            "transcript": transcript,
+            "language": detected_lang,
+            "language_probability": round(lang_prob, 3) if lang_prob is not None else 1.0,
+            "duration": round(duration, 3),
+            "stt_latency": round(elapsed_time, 3),
+            "rtf": round(rtf, 3),
+            "speed_factor": round(speed_factor, 2),
+            "device": self.device,
+            "model_name": active_model_name
+        }
+
+# Global Singleton instance
+stt_engine = None
+
+def get_stt_engine() -> STTEngine:
+    global stt_engine
+    if stt_engine is None:
+        stt_engine = STTEngine()
+    return stt_engine
+

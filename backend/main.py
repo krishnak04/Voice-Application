@@ -1,0 +1,773 @@
+import io
+import time
+import json
+import base64
+import logging
+import uuid
+import asyncio
+import re
+import numpy as np
+from contextlib import asynccontextmanager
+from typing import Optional, List
+from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
+import config
+from schemas import (
+    TranscriptionResponse,
+    ChatRequest,
+    ChatResponse,
+    VoiceResponse,
+    LatencyMetrics,
+    HealthResponse,
+    TTSRequest,
+    TTSResponse,
+    CallTurnResponse,
+    HumanVoicesResponse
+)
+from stt_service import get_stt_engine
+from groq_service import get_groq_engine
+from tts_service import get_tts_engine
+from sherpa_service import get_sherpa_engine
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger("voice_api")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Initializing Voice Server engines on startup...")
+    stt = get_stt_engine()
+    groq = get_groq_engine()
+    tts = get_tts_engine()
+    sherpa = get_sherpa_engine()
+    logger.info(
+        f"Ready: STT ({stt.default_model_name} on {stt.device}), "
+        f"Sherpa ({sherpa.model_name if sherpa.is_available() else 'disabled'}), "
+        f"Groq ({groq.model}), TTS ({tts.active_engine} on {tts.device})"
+    )
+    yield
+    logger.info("Shutting down Voice API server...")
+
+app = FastAPI(
+    title="Real-Time Voice Calling & Speech API",
+    description="Full-duplex voice pipeline combining Sherpa-ONNX streaming ASR, Faster-Whisper, Groq LLM, and Low-VRAM TTS.",
+    version="3.0.0",
+    lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=config.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ==========================================
+# 1. Health & Server Info
+# ==========================================
+@app.get("/api/health", response_model=HealthResponse, tags=["Health"])
+def health_check():
+    stt = get_stt_engine()
+    groq = get_groq_engine()
+    tts = get_tts_engine()
+    sherpa = get_sherpa_engine()
+    return HealthResponse(
+        status="online",
+        whisper_model=stt.default_model_name,
+        device=stt.device,
+        compute_type=stt.compute_type,
+        loaded_models=stt.get_loaded_models(),
+        groq_configured=bool(groq.api_key),
+        groq_model=groq.model,
+        tts_engine=tts.active_engine,
+        tts_device=tts.device,
+        tts_voice=tts.default_voice,
+        sherpa_available=sherpa.is_available(),
+        sherpa_model=sherpa.model_name if sherpa.is_available() else None
+    )
+
+@app.get("/api/sherpa/info", tags=["Speech to Text"])
+def get_sherpa_info():
+    """Return Sherpa-ONNX streaming engine metadata and configuration."""
+    sherpa = get_sherpa_engine()
+    return sherpa.get_info()
+
+
+# ==========================================
+# 2. Pure Voice-to-Text (STT) API
+# ==========================================
+@app.post("/api/transcribe", response_model=TranscriptionResponse, tags=["Speech to Text"])
+async def transcribe_audio(
+    audio: UploadFile = File(..., description="Audio file to transcribe (.wav, .webm, .mp3, .m4a, .ogg)"),
+    language: Optional[str] = Form(None, description="Language code (e.g. 'en', 'hi', 'auto')"),
+    model: Optional[str] = Form(None, description="Whisper model name (e.g. 'base', 'small', 'medium')")
+):
+    """Standalone Voice-to-Text endpoint with Faster-Whisper."""
+    audio_bytes = await audio.read()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Audio payload is empty")
+
+    filename = audio.filename or "audio.webm"
+    ext = "." + filename.split(".")[-1] if "." in filename else ".webm"
+
+    stt = get_stt_engine()
+    stt_result = stt.transcribe_audio_bytes(
+        audio_bytes=audio_bytes,
+        file_ext=ext,
+        language=language,
+        model_name=model
+    )
+
+    return TranscriptionResponse(
+        transcript=stt_result["transcript"],
+        language=stt_result["language"],
+        language_probability=stt_result["language_probability"],
+        duration=stt_result["duration"],
+        stt_latency=stt_result["stt_latency"],
+        rtf=stt_result["rtf"],
+        speed_factor=stt_result["speed_factor"],
+        device=stt_result["device"],
+        model_name=stt_result["model_name"]
+    )
+
+# ==========================================
+# 3. Dedicated Groq LLM API
+# ==========================================
+@app.post("/api/chat", response_model=ChatResponse, tags=["Groq LLM"])
+def chat_with_groq(req: ChatRequest):
+    """Standalone Groq LLM text completion with conversation history support."""
+    if not req.message or not req.message.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+
+    history_dicts = [m.model_dump() for m in req.history] if req.history else None
+
+    groq = get_groq_engine()
+    groq_result = groq.generate_reply(
+        user_text=req.message,
+        api_key=req.groq_api_key,
+        model_name=req.groq_model,
+        history=history_dicts,
+        system_prompt=req.system_prompt
+    )
+
+    return ChatResponse(
+        reply=groq_result["reply"],
+        groq_latency=groq_result["groq_latency"],
+        model=groq_result["model"]
+    )
+
+# ==========================================
+# 4. Text-to-Speech (TTS) APIs
+# ==========================================
+@app.post("/api/tts", response_model=TTSResponse, tags=["Text to Speech"])
+def synthesize_speech(req: TTSRequest):
+    """
+    Standalone Text-to-Speech endpoint.
+    Returns Base64 audio + latency metrics.
+    """
+    if not req.text or not req.text.strip():
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
+
+    tts = get_tts_engine()
+    result = tts.synthesize(
+        text=req.text,
+        voice=req.voice,
+        speed=req.speed or 1.0,
+        pitch=req.pitch,
+        engine=req.engine
+    )
+
+    b64_audio = base64.b64encode(result["audio_bytes"]).decode("utf-8")
+
+    return TTSResponse(
+        audio_base64=b64_audio,
+        format=result["format"],
+        media_type=result["media_type"],
+        tts_latency=result["tts_latency"],
+        duration=result["duration"],
+        engine=result["engine"],
+        voice=result["voice"],
+        pitch=result.get("pitch", "+0Hz")
+    )
+
+@app.get("/api/tts/voices", response_model=HumanVoicesResponse, tags=["Text to Speech"])
+def get_human_voices():
+    """
+    Return all verified, natural human voices categorized by demographics:
+    Male, Female, Child / Youth, and Mature / Narrator, with pitch and accent support.
+    """
+    tts = get_tts_engine()
+    return tts.get_human_voices()
+
+@app.get("/api/tts/stream", tags=["Text to Speech"])
+def stream_speech(
+    text: str = Query(..., description="Text to synthesize"),
+    voice: Optional[str] = Query(None, description="Voice ID"),
+    speed: Optional[float] = Query(1.0, description="Speed factor"),
+    pitch: Optional[str] = Query(None, description="Pitch modification string (e.g. +10Hz, -15Hz)")
+):
+    """Direct audio stream endpoint (plays in browser audio tag or VLC)."""
+    tts = get_tts_engine()
+    result = tts.synthesize(text=text, voice=voice, speed=speed or 1.0, pitch=pitch)
+    return StreamingResponse(
+        io.BytesIO(result["audio_bytes"]),
+        media_type=result["media_type"]
+    )
+
+@app.get("/api/tts/info", tags=["Text to Speech"])
+def get_tts_info():
+    """Return active TTS engine details and available voices."""
+    tts = get_tts_engine()
+    return tts.get_info()
+
+# ==========================================
+# 5. Full Voice Calling Pipeline (Telephony Turn)
+# Audio In -> STT -> Groq (Context) -> TTS -> Audio Out
+# ==========================================
+@app.post("/api/call/turn", response_model=CallTurnResponse, tags=["Voice Calling"])
+async def voice_call_turn(
+    audio: UploadFile = File(..., description="User voice audio recording (.webm or .wav)"),
+    history: Optional[str] = Form(None, description="JSON string of past conversation messages"),
+    language: Optional[str] = Form(None, description="Language code for STT"),
+    whisper_model: Optional[str] = Form(None, description="Whisper model name"),
+    groq_api_key: Optional[str] = Form(None, description="Groq API key"),
+    groq_model: Optional[str] = Form(None, description="Groq model name"),
+    tts_voice: Optional[str] = Form(None, description="TTS voice ID"),
+    tts_pitch: Optional[str] = Form(None, description="TTS voice pitch"),
+    tts_engine: Optional[str] = Form(None, description="TTS engine name")
+):
+    """
+    Simulated Telephone Call Turn:
+    1. Transcribes incoming caller audio with Faster-Whisper.
+    2. Passes transcript and history to Groq LLM with telephony prompt.
+    3. Synthesizes AI voice with ultra-low VRAM TTS.
+    4. Returns spoken voice audio, transcripts, and latency metrics in a single round-trip.
+    """
+    total_start = time.perf_counter()
+    stt = get_stt_engine()
+    groq = get_groq_engine()
+    tts = get_tts_engine()
+
+    audio_bytes = await audio.read()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Audio file is empty")
+
+    filename = audio.filename or "call_audio.webm"
+    ext = "." + filename.split(".")[-1] if "." in filename else ".webm"
+
+    # 1. Faster-Whisper Speech-to-Text
+    stt_result = stt.transcribe_audio_bytes(
+        audio_bytes=audio_bytes,
+        file_ext=ext,
+        language=language,
+        model_name=whisper_model
+    )
+    user_transcript = stt_result["transcript"].strip()
+
+    # Parse conversation history
+    history_list = []
+    if history:
+        try:
+            history_list = json.loads(history)
+            if not isinstance(history_list, list):
+                history_list = []
+        except Exception:
+            history_list = []
+
+    # 2. Groq LLM Phone Persona Reply & TTS
+    if user_transcript:
+        groq_result = groq.generate_reply(
+            user_text=user_transcript,
+            api_key=groq_api_key,
+            model_name=groq_model,
+            history=history_list,
+            is_phone_call=True
+        )
+        ai_reply = groq_result["reply"]
+        groq_latency = groq_result["groq_latency"]
+
+        # 3. Low-VRAM Text-to-Speech
+        tts_result = tts.synthesize(
+            text=ai_reply,
+            voice=tts_voice,
+            speed=1.05,
+            engine=tts_engine
+        )
+        b64_audio = base64.b64encode(tts_result["audio_bytes"]).decode("utf-8")
+        audio_format = tts_result["format"]
+        tts_latency = tts_result["tts_latency"]
+        tts_engine_name = tts_result["engine"]
+        tts_voice_name = tts_result["voice"]
+    else:
+        # In continuous calling, if silence or ambient noise produced no speech,
+        # return empty reply without synthesizing audio or interrupting caller.
+        ai_reply = ""
+        groq_latency = 0.0
+        b64_audio = ""
+        audio_format = "wav"
+        tts_latency = 0.0
+        tts_engine_name = tts.active_engine
+        tts_voice_name = tts_voice or tts.default_voice
+
+    total_server_time = round(time.perf_counter() - total_start, 3)
+
+    latency = LatencyMetrics(
+        audio_duration=stt_result["duration"],
+        stt_latency=stt_result["stt_latency"],
+        rtf=stt_result["rtf"],
+        speed_factor=stt_result["speed_factor"],
+        groq_latency=groq_latency,
+        tts_latency=tts_latency,
+        total_server_time=total_server_time
+    )
+
+    return CallTurnResponse(
+        transcript=user_transcript,
+        reply=ai_reply,
+        audio_base64=b64_audio,
+        audio_format=audio_format,
+        latency=latency,
+        device=stt_result["device"],
+        whisper_model=stt_result["model_name"],
+        tts_engine=tts_engine_name,
+        tts_voice=tts_voice_name
+    )
+
+# ==========================================
+# 6. Backward-Compatible Benchmark Endpoint
+# ==========================================
+@app.post("/api/voice", response_model=VoiceResponse, tags=["Composite Pipeline"])
+async def process_voice(
+    audio: UploadFile = File(...),
+    language: Optional[str] = Form(None),
+    model: Optional[str] = Form(None),
+    groq_api_key: Optional[str] = Form(None),
+    groq_model: Optional[str] = Form(None)
+):
+    """Legacy composite endpoint combining STT and Groq for benchmarking."""
+    request_start = time.perf_counter()
+    stt = get_stt_engine()
+    groq = get_groq_engine()
+
+    audio_bytes = await audio.read()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Audio payload is empty")
+
+    filename = audio.filename or "recording.webm"
+    ext = "." + filename.split(".")[-1] if "." in filename else ".webm"
+
+    stt_result = stt.transcribe_audio_bytes(
+        audio_bytes=audio_bytes,
+        file_ext=ext,
+        language=language,
+        model_name=model
+    )
+    transcript = stt_result["transcript"]
+
+    if transcript.strip():
+        groq_result = groq.generate_reply(
+            user_text=transcript,
+            api_key=groq_api_key,
+            model_name=groq_model
+        )
+    else:
+        groq_result = {
+            "reply": "[No audible speech detected. Please speak closer to the microphone]",
+            "groq_latency": 0.0,
+            "model": groq_model or config.GROQ_MODEL
+        }
+
+    total_server_time = round(time.perf_counter() - request_start, 3)
+
+    latency = LatencyMetrics(
+        audio_duration=stt_result["duration"],
+        stt_latency=stt_result["stt_latency"],
+        rtf=stt_result["rtf"],
+        speed_factor=stt_result["speed_factor"],
+        groq_latency=groq_result["groq_latency"],
+        tts_latency=0.0,
+        total_server_time=total_server_time
+    )
+
+    return VoiceResponse(
+        transcript=transcript,
+        reply=groq_result["reply"],
+        latency=latency,
+        device=stt_result["device"],
+        model_name=stt_result["model_name"]
+    )
+
+# ==========================================
+# 7. Real-Time Full-Duplex WebSocket Endpoint
+# Sherpa-ONNX Streaming ASR -> Groq LLM -> Chunked TTS -> Client Audio
+# Supports continuous mic capture, partial transcription & barge-in interruption
+# ==========================================
+@app.websocket("/ws/call")
+async def websocket_call_endpoint(websocket: WebSocket):
+    """
+    Real-Time Full-Duplex Conversational Voice WebSocket:
+    - Accepts continuous 16kHz PCM16 audio chunks from browser microphone.
+    - Emits real-time partial & final transcripts via Sherpa-ONNX streaming Zipformer.
+    - Dispatches finalized user utterances to Groq LLM with conversation history.
+    - Synthesizes incremental sentence-level audio chunks via TTS.
+    - Supports user barge-in (interruption): immediately halts active response,
+      notifies client to stop audio playback, and switches to new user turn.
+    """
+    await websocket.accept()
+    session_id = f"call_{uuid.uuid4().hex[:8]}"
+    sherpa = get_sherpa_engine()
+    groq = get_groq_engine()
+    tts = get_tts_engine()
+
+    if not sherpa.is_available():
+        await websocket.send_json({
+            "type": "error",
+            "message": "Sherpa-ONNX streaming engine is not available on this server."
+        })
+        await websocket.close()
+        return
+
+    # Create isolated recognition stream for this session
+    stream = sherpa.create_stream(session_id)
+    logger.info(f"[{session_id}] WebSocket call connected. Sherpa-ONNX stream established.")
+
+    # Session settings
+    config_state = {
+        "tts_voice": "en-IN-NeerjaNeural",
+        "tts_engine": "edge_tts",
+        "tts_pitch": "+0Hz",
+        "groq_model": config.GROQ_MODEL,
+        "system_prompt": None,
+        "is_phone_call": True,
+        "tts_speed": 1.05
+    }
+
+    history: List[dict] = []
+    active_turn_id = 0
+    current_ai_task: Optional[asyncio.Task] = None
+    is_ai_speaking = False
+    ai_turn_start_time: float = 0.0
+    last_speech_time: float = 0.0
+    last_partial = ""
+    turn_start_time = None
+    first_partial_sent = False
+
+    # Send initial handshake
+    await websocket.send_json({
+        "type": "ready",
+        "session_id": session_id,
+        "sample_rate": sherpa.sample_rate,
+        "model": sherpa.model_name
+    })
+
+    async def cancel_active_ai_response(reason: str = "barge_in"):
+        nonlocal current_ai_task, is_ai_speaking
+        if current_ai_task and not current_ai_task.done():
+            logger.info(f"[{session_id}] Cancelling active AI turn due to {reason}")
+            current_ai_task.cancel()
+            try:
+                await current_ai_task
+            except asyncio.CancelledError:
+                pass
+            except Exception as e:
+                logger.error(f"[{session_id}] Error cancelling AI task: {e}")
+        is_ai_speaking = False
+        current_ai_task = None
+
+    async def execute_ai_turn(turn_id: int, user_text: str, t_endpoint: float):
+        nonlocal is_ai_speaking
+        is_ai_speaking = True
+        t_llm_start = time.perf_counter()
+        first_token_time = None
+        first_audio_time = None
+        sentence_buffer = ""
+        chunk_idx = 0
+        full_reply_text = ""
+
+        try:
+            async for chunk in groq.async_stream_reply(
+                user_text=user_text,
+                model_name=config_state["groq_model"],
+                history=history,
+                system_prompt=config_state["system_prompt"],
+                is_phone_call=config_state["is_phone_call"]
+            ):
+                delta = chunk.get("delta", "")
+                is_final = chunk.get("is_final", False)
+
+                if delta:
+                    if first_token_time is None:
+                        first_token_time = round(time.perf_counter() - t_llm_start, 3)
+
+                    # Send text delta to client UI immediately
+                    await websocket.send_json({
+                        "type": "assistant_text_delta",
+                        "turn_id": turn_id,
+                        "delta": delta,
+                        "time_to_first_token_ms": int(first_token_time * 1000) if first_token_time else None
+                    })
+
+                    sentence_buffer += delta
+                    full_reply_text += delta
+
+                    # Optimized clause & sentence boundary matching
+                    # Splits on sentence terminators (.?!;\n) OR clause commas/colons after 3+ words
+                    parts = re.split(r'([.?!;\n]+|,\s+|:\s+)', sentence_buffer)
+                    if len(parts) > 2:
+                        candidate_phrase = (parts[0] + parts[1]).strip()
+                        word_count = len(candidate_phrase.split())
+
+                        # Ready if it ends with terminal punctuation (.?!;) or is a speakable clause (3+ words)
+                        is_terminal = any(candidate_phrase.endswith(p) for p in ('.', '?', '!', ';', '\n'))
+                        is_clause = word_count >= 3
+
+                        if is_terminal or is_clause:
+                            ready_sentence = candidate_phrase
+                            sentence_buffer = "".join(parts[2:]).strip()
+
+                            synth_res = await tts.async_synthesize(
+                                text=ready_sentence,
+                                voice=config_state["tts_voice"],
+                                speed=config_state["tts_speed"],
+                                pitch=config_state.get("tts_pitch"),
+                                engine=config_state["tts_engine"]
+                            )
+                            audio_b64 = base64.b64encode(synth_res["audio_bytes"]).decode("utf-8")
+
+                            if first_audio_time is None:
+                                first_audio_time = round(time.perf_counter() - t_endpoint, 3)
+
+                            chunk_idx += 1
+                            await websocket.send_json({
+                                "type": "audio_chunk",
+                                "turn_id": turn_id,
+                                "chunk_index": chunk_idx,
+                                "audio_base64": audio_b64,
+                                "format": synth_res["format"],
+                                "text_snippet": ready_sentence,
+                                "is_final": False,
+                                "metrics": {
+                                    "time_to_first_token_ms": int((first_token_time or 0) * 1000),
+                                    "time_to_first_audio_ms": int((first_audio_time or 0) * 1000),
+                                    "tts_chunk_latency_ms": int(synth_res["tts_latency"] * 1000)
+                                }
+                            })
+
+                if is_final:
+                    break
+
+            # Synthesize any remaining sentence buffer
+            remaining_text = sentence_buffer.strip()
+            if remaining_text:
+                synth_res = await tts.async_synthesize(
+                    text=remaining_text,
+                    voice=config_state["tts_voice"],
+                    speed=config_state["tts_speed"],
+                    pitch=config_state.get("tts_pitch"),
+                    engine=config_state["tts_engine"]
+                )
+                audio_b64 = base64.b64encode(synth_res["audio_bytes"]).decode("utf-8")
+
+                if first_audio_time is None:
+                    first_audio_time = round(time.perf_counter() - t_endpoint, 3)
+
+                chunk_idx += 1
+                await websocket.send_json({
+                    "type": "audio_chunk",
+                    "turn_id": turn_id,
+                    "chunk_index": chunk_idx,
+                    "audio_base64": audio_b64,
+                    "format": synth_res["format"],
+                    "text_snippet": remaining_text,
+                    "is_final": True,
+                    "metrics": {
+                        "time_to_first_token_ms": int((first_token_time or 0) * 1000),
+                        "time_to_first_audio_ms": int((first_audio_time or 0) * 1000),
+                        "tts_chunk_latency_ms": int(synth_res["tts_latency"] * 1000)
+                    }
+                })
+
+            total_elapsed = round(time.perf_counter() - t_endpoint, 3)
+            clean_reply = full_reply_text.strip()
+            if user_text and clean_reply:
+                history.append({"role": "user", "content": user_text})
+                history.append({"role": "assistant", "content": clean_reply})
+
+            await websocket.send_json({
+                "type": "turn_complete",
+                "turn_id": turn_id,
+                "full_reply": clean_reply,
+                "total_chunks": chunk_idx,
+                "metrics": {
+                    "time_to_first_token_ms": int((first_token_time or 0) * 1000),
+                    "time_to_first_audio_ms": int((first_audio_time or 0) * 1000),
+                    "total_turn_latency_ms": int(total_elapsed * 1000)
+                }
+            })
+
+        except asyncio.CancelledError:
+            logger.info(f"[{session_id}] AI turn {turn_id} cancelled.")
+            raise
+        except Exception as e:
+            logger.error(f"[{session_id}] AI turn error: {e}")
+            await websocket.send_json({
+                "type": "error",
+                "turn_id": turn_id,
+                "message": f"AI response error: {str(e)}"
+            })
+        finally:
+            is_ai_speaking = False
+
+    try:
+        while True:
+            message = await websocket.receive()
+
+            if "bytes" in message and message["bytes"]:
+                raw_bytes = message["bytes"]
+                # Convert PCM16 LE bytes to float32 samples [-1.0, 1.0]
+                audio_np = np.frombuffer(raw_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+
+                if turn_start_time is None:
+                    turn_start_time = time.perf_counter()
+
+                # Feed audio chunk to Sherpa streaming recognizer
+                sherpa.feed_audio(session_id, audio_np)
+
+                # Check partial transcript
+                partial = sherpa.get_partial_transcript(session_id)
+                now_t = time.perf_counter()
+                if partial:
+                    last_speech_time = now_t
+
+                if partial and partial != last_partial:
+                    last_partial = partial
+                    first_partial_latency = (
+                        int((now_t - turn_start_time) * 1000)
+                        if not first_partial_sent
+                        else None
+                    )
+                    first_partial_sent = True
+
+                    await websocket.send_json({
+                        "type": "partial_transcript",
+                        "text": partial,
+                        "turn_id": active_turn_id,
+                        "first_partial_latency_ms": first_partial_latency
+                    })
+
+                    # Barge-in: if AI is speaking and user speaks substantial fresh utterance
+                    # Respect a 1.2s grace period from turn start to avoid self-cancellation on trailing frames
+                    if is_ai_speaking or (current_ai_task and not current_ai_task.done()):
+                        time_since_ai_start = now_t - ai_turn_start_time
+                        if time_since_ai_start > 1.2:
+                            words = partial.strip().split()
+                            if len(words) >= 2 and len(partial.strip()) >= 8:
+                                interrupt_start = time.perf_counter()
+                                await cancel_active_ai_response("user_spoken_partial")
+                                interrupt_latency_ms = round((time.perf_counter() - interrupt_start) * 1000, 2)
+                                await websocket.send_json({
+                                    "type": "interrupted",
+                                    "turn_id": active_turn_id,
+                                    "reason": "user_speech_detected",
+                                    "interruption_latency_ms": interrupt_latency_ms,
+                                    "partial_text": partial
+                                })
+
+                # Check endpoint detection: only trigger if speech actually occurred (last_partial is non-empty)
+                has_speech = bool(last_partial.strip())
+                is_vad_endpoint = sherpa.is_endpoint(session_id) and has_speech
+                has_trailing_silence = (
+                    has_speech
+                    and last_speech_time > 0
+                    and (now_t - last_speech_time >= 1.2)
+                    and not is_ai_speaking
+                )
+
+                if is_vad_endpoint or has_trailing_silence:
+                    final_text = sherpa.get_final_transcript(session_id).strip()
+                    if not final_text and last_partial:
+                        final_text = last_partial.strip()
+
+                    sherpa.reset_stream(session_id)
+                    last_partial = ""
+                    first_partial_sent = False
+                    last_speech_time = 0.0
+
+                    if final_text:
+                        t_endpoint = time.perf_counter()
+                        endpoint_latency_ms = round((t_endpoint - turn_start_time) * 1000, 1) if turn_start_time else 0
+                        turn_start_time = None
+
+                        active_turn_id += 1
+                        turn_id = active_turn_id
+                        logger.info(f"[{session_id}] Sherpa finalized turn {turn_id}: '{final_text}' (vad_endpoint={is_vad_endpoint}, trailing_silence={has_trailing_silence})")
+
+                        await websocket.send_json({
+                            "type": "final_transcript",
+                            "text": final_text,
+                            "turn_id": turn_id,
+                            "endpoint_latency_ms": endpoint_latency_ms
+                        })
+
+                        # Cancel any previous active task
+                        await cancel_active_ai_response("new_turn_start")
+
+                        # Spawn assistant response task
+                        ai_turn_start_time = time.perf_counter()
+                        current_ai_task = asyncio.create_task(
+                            execute_ai_turn(turn_id, final_text, t_endpoint)
+                        )
+
+            elif "text" in message and message["text"]:
+                data = json.loads(message["text"])
+                msg_type = data.get("type")
+
+                if msg_type == "config":
+                    if "tts_voice" in data: config_state["tts_voice"] = data["tts_voice"]
+                    if "tts_engine" in data: config_state["tts_engine"] = data["tts_engine"]
+                    if "tts_pitch" in data: config_state["tts_pitch"] = data["tts_pitch"]
+                    if "groq_model" in data: config_state["groq_model"] = data["groq_model"]
+                    if "system_prompt" in data: config_state["system_prompt"] = data["system_prompt"]
+                    if "tts_speed" in data: config_state["tts_speed"] = float(data["tts_speed"])
+                    logger.info(f"[{session_id}] Updated config: {config_state}")
+
+                elif msg_type == "interrupt":
+                    interrupt_start = time.perf_counter()
+                    time_since_ai_start = interrupt_start - ai_turn_start_time
+                    if is_ai_speaking or (current_ai_task and not current_ai_task.done()):
+                        await cancel_active_ai_response("client_interrupt_message")
+                        interrupt_latency_ms = round((time.perf_counter() - interrupt_start) * 1000, 2)
+                        await websocket.send_json({
+                            "type": "interrupted",
+                            "turn_id": active_turn_id,
+                            "reason": "client_barge_in",
+                            "interruption_latency_ms": interrupt_latency_ms
+                        })
+                    else:
+                        await websocket.send_json({
+                            "type": "interrupted",
+                            "turn_id": active_turn_id,
+                            "reason": "already_idle",
+                            "interruption_latency_ms": 0.0
+                        })
+
+                elif msg_type == "clear_history":
+                    history.clear()
+                    await websocket.send_json({"type": "history_cleared"})
+
+                elif msg_type == "ping":
+                    await websocket.send_json({"type": "pong"})
+
+            elif message.get("type") == "websocket.disconnect":
+                break
+
+    except WebSocketDisconnect:
+        logger.info(f"[{session_id}] Client disconnected.")
+    except Exception as e:
+        logger.error(f"[{session_id}] WebSocket error: {e}")
+    finally:
+        await cancel_active_ai_response("session_closed")
+        sherpa.close_stream(session_id)
+        logger.info(f"[{session_id}] Cleaned up session stream.")
+

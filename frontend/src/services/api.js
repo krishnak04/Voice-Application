@@ -1,0 +1,330 @@
+export function getDefaultServerUrl() {
+  if (typeof window !== 'undefined' && window.location && window.location.hostname) {
+    const protocol = window.location.protocol || 'http:';
+    const hostname = window.location.hostname;
+    return `${protocol}//${hostname}:8024`;
+  }
+  return 'http://localhost:8024';
+}
+
+export function getServerUrl() {
+  const saved = localStorage.getItem('voice_benchmark_server_url');
+  if (saved) {
+    if (saved === 'http://localhost:8000' || saved === 'http://127.0.0.1:8000') {
+      return getDefaultServerUrl();
+    }
+    if (saved.includes(':8000')) {
+      const updated = saved.replace(':8000', ':8024');
+      localStorage.setItem('voice_benchmark_server_url', updated);
+      return updated;
+    }
+    return saved;
+  }
+  return getDefaultServerUrl();
+}
+
+export function setServerUrl(url) {
+  if (!url || !url.trim() || url.trim() === getDefaultServerUrl()) {
+    localStorage.removeItem('voice_benchmark_server_url');
+    return;
+  }
+  const cleanUrl = url.trim().replace(/\/+$/, '');
+  localStorage.setItem('voice_benchmark_server_url', cleanUrl);
+}
+
+export async function checkServerHealth() {
+  const baseUrl = getServerUrl();
+  try {
+    const res = await fetch(`${baseUrl}/api/health`, { method: 'GET' });
+    if (!res.ok) throw new Error(`Health check failed: ${res.statusText}`);
+    return await res.json();
+  } catch (err) {
+    return { status: 'offline', error: err.message };
+  }
+}
+
+/**
+ * Pure Voice-to-Text STT API call
+ */
+export async function transcribeAudio(audioBlob, options = {}) {
+  const baseUrl = getServerUrl();
+  const formData = new FormData();
+  formData.append('audio', audioBlob, 'mic_recording.webm');
+
+  if (options.language && options.language !== 'auto') {
+    formData.append('language', options.language);
+  }
+  if (options.model) {
+    formData.append('model', options.model);
+  }
+
+  const response = await fetch(`${baseUrl}/api/transcribe`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Transcription failed with ${response.status}`);
+  }
+
+  return await response.json();
+}
+
+/**
+ * Dedicated Groq LLM Chat API call
+ */
+export async function sendChatMessage(message, options = {}) {
+  const baseUrl = getServerUrl();
+  const payload = {
+    message,
+    groq_api_key: options.groqApiKey || undefined,
+    groq_model: options.groqModel || undefined,
+    history: options.history || undefined,
+  };
+
+  const response = await fetch(`${baseUrl}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Groq LLM chat failed with ${response.status}`);
+  }
+
+  return await response.json();
+}
+
+/**
+ * Text-to-Speech (TTS) standalone call
+ */
+export async function synthesizeSpeech(text, options = {}) {
+  const baseUrl = getServerUrl();
+  const payload = {
+    text,
+    voice: options.voice || undefined,
+    speed: options.speed || 1.0,
+    pitch: options.pitch || undefined,
+    engine: options.engine || undefined,
+  };
+
+  const response = await fetch(`${baseUrl}/api/tts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `TTS synthesis failed with ${response.status}`);
+  }
+
+  return await response.json();
+}
+
+/**
+ * Retrieve curated real human voices with metadata, categories, accents, and preview samples
+ */
+export async function getHumanVoices() {
+  const baseUrl = getServerUrl();
+  try {
+    const res = await fetch(`${baseUrl}/api/tts/voices`, { method: 'GET' });
+    if (!res.ok) throw new Error('Failed to get human voices');
+    return await res.json();
+  } catch (err) {
+    return {
+      engine: 'edge_tts',
+      total_human_voices: 0,
+      categories: ['Adult Female', 'Adult Male', 'Child / Youth', 'Mature / Narrator'],
+      voices: [],
+      elderly_limitation_notice: 'Edge-TTS provides child/youth voices (Ana, Maisie) and diverse adult voices. Dedicated elderly/senior character models are not published by Microsoft Edge-TTS; authoritative mature human adult voices are provided instead.'
+    };
+  }
+}
+
+/**
+ * Get active TTS engine info and available voices
+ */
+export async function getTTSInfo() {
+  const baseUrl = getServerUrl();
+  try {
+    const res = await fetch(`${baseUrl}/api/tts/info`, { method: 'GET' });
+    if (!res.ok) throw new Error('Failed to get TTS info');
+    return await res.json();
+  } catch (err) {
+    return { active_engine: 'none', available_voices: [] };
+  }
+}
+
+/**
+ * Get Sherpa-ONNX streaming engine metadata
+ */
+export async function getSherpaInfo() {
+  const baseUrl = getServerUrl();
+  try {
+    const res = await fetch(`${baseUrl}/api/sherpa/info`, { method: 'GET' });
+    if (!res.ok) throw new Error('Failed to get Sherpa info');
+    return await res.json();
+  } catch (err) {
+    return { available: false, error: err.message };
+  }
+}
+
+/**
+ * Resolve full-duplex WebSocket URL from current server URL
+ */
+export function getWebSocketUrl(path = '/ws/call') {
+  const baseUrl = getServerUrl();
+  const wsProto = baseUrl.startsWith('https:') ? 'wss:' : 'ws:';
+  const host = baseUrl.replace(/^https?:\/\//, '');
+  const cleanPath = path.startsWith('/') ? path : '/' + path;
+  return `${wsProto}//${host}${cleanPath}`;
+}
+
+
+/**
+ * Simulated Phone Call Turn
+ * Audio In -> Faster-Whisper -> Groq LLM with context -> TTS -> Audio Out
+ */
+export async function sendVoiceCallTurn(audioBlob, history = [], options = {}) {
+  const baseUrl = getServerUrl();
+  const clientStart = performance.now();
+
+  const formData = new FormData();
+  formData.append('audio', audioBlob, 'phone_turn.webm');
+
+  if (history && history.length > 0) {
+    formData.append('history', JSON.stringify(history));
+  }
+  if (options.language && options.language !== 'auto') {
+    formData.append('language', options.language);
+  }
+  if (options.whisperModel) {
+    formData.append('whisper_model', options.whisperModel);
+  }
+  if (options.groqApiKey) {
+    formData.append('groq_api_key', options.groqApiKey);
+  }
+  if (options.groqModel) {
+    formData.append('groq_model', options.groqModel);
+  }
+  if (options.ttsVoice) {
+    formData.append('tts_voice', options.ttsVoice);
+  }
+  if (options.ttsPitch) {
+    formData.append('tts_pitch', options.ttsPitch);
+  }
+  if (options.ttsSpeed) {
+    formData.append('tts_speed', String(options.ttsSpeed));
+  }
+  if (options.ttsEngine) {
+    formData.append('tts_engine', options.ttsEngine);
+  }
+
+  const response = await fetch(`${baseUrl}/api/call/turn`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Call turn failed with ${response.status}`);
+  }
+
+  const data = await response.json();
+  const clientEnd = performance.now();
+  data.latency.client_rtt = Math.round(clientEnd - clientStart) / 1000;
+
+  return data;
+}
+
+/**
+ * Full Pipeline Benchmark (STT + Groq Text)
+ */
+export async function sendAudioForBenchmark(audioBlob, options = {}) {
+  const clientStart = performance.now();
+
+  const sttData = await transcribeAudio(audioBlob, {
+    language: options.language,
+    model: options.model,
+  });
+
+  const transcript = (sttData.transcript || '').trim();
+  let chatData = null;
+
+  if (transcript) {
+    chatData = await sendChatMessage(transcript, {
+      groqApiKey: options.groqApiKey,
+      groqModel: options.groqModel,
+    });
+  } else {
+    chatData = {
+      reply: '[No audible speech detected. Please speak closer to the microphone]',
+      groq_latency: 0.0,
+      model: options.groqModel || 'default',
+    };
+  }
+
+  const clientEnd = performance.now();
+  const clientRtt = Math.round(clientEnd - clientStart) / 1000;
+  const groqLatency = chatData ? chatData.groq_latency : 0.0;
+  const totalServerTime = +(sttData.stt_latency + groqLatency).toFixed(3);
+
+  return {
+    transcript: sttData.transcript,
+    reply: chatData ? chatData.reply : '',
+    language: sttData.language,
+    latency: {
+      audio_duration: sttData.duration,
+      stt_latency: sttData.stt_latency,
+      rtf: sttData.rtf,
+      speed_factor: sttData.speed_factor,
+      groq_latency: groqLatency,
+      tts_latency: 0.0,
+      total_server_time: totalServerTime,
+      client_rtt: clientRtt,
+    },
+    device: sttData.device,
+    model_name: sttData.model_name,
+  };
+}
+
+/**
+ * Helper to play base64 audio directly in browser
+ */
+let currentAudio = null;
+
+export function playAudioFromBase64(base64Data, format = 'wav', onEnded = null) {
+  stopAudioPlayback();
+  const mimeType = format === 'mp3' ? 'audio/mpeg' : 'audio/wav';
+  const audioSrc = `data:${mimeType};base64,${base64Data}`;
+  const audio = new Audio(audioSrc);
+  currentAudio = audio;
+
+  if (onEnded) {
+    audio.onended = () => {
+      currentAudio = null;
+      onEnded();
+    };
+  }
+
+  audio.play().catch((err) => {
+    console.warn('Audio playback error (user interaction needed):', err);
+  });
+
+  return audio;
+}
+
+export function stopAudioPlayback() {
+  if (currentAudio) {
+    try {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    } catch (e) {
+      // ignore
+    }
+    currentAudio = null;
+  }
+}
