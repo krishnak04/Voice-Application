@@ -23,7 +23,13 @@ from schemas import (
     TTSRequest,
     TTSResponse,
     CallTurnResponse,
-    HumanVoicesResponse
+    HumanVoicesResponse,
+    SherpaModelsResponse,
+    SherpaSelectRequest,
+    SherpaDownloadRequest,
+    WhisperSelectRequest,
+    STTSelectRequest,
+    STTModelsResponse
 )
 from stt_service import get_stt_engine
 from groq_service import get_groq_engine
@@ -84,14 +90,140 @@ def health_check():
         tts_device=tts.device,
         tts_voice=tts.default_voice,
         sherpa_available=sherpa.is_available(),
-        sherpa_model=sherpa.model_name if sherpa.is_available() else None
+        sherpa_model=sherpa.model_name if sherpa.is_available() else None,
+        sherpa_active_model=sherpa.active_model_id if sherpa.is_available() else None,
+        sherpa_type=sherpa.model_type if sherpa.is_available() else "streaming",
+        sherpa_category=sherpa.model_category if sherpa.is_available() else "Standard"
     )
+
+@app.get("/api/stt/models", tags=["Speech to Text"])
+def get_all_stt_models(engine: Optional[str] = None):
+    """Return verified models for both Whisper and Sherpa-ONNX engines."""
+    stt = get_stt_engine()
+    sherpa = get_sherpa_engine()
+    whisper_data = {
+        "engine": "whisper",
+        "name": "Faster-Whisper (OpenAI Architecture)",
+        "active_model": stt.default_model_name,
+        "device": stt.device,
+        "compute_type": stt.compute_type,
+        "models": stt.list_models()
+    }
+    sherpa_data = {
+        "engine": "sherpa",
+        "name": "Sherpa-ONNX (Next-Gen Kaldi Zipformer)",
+        "active_model": sherpa.active_model_id,
+        "active_type": sherpa.model_type,
+        "active_category": sherpa.model_category,
+        "available": sherpa.is_available(),
+        "models": sherpa.list_models()
+    }
+    if engine == "whisper":
+        return whisper_data
+    elif engine == "sherpa":
+        return sherpa_data
+    return {
+        "engines": ["whisper", "sherpa"],
+        "active_engine": "sherpa" if sherpa.is_available() and sherpa.is_streaming else "whisper",
+        "whisper": whisper_data,
+        "sherpa": sherpa_data,
+        "whisper_models": whisper_data["models"],
+        "sherpa_models": sherpa_data["models"]
+    }
+
+@app.post("/api/stt/select", tags=["Speech to Text"])
+def select_stt_model(req: STTSelectRequest):
+    """Unified STT model selector: safely switches either Whisper or Sherpa-ONNX model."""
+    target_engine = (req.engine or "whisper").lower().strip()
+    if target_engine == "whisper":
+        stt = get_stt_engine()
+        res = stt.select_model(req.model_id)
+        if not res.get("success"):
+            raise HTTPException(status_code=400, detail=res.get("message"))
+        return {
+            "success": True,
+            "engine": "whisper",
+            "model_id": res.get("active_model"),
+            "message": res.get("message")
+        }
+    elif target_engine in ("sherpa", "sherpa-onnx"):
+        sherpa = get_sherpa_engine()
+        res = sherpa.switch_model(req.model_id)
+        if not res.get("success"):
+            raise HTTPException(status_code=400, detail=res.get("message"))
+        return {
+            "success": True,
+            "engine": "sherpa",
+            "model_id": sherpa.active_model_id,
+            "message": res.get("message")
+        }
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported STT engine: '{req.engine}'. Use 'whisper' or 'sherpa'.")
+
+@app.get("/api/whisper/models", tags=["Speech to Text"])
+def get_whisper_models():
+    """List all verified Faster-Whisper models with loaded and active status."""
+    stt = get_stt_engine()
+    return {
+        "models": stt.list_models(),
+        "active_model": stt.default_model_name,
+        "device": stt.device,
+        "compute_type": stt.compute_type
+    }
+
+@app.post("/api/whisper/models/select", tags=["Speech to Text"])
+def select_whisper_model(req: WhisperSelectRequest):
+    """Safely switch and preload the active Faster-Whisper model."""
+    stt = get_stt_engine()
+    res = stt.select_model(req.model_id)
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("message"))
+    return res
 
 @app.get("/api/sherpa/info", tags=["Speech to Text"])
 def get_sherpa_info():
     """Return Sherpa-ONNX streaming engine metadata and configuration."""
     sherpa = get_sherpa_engine()
     return sherpa.get_info()
+
+@app.get("/api/sherpa/models", tags=["Speech to Text"])
+def get_sherpa_models():
+    """List all verified English Sherpa-ONNX models with disk status, size category, and type."""
+    sherpa = get_sherpa_engine()
+    return {
+        "models": sherpa.list_models(),
+        "active_model": sherpa.active_model_id,
+        "active_type": sherpa.model_type,
+        "active_category": sherpa.model_category
+    }
+
+@app.post("/api/sherpa/models/select", tags=["Speech to Text"])
+def select_sherpa_model(req: SherpaSelectRequest):
+    """Safely switch the active Sherpa-ONNX model, validating files and active sessions."""
+    sherpa = get_sherpa_engine()
+    res = sherpa.switch_model(req.model_id)
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("message"))
+    return res
+
+@app.post("/api/sherpa/models/download", tags=["Speech to Text"])
+def download_sherpa_model(req: SherpaDownloadRequest):
+    """Download and extract a verified English Sherpa-ONNX model from official releases."""
+    sherpa = get_sherpa_engine()
+    res = sherpa.download_model(req.model_id)
+    if not res.get("success"):
+        raise HTTPException(status_code=500, detail=res.get("message"))
+    return res
+
+@app.get("/api/sherpa/benchmark", tags=["Speech to Text"])
+def get_sherpa_benchmark():
+    """Return empirical benchmark comparisons for installed Sherpa-ONNX English models."""
+    try:
+        from benchmark_sherpa_models import run_benchmark
+        results = run_benchmark()
+        return {"status": "success", "benchmarks": results}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
 
 
 # ==========================================
@@ -101,9 +233,10 @@ def get_sherpa_info():
 async def transcribe_audio(
     audio: UploadFile = File(..., description="Audio file to transcribe (.wav, .webm, .mp3, .m4a, .ogg)"),
     language: Optional[str] = Form(None, description="Language code (e.g. 'en', 'hi', 'auto')"),
-    model: Optional[str] = Form(None, description="Whisper model name (e.g. 'base', 'small', 'medium')")
+    model: Optional[str] = Form(None, description="Model name (e.g. 'base', 'small', 'medium')"),
+    engine: Optional[str] = Form(None, description="STT engine ('whisper' or 'sherpa')")
 ):
-    """Standalone Voice-to-Text endpoint with Faster-Whisper."""
+    """Standalone Voice-to-Text endpoint supporting both Faster-Whisper and Sherpa-ONNX."""
     audio_bytes = await audio.read()
     if not audio_bytes:
         raise HTTPException(status_code=400, detail="Audio payload is empty")
@@ -111,13 +244,25 @@ async def transcribe_audio(
     filename = audio.filename or "audio.webm"
     ext = "." + filename.split(".")[-1] if "." in filename else ".webm"
 
-    stt = get_stt_engine()
-    stt_result = stt.transcribe_audio_bytes(
-        audio_bytes=audio_bytes,
-        file_ext=ext,
-        language=language,
-        model_name=model
-    )
+    # Route based on engine selection or model prefix
+    use_sherpa = (engine == "sherpa") or (model and (model.startswith("sherpa-") or model == "sherpa-streaming"))
+
+    if use_sherpa:
+        sherpa = get_sherpa_engine()
+        if not sherpa.is_available():
+            raise HTTPException(status_code=503, detail="Sherpa-ONNX engine is not available.")
+        # If a specific sherpa model was passed and differs from active, switch or transcribe
+        if model and model.startswith("sherpa-") and model != sherpa.active_model_id:
+            sherpa.switch_model(model)
+        stt_result = sherpa.transcribe_audio_source(audio_bytes)
+    else:
+        stt = get_stt_engine()
+        stt_result = stt.transcribe_audio_bytes(
+            audio_bytes=audio_bytes,
+            file_ext=ext,
+            language=language,
+            model_name=model
+        )
 
     return TranscriptionResponse(
         transcript=stt_result["transcript"],
@@ -231,6 +376,7 @@ async def voice_call_turn(
     history: Optional[str] = Form(None, description="JSON string of past conversation messages"),
     language: Optional[str] = Form(None, description="Language code for STT"),
     whisper_model: Optional[str] = Form(None, description="Whisper model name"),
+    stt_engine: Optional[str] = Form(None, description="STT engine ('whisper' or 'sherpa')"),
     groq_api_key: Optional[str] = Form(None, description="Groq API key"),
     groq_model: Optional[str] = Form(None, description="Groq model name"),
     tts_voice: Optional[str] = Form(None, description="TTS voice ID"),
@@ -239,7 +385,7 @@ async def voice_call_turn(
 ):
     """
     Simulated Telephone Call Turn:
-    1. Transcribes incoming caller audio with Faster-Whisper.
+    1. Transcribes incoming caller audio with Faster-Whisper or Sherpa-ONNX.
     2. Passes transcript and history to Groq LLM with telephony prompt.
     3. Synthesizes AI voice with ultra-low VRAM TTS.
     4. Returns spoken voice audio, transcripts, and latency metrics in a single round-trip.
@@ -248,6 +394,7 @@ async def voice_call_turn(
     stt = get_stt_engine()
     groq = get_groq_engine()
     tts = get_tts_engine()
+    sherpa = get_sherpa_engine()
 
     audio_bytes = await audio.read()
     if not audio_bytes:
@@ -256,13 +403,19 @@ async def voice_call_turn(
     filename = audio.filename or "call_audio.webm"
     ext = "." + filename.split(".")[-1] if "." in filename else ".webm"
 
-    # 1. Faster-Whisper Speech-to-Text
-    stt_result = stt.transcribe_audio_bytes(
-        audio_bytes=audio_bytes,
-        file_ext=ext,
-        language=language,
-        model_name=whisper_model
-    )
+    # Route STT to selected engine
+    use_sherpa = (stt_engine == "sherpa") or (whisper_model and (whisper_model.startswith("sherpa-") or whisper_model == "sherpa-streaming"))
+    if use_sherpa and sherpa.is_available():
+        if whisper_model and whisper_model.startswith("sherpa-") and whisper_model != sherpa.active_model_id:
+            sherpa.switch_model(whisper_model)
+        stt_result = sherpa.transcribe_audio_source(audio_bytes)
+    else:
+        stt_result = stt.transcribe_audio_bytes(
+            audio_bytes=audio_bytes,
+            file_ext=ext,
+            language=language,
+            model_name=whisper_model
+        )
     user_transcript = stt_result["transcript"].strip()
 
     # Parse conversation history
@@ -342,6 +495,7 @@ async def process_voice(
     audio: UploadFile = File(...),
     language: Optional[str] = Form(None),
     model: Optional[str] = Form(None),
+    engine: Optional[str] = Form(None),
     groq_api_key: Optional[str] = Form(None),
     groq_model: Optional[str] = Form(None)
 ):
@@ -349,6 +503,7 @@ async def process_voice(
     request_start = time.perf_counter()
     stt = get_stt_engine()
     groq = get_groq_engine()
+    sherpa = get_sherpa_engine()
 
     audio_bytes = await audio.read()
     if not audio_bytes:
@@ -357,12 +512,18 @@ async def process_voice(
     filename = audio.filename or "recording.webm"
     ext = "." + filename.split(".")[-1] if "." in filename else ".webm"
 
-    stt_result = stt.transcribe_audio_bytes(
-        audio_bytes=audio_bytes,
-        file_ext=ext,
-        language=language,
-        model_name=model
-    )
+    use_sherpa = (engine == "sherpa") or (model and (model.startswith("sherpa-") or model == "sherpa-streaming"))
+    if use_sherpa and sherpa.is_available():
+        if model and model.startswith("sherpa-") and model != sherpa.active_model_id:
+            sherpa.switch_model(model)
+        stt_result = sherpa.transcribe_audio_source(audio_bytes)
+    else:
+        stt_result = stt.transcribe_audio_bytes(
+            audio_bytes=audio_bytes,
+            file_ext=ext,
+            language=language,
+            model_name=model
+        )
     transcript = stt_result["transcript"]
 
     if transcript.strip():
@@ -424,6 +585,14 @@ async def websocket_call_endpoint(websocket: WebSocket):
         await websocket.send_json({
             "type": "error",
             "message": "Sherpa-ONNX streaming engine is not available on this server."
+        })
+        await websocket.close()
+        return
+
+    if not sherpa.is_streaming:
+        await websocket.send_json({
+            "type": "error",
+            "message": f"Active model '{sherpa.model_name}' is an Offline ASR model. Full-duplex live voice calling requires a Streaming model (e.g. Small or Standard Streaming Zipformer). Please switch model in the ASR Model Selector."
         })
         await websocket.close()
         return
@@ -590,6 +759,35 @@ async def websocket_call_endpoint(websocket: WebSocket):
 
             total_elapsed = round(time.perf_counter() - t_endpoint, 3)
             clean_reply = full_reply_text.strip()
+            if not clean_reply and user_text.strip():
+                clean_reply = "I'm sorry, I didn't quite catch that. Could you please repeat?"
+                try:
+                    synth_res = await tts.async_synthesize(
+                        text=clean_reply,
+                        voice=config_state["tts_voice"],
+                        speed=config_state["tts_speed"],
+                        pitch=config_state.get("tts_pitch"),
+                        engine=config_state["tts_engine"]
+                    )
+                    audio_b64 = base64.b64encode(synth_res["audio_bytes"]).decode("utf-8")
+                    chunk_idx += 1
+                    await websocket.send_json({
+                        "type": "audio_chunk",
+                        "turn_id": turn_id,
+                        "chunk_index": chunk_idx,
+                        "audio_base64": audio_b64,
+                        "format": synth_res["format"],
+                        "text_snippet": clean_reply,
+                        "is_final": True,
+                        "metrics": {
+                            "time_to_first_token_ms": int((first_token_time or 0) * 1000),
+                            "time_to_first_audio_ms": int((first_audio_time or 0) * 1000),
+                            "tts_chunk_latency_ms": int(synth_res["tts_latency"] * 1000)
+                        }
+                    })
+                except Exception as synth_err:
+                    logger.warning(f"[{session_id}] Fallback synthesis warning: {synth_err}")
+
             if user_text and clean_reply:
                 history.append({"role": "user", "content": user_text})
                 history.append({"role": "assistant", "content": clean_reply})

@@ -5,6 +5,7 @@ import VoiceCallSimulator from './components/VoiceCallSimulator';
 import LatencyDashboard from './components/LatencyDashboard';
 import ChatTranscript from './components/ChatTranscript';
 import SettingsModal from './components/SettingsModal';
+import SherpaModelSelector from './components/SherpaModelSelector';
 import { useAudioRecorder } from './hooks/useAudioRecorder';
 import { checkServerHealth, sendAudioForBenchmark } from './services/api';
 import { PhoneCall, Activity, Mic, Volume2, ChevronDown, Check, Sparkles } from 'lucide-react';
@@ -18,9 +19,16 @@ export default function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processError, setProcessError] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSherpaModalOpen, setIsSherpaModalOpen] = useState(false);
   const [result, setResult] = useState(null);
   const [language, setLanguage] = useState(() => localStorage.getItem('whisper_language') || 'auto');
-  const [model, setModel] = useState(() => localStorage.getItem('whisper_model') || 'base');
+  const [model, setModel] = useState(() => localStorage.getItem('whisper_model') || 'sherpa-onnx-streaming-zipformer-en-2023-06-26');
+  const [engine, setEngine] = useState(() => localStorage.getItem('stt_engine') || 'sherpa');
+
+  const handleEngineChange = (eng) => {
+    setEngine(eng);
+    localStorage.setItem('stt_engine', eng);
+  };
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -86,6 +94,8 @@ export default function App() {
         groqModel,
         language,
         model,
+        engine,
+        stt_engine: engine
       });
       setResult(data);
     } catch (err) {
@@ -97,7 +107,13 @@ export default function App() {
 
   return (
     <div className="app-container">
-      <Header health={health} onOpenSettings={() => setIsSettingsOpen(true)} />
+      <Header
+        health={health}
+        sttEngine={engine}
+        sttModel={model}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenSherpa={() => setIsSherpaModalOpen(true)}
+      />
 
       {/* Mode Navigation Tabs */}
       <div
@@ -456,10 +472,13 @@ export default function App() {
             onLanguageChange={handleLanguageChange}
             model={model}
             onModelChange={handleModelChange}
+            engine={engine}
+            onEngineChange={handleEngineChange}
             onCallResult={(res) => setResult(res)}
             health={health}
             mode={simulatorMode}
             onModeChange={handleSimulatorModeChange}
+            onOpenSherpa={() => setIsSherpaModalOpen(true)}
           />
         ) : (
           <AudioRecorder
@@ -472,6 +491,8 @@ export default function App() {
             onLanguageChange={handleLanguageChange}
             model={model}
             onModelChange={handleModelChange}
+            engine={engine}
+            onEngineChange={handleEngineChange}
             onStart={startRecording}
             onStop={handleStopRecording}
           />
@@ -492,6 +513,12 @@ export default function App() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         onSaveSettings={fetchHealth}
+      />
+
+      <SherpaModelSelector
+        isOpen={isSherpaModalOpen}
+        onClose={() => setIsSherpaModalOpen(false)}
+        onModelSelected={fetchHealth}
       />
     </div>
   );

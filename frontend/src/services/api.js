@@ -57,6 +57,9 @@ export async function transcribeAudio(audioBlob, options = {}) {
   if (options.model) {
     formData.append('model', options.model);
   }
+  if (options.engine) {
+    formData.append('engine', options.engine);
+  }
 
   const response = await fetch(`${baseUrl}/api/transcribe`, {
     method: 'POST',
@@ -173,6 +176,68 @@ export async function getSherpaInfo() {
 }
 
 /**
+ * List all verified Sherpa-ONNX English models with download status
+ */
+export async function getSherpaModels() {
+  const baseUrl = getServerUrl();
+  try {
+    const res = await fetch(`${baseUrl}/api/sherpa/models`, { method: 'GET' });
+    if (!res.ok) throw new Error('Failed to fetch Sherpa models');
+    return await res.json();
+  } catch (err) {
+    return { models: [], active_model: null, error: err.message };
+  }
+}
+
+/**
+ * Safely select/switch active Sherpa-ONNX model
+ */
+export async function selectSherpaModel(modelId) {
+  const baseUrl = getServerUrl();
+  const res = await fetch(`${baseUrl}/api/sherpa/models/select`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model_id: modelId })
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.detail || data.message || 'Failed to select Sherpa model');
+  }
+  return data;
+}
+
+/**
+ * Download a verified Sherpa-ONNX model
+ */
+export async function downloadSherpaModel(modelId) {
+  const baseUrl = getServerUrl();
+  const res = await fetch(`${baseUrl}/api/sherpa/models/download`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model_id: modelId })
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.detail || data.message || 'Failed to download Sherpa model');
+  }
+  return data;
+}
+
+/**
+ * Retrieve empirical benchmark comparison metrics
+ */
+export async function getSherpaBenchmarks() {
+  const baseUrl = getServerUrl();
+  try {
+    const res = await fetch(`${baseUrl}/api/sherpa/benchmark`, { method: 'GET' });
+    if (!res.ok) throw new Error('Failed to fetch Sherpa benchmarks');
+    return await res.json();
+  } catch (err) {
+    return { status: 'error', error: err.message };
+  }
+}
+
+/**
  * Resolve full-duplex WebSocket URL from current server URL
  */
 export function getWebSocketUrl(path = '/ws/call') {
@@ -203,6 +268,9 @@ export async function sendVoiceCallTurn(audioBlob, history = [], options = {}) {
   }
   if (options.whisperModel) {
     formData.append('whisper_model', options.whisperModel);
+  }
+  if (options.sttEngine) {
+    formData.append('stt_engine', options.sttEngine);
   }
   if (options.groqApiKey) {
     formData.append('groq_api_key', options.groqApiKey);
@@ -249,6 +317,7 @@ export async function sendAudioForBenchmark(audioBlob, options = {}) {
   const sttData = await transcribeAudio(audioBlob, {
     language: options.language,
     model: options.model,
+    engine: options.engine,
   });
 
   const transcript = (sttData.transcript || '').trim();
@@ -328,3 +397,50 @@ export function stopAudioPlayback() {
     currentAudio = null;
   }
 }
+
+/**
+ * STT Unified & Engine-Specific APIs (Whisper & Sherpa-ONNX)
+ */
+export async function getSttModels(engine = null) {
+  const baseUrl = getServerUrl();
+  const url = engine ? `${baseUrl}/api/stt/models?engine=${encodeURIComponent(engine)}` : `${baseUrl}/api/stt/models`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch STT models: ${res.statusText}`);
+  return await res.json();
+}
+
+export async function selectSttModel(engine, modelId) {
+  const baseUrl = getServerUrl();
+  const res = await fetch(`${baseUrl}/api/stt/select`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ engine, model_id: modelId })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || err.message || `Failed to select ${engine} model`);
+  }
+  return await res.json();
+}
+
+export async function getWhisperModels() {
+  const baseUrl = getServerUrl();
+  const res = await fetch(`${baseUrl}/api/whisper/models`);
+  if (!res.ok) throw new Error(`Failed to fetch Whisper models: ${res.statusText}`);
+  return await res.json();
+}
+
+export async function selectWhisperModel(modelId) {
+  const baseUrl = getServerUrl();
+  const res = await fetch(`${baseUrl}/api/whisper/models/select`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model_id: modelId })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || err.message || 'Failed to select Whisper model');
+  }
+  return await res.json();
+}
+

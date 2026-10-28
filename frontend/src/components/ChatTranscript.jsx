@@ -4,7 +4,10 @@ import { User, Bot, Copy, Check } from 'lucide-react';
 export default function ChatTranscript({ transcript, reply, language }) {
   const [copied, setCopied] = React.useState(false);
 
-  if (!transcript && !reply) return null;
+  const hasTranscript = Boolean(transcript && transcript.trim());
+  const hasReply = Boolean(reply && reply.trim());
+
+  if (!hasTranscript && !hasReply) return null;
 
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text);
@@ -14,7 +17,7 @@ export default function ChatTranscript({ transcript, reply, language }) {
 
   return (
     <section className="glass-panel chat-container">
-      {transcript && (
+      {hasTranscript && (
         <div className="chat-bubble user">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div className="chat-bubble-header" style={{ color: 'var(--accent-cyan)' }}>
@@ -33,7 +36,7 @@ export default function ChatTranscript({ transcript, reply, language }) {
         </div>
       )}
 
-      {reply && (
+      {hasReply && (
         <div className="chat-bubble ai">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div className="chat-bubble-header" style={{ color: 'var(--accent-purple)' }}>

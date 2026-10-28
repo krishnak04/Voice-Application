@@ -1,0 +1,130 @@
+[
+  {
+    "model_id": "sherpa-onnx-streaming-zipformer-en-2023-06-26",
+    "name": "Sherpa-ONNX Zipformer Streaming Standard (Baseline)",
+    "category": "Standard",
+    "type": "streaming",
+    "params": "~65.6M",
+    "load_time_sec": 3.528,
+    "ram_delta_mb": 135.2,
+    "avg_rtf": 0.0556,
+    "avg_wer": 3.82,
+    "first_partial_ms": 62.0,
+    "runs": [
+      {
+        "wav": "0.wav",
+        "duration": 6.62,
+        "first_partial_ms": 62.0,
+        "final_latency_ms": 374.2,
+        "rtf": 0.0565,
+        "wer": 5.56,
+        "hyp": "AFTER EARLY NIGHTFALL THE YELLOW LAMPS WOULD LIGHT UP HERE AND THERE THE SQUALID QUARTER OF THE BROTHEL"
+      },
+      {
+        "wav": "1.wav",
+        "duration": 16.71,
+        "first_partial_ms": 49.7,
+        "final_latency_ms": 912.4,
+        "rtf": 0.0546,
+        "wer": 2.08,
+        "hyp": "GOD AS A DIRECT CONSEQUENCE OF THE SIN WHICH MAN THUS PUNISHED HAD GIVEN HER A LOVELY CHILD WHOSE PLACE WAS ON THAT SAME DISHONOURED BOSOM TO CONNECT HER PARENT FOR EVER WITH THE RACE AND DESCENT OF MORTALS AND TO BE FINALLY A BLESSED SOUL IN HE"
+      }
+    ]
+  },
+  {
+    "model_id": "sherpa-onnx-streaming-zipformer-en-20M-2023-02-17",
+    "name": "Sherpa-ONNX Zipformer Streaming Small (Lightweight)",
+    "category": "Small",
+    "type": "streaming",
+    "params": "~20M",
+    "load_time_sec": 0.759,
+    "ram_delta_mb": 61.3,
+    "avg_rtf": 0.0268,
+    "avg_wer": 13.2,
+    "first_partial_ms": 64.6,
+    "runs": [
+      {
+        "wav": "0.wav",
+        "duration": 6.62,
+        "first_partial_ms": 64.6,
+        "final_latency_ms": 184.4,
+        "rtf": 0.0278,
+        "wer": 22.22,
+        "hyp": "THE YELLOW LAMPS WOULD LIGHT UP HERE AND THERE THE SQUALID QUARTER OF THE BRAFFLEL"
+      },
+      {
+        "wav": "1.wav",
+        "duration": 16.71,
+        "first_partial_ms": 37.9,
+        "final_latency_ms": 433.0,
+        "rtf": 0.0259,
+        "wer": 4.17,
+        "hyp": "AS A DIRECT CONSEQUENCE OF THE SIN WHICH MAN THUS PUNISHED HAD GIVEN HER A LOVELY CHILD WHOSE PLACE WAS ON THAT SAME DISHONORED BOSOM TO CONNECT HER PARENT FOR EVER WITH THE RACE AND DESCENT OF MORTALS AND TO BE FINALLY A BLESSED SOUL IN HEAVEN"
+      }
+    ]
+  },
+  {
+    "model_id": "sherpa-onnx-zipformer-small-en-2023-06-26",
+    "name": "Sherpa-ONNX Zipformer Offline Small",
+    "category": "Small",
+    "type": "offline",
+    "params": "~30M",
+    "load_time_sec": 0.675,
+    "ram_delta_mb": 56.2,
+    "avg_rtf": 0.014,
+    "avg_wer": 2.08,
+    "first_partial_ms": null,
+    "runs": [
+      {
+        "wav": "0.wav",
+        "duration": 6.62,
+        "first_partial_ms": null,
+        "final_latency_ms": 87.0,
+        "rtf": 0.0131,
+        "wer": 0.0,
+        "hyp": "AFTER EARLY NIGHTFALL THE YELLOW LAMPS WOULD LIGHT UP HERE AND THERE THE SQUALID QUARTER OF THE BROTHELS"
+      },
+      {
+        "wav": "1.wav",
+        "duration": 16.71,
+        "first_partial_ms": null,
+        "final_latency_ms": 248.8,
+        "rtf": 0.0149,
+        "wer": 4.17,
+        "hyp": "GOD AS A DIRECT CONSEQUENCE OF THE SIN WHICH MAN THUS PUNISHED HAD GIVEN HER A LOVELY CHILD WHOSE PLACE WAS ON THAT SAME DISHONOURED BOSOM TO CONNECT HER PARENT FOREVER WITH THE RACE AND DESCENT OF MORTALS AND TO BE FINALLY A BLESSED SOUL IN HEAVEN"
+      }
+    ]
+  },
+  {
+    "model_id": "sherpa-onnx-zipformer-large-en-2023-06-26",
+    "name": "Sherpa-ONNX Zipformer Offline Large (High Accuracy)",
+    "category": "Large",
+    "type": "offline",
+    "params": "~148M",
+    "load_time_sec": 1.458,
+    "ram_delta_mb": 194.9,
+    "avg_rtf": 0.0228,
+    "avg_wer": 1.04,
+    "first_partial_ms": null,
+    "runs": [
+      {
+        "wav": "0.wav",
+        "duration": 6.62,
+        "first_partial_ms": null,
+        "final_latency_ms": 161.6,
+        "rtf": 0.0244,
+        "wer": 0.0,
+        "hyp": "AFTER EARLY NIGHTFALL THE YELLOW LAMPS WOULD LIGHT UP HERE AND THERE THE SQUALID QUARTER OF THE BROTHELS"
+      },
+      {
+        "wav": "1.wav",
+        "duration": 16.71,
+        "first_partial_ms": null,
+        "final_latency_ms": 355.2,
+        "rtf": 0.0212,
+        "wer": 2.08,
+        "hyp": "GOD AS A DIRECT CONSEQUENCE OF THE SIN WHICH MAN THUS PUNISHED HAD GIVEN HER A LOVELY CHILD WHOSE PLACE WAS ON THAT SAME DISHONORED BOSOM TO CONNECT HER PARENT FOR EVER WITH THE RACE AND DESCENT OF MORTALS AND TO BE FINALLY A BLESSED SOUL IN HEAVEN"
+      }
+    ]
+  }
+]

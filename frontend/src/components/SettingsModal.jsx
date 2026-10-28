@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { X, Server, Key, Cpu, Save } from 'lucide-react';
 import { getServerUrl, setServerUrl, getDefaultServerUrl } from '../services/api';
+import { WHISPER_MODELS, SHERPA_MODELS } from './AudioRecorder';
 
 export default function SettingsModal({ isOpen, onClose, onSaveSettings }) {
   const defaultUrl = getDefaultServerUrl();
   const [url, setUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('openai/gpt-oss-20b');
-  const [whisperModel, setWhisperModel] = useState('base');
+  const [sttEngine, setSttEngine] = useState('sherpa');
+  const [sttModel, setSttModel] = useState('sherpa-onnx-streaming-zipformer-en-2023-06-26');
 
   useEffect(() => {
     if (isOpen) {
@@ -19,7 +21,14 @@ export default function SettingsModal({ isOpen, onClose, onSaveSettings }) {
       }
       setApiKey(localStorage.getItem('groq_api_key') || '');
       setModel(localStorage.getItem('groq_model') || 'openai/gpt-oss-20b');
-      setWhisperModel(localStorage.getItem('whisper_model') || 'base');
+      const savedEngine = localStorage.getItem('stt_engine') || 'sherpa';
+      setSttEngine(savedEngine);
+      const savedModel = localStorage.getItem('whisper_model');
+      if (savedModel) {
+        setSttModel(savedModel);
+      } else {
+        setSttModel(savedEngine === 'sherpa' ? 'sherpa-onnx-streaming-zipformer-en-2023-06-26' : 'base');
+      }
     }
   }, [isOpen]);
 
@@ -30,7 +39,8 @@ export default function SettingsModal({ isOpen, onClose, onSaveSettings }) {
     setServerUrl(url);
     localStorage.setItem('groq_api_key', apiKey.trim());
     localStorage.setItem('groq_model', model.trim());
-    localStorage.setItem('whisper_model', whisperModel.trim());
+    localStorage.setItem('stt_engine', sttEngine);
+    localStorage.setItem('whisper_model', sttModel.trim());
     onSaveSettings();
     onClose();
   };
@@ -135,25 +145,82 @@ export default function SettingsModal({ isOpen, onClose, onSaveSettings }) {
             </div>
           </div>
 
+          {/* STT Engine Selector */}
           <div>
             <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
-              <Cpu size={14} /> Whisper Model
+              <Cpu size={14} /> Voice-to-Text (STT) Engine
+            </label>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setSttEngine('sherpa');
+                  setSttModel('sherpa-onnx-streaming-zipformer-en-2023-06-26');
+                }}
+                style={{
+                  flex: 1,
+                  padding: '0.5rem',
+                  borderRadius: '6px',
+                  border: sttEngine === 'sherpa' ? '1px solid #9333ea' : '1px solid var(--border)',
+                  background: sttEngine === 'sherpa' ? 'rgba(168, 85, 247, 0.15)' : 'var(--bg-input)',
+                  color: sttEngine === 'sherpa' ? '#9333ea' : 'var(--text-muted)',
+                  fontWeight: 600,
+                  fontSize: '0.78rem',
+                  cursor: 'pointer'
+                }}
+              >
+                ⚡ Sherpa-ONNX
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSttEngine('whisper');
+                  setSttModel('base');
+                }}
+                style={{
+                  flex: 1,
+                  padding: '0.5rem',
+                  borderRadius: '6px',
+                  border: sttEngine === 'whisper' ? '1px solid #0284c7' : '1px solid var(--border)',
+                  background: sttEngine === 'whisper' ? 'rgba(2, 132, 199, 0.15)' : 'var(--bg-input)',
+                  color: sttEngine === 'whisper' ? '#0284c7' : 'var(--text-muted)',
+                  fontWeight: 600,
+                  fontSize: '0.78rem',
+                  cursor: 'pointer'
+                }}
+              >
+                🎙️ Faster-Whisper
+              </button>
+            </div>
+          </div>
+
+          {/* Model Dropdown Filtered by Engine */}
+          <div>
+            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
+              <Cpu size={14} /> Active {sttEngine === 'sherpa' ? 'Sherpa-ONNX' : 'Faster-Whisper'} Model
             </label>
             <select
-              value={whisperModel}
-              onChange={(e) => setWhisperModel(e.target.value)}
+              value={sttModel}
+              onChange={(e) => setSttModel(e.target.value)}
               style={{
                 width: '100%', padding: '0.65rem 0.8rem', borderRadius: '8px',
                 background: 'var(--bg-input)', border: '1px solid var(--border)',
                 color: 'var(--text-main)', fontFamily: 'var(--font-mono)', fontSize: '0.85rem'
               }}
             >
-              <option value="base">base (Installed on Dev PC - Fast Multilingual)</option>
-              <option value="small">small (Multilingual higher accuracy)</option>
-              <option value="medium">medium (Production Indic quality)</option>
-              <option value="large-v3-turbo">large-v3-turbo (State of the art)</option>
-              <option value="tiny">tiny (Ultra fast, lowest memory)</option>
-              <option value="base.en">base.en (English-only ultra fast)</option>
+              {sttEngine === 'sherpa' ? (
+                SHERPA_MODELS.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.type === 'streaming' ? '⚡' : '📦'} {m.label}
+                  </option>
+                ))
+              ) : (
+                WHISPER_MODELS.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    🎙️ {m.label}
+                  </option>
+                ))
+              )}
             </select>
           </div>
 

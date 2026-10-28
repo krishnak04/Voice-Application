@@ -39,11 +39,16 @@ import {
   getWebSocketUrl,
   getHumanVoices
 } from '../services/api';
-import { MODELS as STT_MODELS, LANGUAGES as STT_LANGUAGES } from './AudioRecorder';
+import {
+  MODELS as STT_MODELS,
+  LANGUAGES as STT_LANGUAGES,
+  WHISPER_MODELS,
+  SHERPA_MODELS
+} from './AudioRecorder';
 
 export const EXTENDED_STT_MODELS = [
-  { id: 'sherpa-streaming', label: '⚡ Sherpa-ONNX Zipformer (English Streaming Full-Duplex)' },
-  ...STT_MODELS
+  ...SHERPA_MODELS.map(m => ({ id: m.id, label: `${m.type === 'streaming' ? '⚡' : '📦'} [Sherpa] ${m.label}` })),
+  ...WHISPER_MODELS.map(m => ({ id: m.id, label: `🎙️ [Whisper] ${m.label}` }))
 ];
 
 export const TTS_MODELS = [
@@ -433,10 +438,13 @@ export default function VoiceCallSimulator({
   onLanguageChange,
   model: initialModel = 'base',
   onModelChange,
+  engine: initialEngine = 'sherpa',
+  onEngineChange,
   onCallResult,
   health,
   mode: propMode,
-  onModeChange
+  onModeChange,
+  onOpenSherpa
 }) {
   // Call Lifecycle: 'idle' | 'calling' | 'active' | 'ended'
   const [callState, setCallState] = useState('idle');
@@ -445,8 +453,9 @@ export default function VoiceCallSimulator({
   const [callDuration, setCallDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
 
-  // Voice-to-Text (STT) Model & Language State
-  const [sttModel, setSttModel] = useState(() => initialModel || localStorage.getItem('whisper_model') || 'sherpa-streaming');
+  // STT Engine, Model & Language State
+  const [sttEngine, setSttEngine] = useState(() => initialEngine || localStorage.getItem('stt_engine') || 'sherpa');
+  const [sttModel, setSttModel] = useState(() => initialModel || localStorage.getItem('whisper_model') || (sttEngine === 'sherpa' ? 'sherpa-onnx-streaming-zipformer-en-2023-06-26' : 'base'));
   const [sttLanguage, setSttLanguage] = useState(() => initialLanguage || localStorage.getItem('whisper_language') || 'auto');
 
   // Text-to-Voice (TTS) Model & Human Voice State
@@ -493,6 +502,12 @@ export default function VoiceCallSimulator({
   const bargeInTimerRef = useRef(null);
 
   // Sync with prop changes if parent updates
+  useEffect(() => {
+    if (initialEngine && initialEngine !== sttEngine) {
+      setSttEngine(initialEngine);
+    }
+  }, [initialEngine]);
+
   useEffect(() => {
     if (initialModel && initialModel !== sttModel) {
       setSttModel(initialModel);
@@ -615,6 +630,16 @@ export default function VoiceCallSimulator({
   const handleSilenceChange = (val) => {
     setSilenceTimeoutMs(val);
     localStorage.setItem('call_silence_timeout', String(val));
+  };
+
+  const handleSttEngineChange = (newEngine) => {
+    setSttEngine(newEngine);
+    localStorage.setItem('stt_engine', newEngine);
+    if (onEngineChange) {
+      onEngineChange(newEngine);
+    }
+    const defaultModel = newEngine === 'sherpa' ? 'sherpa-onnx-streaming-zipformer-en-2023-06-26' : 'base';
+    handleSttModelChange(defaultModel);
   };
 
   const handleSttModelChange = (newModel) => {
@@ -782,7 +807,7 @@ export default function VoiceCallSimulator({
       try {
         currentAudioRef.current.pause();
         currentAudioRef.current.currentTime = 0;
-      } catch (e) {}
+      } catch (e) { }
       currentAudioRef.current = null;
     }
     audioQueueRef.current = [];
@@ -843,14 +868,14 @@ export default function VoiceCallSimulator({
     if (wsRef.current) {
       try {
         wsRef.current.close();
-      } catch (e) {}
+      } catch (e) { }
       wsRef.current = null;
     }
 
     if (scriptProcessorRef.current) {
       try {
         scriptProcessorRef.current.disconnect();
-      } catch (e) {}
+      } catch (e) { }
       scriptProcessorRef.current = null;
     }
 
@@ -871,7 +896,7 @@ export default function VoiceCallSimulator({
       try {
         mediaRecorderRef.current.onstop = null;
         mediaRecorderRef.current.stop();
-      } catch (e) {}
+      } catch (e) { }
       mediaRecorderRef.current = null;
     }
 
@@ -881,7 +906,7 @@ export default function VoiceCallSimulator({
     }
 
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current.close().catch(() => { });
       audioContextRef.current = null;
     }
 
@@ -953,7 +978,7 @@ export default function VoiceCallSimulator({
               }
             };
             freshRecorder.start(100);
-          } catch (e) {}
+          } catch (e) { }
         }
       };
       recorder.stop();
@@ -1006,7 +1031,9 @@ export default function VoiceCallSimulator({
           groqApiKey,
           groqModel,
           ttsVoice: selectedVoice,
-          ttsEngine: activeTtsEngine
+          ttsEngine: activeTtsEngine,
+          engine: sttEngine,
+          stt_engine: sttEngine
         });
 
         const userText = (result.transcript || '').trim();
@@ -1199,16 +1226,9 @@ export default function VoiceCallSimulator({
     setLiveAssistantText('');
     setBargeInNotice(null);
 
-    const isSherpa = sttModel === 'sherpa-streaming';
+    const isStreamingSherpa = sttEngine === 'sherpa' && (!sttModel || sttModel === 'sherpa-streaming' || sttModel.includes('streaming'));
 
-    setChatHistory([
-      {
-        role: 'system_notification',
-        content: isSherpa
-          ? 'Call initiated. Connecting full-duplex WebSocket with Sherpa-ONNX streaming Zipformer...'
-          : 'Call initiated. Connecting to AI Voice Agent...'
-      }
-    ]);
+    setChatHistory([]);
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -1240,7 +1260,7 @@ export default function VoiceCallSimulator({
       audioContextRef.current = audioCtx;
       analyserRef.current = analyser;
 
-      if (isSherpa) {
+      if (isStreamingSherpa) {
         // --- REAL-TIME FULL-DUPLEX WEBSOCKET PIPELINE ---
         const wsUrl = getWebSocketUrl('/ws/call');
         const ws = new WebSocket(wsUrl);
@@ -1316,10 +1336,12 @@ export default function VoiceCallSimulator({
             } else if (data.type === 'final_transcript') {
               setLivePartial('');
               currentTurnIdRef.current = data.turn_id;
-              setChatHistory((prev) => [
-                ...prev,
-                { role: 'user', content: data.text }
-              ]);
+              if (data.text && data.text.trim()) {
+                setChatHistory((prev) => [
+                  ...prev,
+                  { role: 'user', content: data.text.trim() }
+                ]);
+              }
               setCallStatus('processing');
               setFdMetrics((m) => ({
                 ...m,
@@ -1348,17 +1370,19 @@ export default function VoiceCallSimulator({
               }
             } else if (data.type === 'turn_complete') {
               setLiveAssistantText('');
-              setChatHistory((prev) => [
-                ...prev,
-                { role: 'assistant', content: data.full_reply }
-              ]);
+              if (data.full_reply && data.full_reply.trim()) {
+                setChatHistory((prev) => [
+                  ...prev,
+                  { role: 'assistant', content: data.full_reply.trim() }
+                ]);
+              }
               if (data.metrics?.total_turn_latency_ms) {
                 setFdMetrics((m) => ({ ...m, totalTurnLatency: data.metrics.total_turn_latency_ms }));
               }
               if (onCallResult) {
                 onCallResult({
                   transcript: '',
-                  reply: data.full_reply,
+                  reply: data.full_reply || '',
                   latency: {
                     stt_latency: (fdMetrics.timeToFinal || 0) / 1000,
                     groq_latency: (data.metrics?.time_to_first_token_ms || 0) / 1000,
@@ -1366,6 +1390,15 @@ export default function VoiceCallSimulator({
                     total_server_time: (data.metrics?.total_turn_latency_ms || 0) / 1000
                   }
                 });
+              }
+            } else if (data.type === 'error') {
+              setLiveAssistantText('');
+              setCallStatus('listening');
+              if (data.message) {
+                setChatHistory((prev) => [
+                  ...prev,
+                  { role: 'system_notification', content: `⚠️ ${data.message}` }
+                ]);
               }
             } else if (data.type === 'interrupted') {
               // Real-Time Barge-In Interruption: halt active audio, clear queue!
@@ -1615,7 +1648,7 @@ export default function VoiceCallSimulator({
         sttStreamRef.current = null;
       }
       if (sttAudioContextRef.current && sttAudioContextRef.current.state !== 'closed') {
-        sttAudioContextRef.current.close().catch(() => {});
+        sttAudioContextRef.current.close().catch(() => { });
         sttAudioContextRef.current = null;
       }
 
@@ -1631,7 +1664,8 @@ export default function VoiceCallSimulator({
       try {
         const data = await transcribeAudio(blob, {
           language: sttLanguage,
-          model: sttModel
+          model: sttModel,
+          engine: sttEngine
         });
         setSttTranscriptResult(data);
       } catch (err) {
@@ -1653,7 +1687,8 @@ export default function VoiceCallSimulator({
     try {
       const data = await transcribeAudio(file, {
         language: sttLanguage,
-        model: sttModel
+        model: sttModel,
+        engine: sttEngine
       });
       setSttTranscriptResult(data);
     } catch (err) {
@@ -1761,8 +1796,8 @@ export default function VoiceCallSimulator({
             simulatorMode === 'stt'
               ? '1px solid var(--accent-stt-border)'
               : simulatorMode === 'tts'
-              ? '1px solid var(--accent-tts-border)'
-              : '1px solid var(--accent-call-border)',
+                ? '1px solid var(--accent-tts-border)'
+                : '1px solid var(--accent-call-border)',
           boxShadow: 'var(--shadow-sm)'
         }}
       >
@@ -1829,36 +1864,105 @@ export default function VoiceCallSimulator({
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: '1rem' }}>
-          {/* 1. Voice-to-Text (STT) Model Control Card */}
+          {/* 1. Voice-to-Text (STT) Dual Engine & Model Control Card */}
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: '0.55rem',
+              gap: '0.65rem',
               padding: '0.85rem 1rem',
               borderRadius: '12px',
               background: 'var(--bg-subtle)',
               border: '1px solid var(--border)'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
               <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--accent-call)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <Mic size={15} /> Voice to Text (STT) Model
+                <Mic size={15} /> Voice to Text (STT) Engine & Model
               </label>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                {health?.device ? `Device: ${health.device.toUpperCase()}` : 'Faster-Whisper'}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  {health?.device ? `Device: ${health.device.toUpperCase()}` : 'CPU/GPU'}
+                </span>
+                {onOpenSherpa && (
+                  <button
+                    type="button"
+                    onClick={onOpenSherpa}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--accent-call)',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textDecoration: 'underline'
+                    }}
+                    title="Configure models, download weights, or view benchmarks"
+                  >
+                    Configure
+                  </button>
+                )}
+              </div>
             </div>
 
+            {/* STT Engine Selector */}
+            <div style={{ display: 'flex', gap: '0.35rem', background: 'var(--bg-card)', padding: '0.2rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <button
+                type="button"
+                onClick={() => handleSttEngineChange('sherpa')}
+                style={{
+                  flex: 1,
+                  padding: '0.35rem 0.5rem',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: sttEngine === 'sherpa' ? 'rgba(168, 85, 247, 0.16)' : 'transparent',
+                  color: sttEngine === 'sherpa' ? '#9333ea' : 'var(--text-muted)',
+                  fontWeight: sttEngine === 'sherpa' ? 700 : 500,
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.3rem',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <span>⚡ Sherpa-ONNX</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSttEngineChange('whisper')}
+                style={{
+                  flex: 1,
+                  padding: '0.35rem 0.5rem',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: sttEngine === 'whisper' ? 'rgba(2, 132, 199, 0.16)' : 'transparent',
+                  color: sttEngine === 'whisper' ? '#0284c7' : 'var(--text-muted)',
+                  fontWeight: sttEngine === 'whisper' ? 700 : 500,
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.3rem',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <span>🎙️ Faster-Whisper</span>
+              </button>
+            </div>
+
+            {/* Model & Language Dropdowns */}
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              {/* STT Model Dropdown */}
+              {/* STT Model Dropdown (Filtered by Engine) */}
               <select
                 value={sttModel}
                 onChange={(e) => handleSttModelChange(e.target.value)}
-                title="Select Whisper STT Model"
+                title={`Select ${sttEngine === 'sherpa' ? 'Sherpa-ONNX' : 'Whisper'} Model`}
                 style={{
-                  flex: 1.3,
-                  minWidth: '150px',
+                  flex: 1.4,
+                  minWidth: '160px',
                   padding: '0.52rem 0.65rem',
                   borderRadius: '7px',
                   background: 'var(--bg-input)',
@@ -1870,11 +1974,19 @@ export default function VoiceCallSimulator({
                   cursor: 'pointer'
                 }}
               >
-                {EXTENDED_STT_MODELS.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.label}
-                  </option>
-                ))}
+                {sttEngine === 'sherpa' ? (
+                  SHERPA_MODELS.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.type === 'streaming' ? '⚡' : '📦'} {m.label}
+                    </option>
+                  ))
+                ) : (
+                  WHISPER_MODELS.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      🎙️ {m.label}
+                    </option>
+                  ))
+                )}
               </select>
 
               {/* STT Language Dropdown */}
@@ -1884,7 +1996,7 @@ export default function VoiceCallSimulator({
                 title="Select Caller Language"
                 style={{
                   flex: 1,
-                  minWidth: '120px',
+                  minWidth: '110px',
                   padding: '0.52rem 0.65rem',
                   borderRadius: '7px',
                   background: 'var(--bg-input)',
@@ -1901,6 +2013,26 @@ export default function VoiceCallSimulator({
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Dynamic Model Type & Compatibility Info */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.7rem' }}>
+              <span style={{
+                color: (sttEngine === 'sherpa' && (!sttModel || sttModel.includes('streaming'))) ? '#10b981' : '#f59e0b',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem'
+              }}>
+                {(sttEngine === 'sherpa' && (!sttModel || sttModel.includes('streaming')))
+                  ? '⚡ Streaming Full-Duplex (WebSocket sub-100ms)'
+                  : '📦 Turn-Based Offline Pipeline'}
+              </span>
+              {sttEngine === 'sherpa' && sttLanguage !== 'en' && sttLanguage !== 'auto' && (
+                <span style={{ color: '#ef4444', fontWeight: 600 }}>
+                  ⚠️ Sherpa is English-only. Switch to Whisper for Indic.
+                </span>
+              )}
             </div>
           </div>
 
@@ -2152,8 +2284,8 @@ export default function VoiceCallSimulator({
                         ? '#ef4444'
                         : '#34d399'
                       : callState === 'calling'
-                      ? '#fbbf24'
-                      : '#64748b',
+                        ? '#fbbf24'
+                        : '#64748b',
                   boxShadow: callState === 'active' ? '0 0 10px #34d399' : undefined
                 }}
               />
@@ -2192,13 +2324,12 @@ export default function VoiceCallSimulator({
                     width: '110px',
                     height: '110px',
                     borderRadius: '50%',
-                    border: `2px solid ${
-                      callStatus === 'ai_speaking'
+                    border: `2px solid ${callStatus === 'ai_speaking'
                         ? 'rgba(245, 158, 11, 0.4)'
                         : callStatus === 'speaking'
-                        ? 'rgba(56, 189, 248, 0.5)'
-                        : 'rgba(52, 211, 153, 0.25)'
-                    }`,
+                          ? 'rgba(56, 189, 248, 0.5)'
+                          : 'rgba(52, 211, 153, 0.25)'
+                      }`,
                     transform: `scale(${1 + audioLevel * 0.003})`,
                     transition: 'transform 0.1s ease',
                     pointerEvents: 'none'
@@ -2217,14 +2348,14 @@ export default function VoiceCallSimulator({
                     callStatus === 'ai_speaking'
                       ? 'linear-gradient(135deg, #f59e0b, #ef4444)'
                       : callStatus === 'speaking'
-                      ? 'linear-gradient(135deg, #38bdf8, #6366f1)'
-                      : callStatus === 'processing'
-                      ? 'linear-gradient(135deg, #a855f7, #6366f1)'
-                      : isMuted
-                      ? 'linear-gradient(135deg, #ef4444, #7f1d1d)'
-                      : callState === 'active'
-                      ? 'linear-gradient(135deg, #0284c7, #0f766e)'
-                      : 'linear-gradient(135deg, #1e293b, #334155)',
+                        ? 'linear-gradient(135deg, #38bdf8, #6366f1)'
+                        : callStatus === 'processing'
+                          ? 'linear-gradient(135deg, #a855f7, #6366f1)'
+                          : isMuted
+                            ? 'linear-gradient(135deg, #ef4444, #7f1d1d)'
+                            : callState === 'active'
+                              ? 'linear-gradient(135deg, #0284c7, #0f766e)'
+                              : 'linear-gradient(135deg, #1e293b, #334155)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -2232,10 +2363,10 @@ export default function VoiceCallSimulator({
                     callStatus === 'ai_speaking'
                       ? '0 0 35px rgba(245, 158, 11, 0.6)'
                       : callStatus === 'speaking'
-                      ? '0 0 35px rgba(56, 189, 248, 0.6)'
-                      : callStatus === 'processing'
-                      ? '0 0 30px rgba(168, 85, 247, 0.5)'
-                      : '0 8px 24px rgba(0,0,0,0.4)',
+                        ? '0 0 35px rgba(56, 189, 248, 0.6)'
+                        : callStatus === 'processing'
+                          ? '0 0 30px rgba(168, 85, 247, 0.5)'
+                          : '0 8px 24px rgba(0,0,0,0.4)',
                   transition: 'all 0.3s ease',
                   transform:
                     callStatus === 'ai_speaking' || callStatus === 'speaking' ? 'scale(1.06)' : 'scale(1)',
@@ -2268,12 +2399,12 @@ export default function VoiceCallSimulator({
                       callStatus === 'ai_speaking'
                         ? '#fbbf24'
                         : callStatus === 'speaking'
-                        ? '#38bdf8'
-                        : callStatus === 'processing'
-                        ? '#c084fc'
-                        : isMuted
-                        ? '#f87171'
-                        : 'var(--text-muted)'
+                          ? '#38bdf8'
+                          : callStatus === 'processing'
+                            ? '#c084fc'
+                            : isMuted
+                              ? '#f87171'
+                              : 'var(--text-muted)'
                   }}
                 >
                   {callState === 'idle' && 'Click Start Voice Call to connect'}
@@ -2519,10 +2650,49 @@ export default function VoiceCallSimulator({
                 }}
               >
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                     <label style={{ color: 'var(--accent-call)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      <Mic size={14} /> Voice-to-Text (STT) Model:
+                      <Mic size={14} /> Voice-to-Text (STT) Engine & Model:
                     </label>
+
+                    {/* Dual Engine Selector Buttons */}
+                    <div style={{ display: 'flex', gap: '0.3rem', background: 'var(--bg-input)', padding: '0.2rem', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleSttEngineChange('sherpa')}
+                        style={{
+                          flex: 1,
+                          padding: '0.3rem',
+                          borderRadius: '4px',
+                          border: 'none',
+                          background: sttEngine === 'sherpa' ? 'rgba(168, 85, 247, 0.2)' : 'transparent',
+                          color: sttEngine === 'sherpa' ? '#9333ea' : 'var(--text-muted)',
+                          fontWeight: sttEngine === 'sherpa' ? 700 : 500,
+                          fontSize: '0.72rem',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ⚡ Sherpa-ONNX
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSttEngineChange('whisper')}
+                        style={{
+                          flex: 1,
+                          padding: '0.3rem',
+                          borderRadius: '4px',
+                          border: 'none',
+                          background: sttEngine === 'whisper' ? 'rgba(2, 132, 199, 0.2)' : 'transparent',
+                          color: sttEngine === 'whisper' ? '#0284c7' : 'var(--text-muted)',
+                          fontWeight: sttEngine === 'whisper' ? 700 : 500,
+                          fontSize: '0.72rem',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        🎙️ Faster-Whisper
+                      </button>
+                    </div>
+
                     <select
                       value={sttModel}
                       onChange={(e) => handleSttModelChange(e.target.value)}
@@ -2535,12 +2705,47 @@ export default function VoiceCallSimulator({
                         fontSize: '0.82rem'
                       }}
                     >
-                      {EXTENDED_STT_MODELS.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.label}
-                        </option>
-                      ))}
+                      {sttEngine === 'sherpa' ? (
+                        SHERPA_MODELS.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.type === 'streaming' ? '⚡' : '📦'} {m.label}
+                          </option>
+                        ))
+                      ) : (
+                        WHISPER_MODELS.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            🎙️ {m.label}
+                          </option>
+                        ))
+                      )}
                     </select>
+
+                    {onOpenSherpa && (
+                      <button
+                        type="button"
+                        onClick={onOpenSherpa}
+                        style={{
+                          marginTop: '0.2rem',
+                          padding: '0.35rem 0.6rem',
+                          borderRadius: '6px',
+                          background: 'rgba(168, 85, 247, 0.12)',
+                          border: '1px solid rgba(168, 85, 247, 0.35)',
+                          color: '#9333ea',
+                          fontSize: '0.74rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '0.4rem',
+                          transition: 'all 0.2s ease'
+                        }}
+                        title="Open STT model catalog & empirical benchmark report"
+                      >
+                        <span>⚙️ Manage & Benchmark All Models</span>
+                        <span style={{ textDecoration: 'underline', fontSize: '0.7rem' }}>Catalog</span>
+                      </button>
+                    )}
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
@@ -2679,6 +2884,10 @@ export default function VoiceCallSimulator({
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 {chatHistory.map((msg, idx) => {
+                  if (!msg || typeof msg.content !== 'string' || !msg.content.trim()) {
+                    return null;
+                  }
+
                   if (msg.role === 'system_notification') {
                     return (
                       <div
@@ -2740,7 +2949,7 @@ export default function VoiceCallSimulator({
                 })}
 
                 {/* Live Sherpa-ONNX User Speech Bubble */}
-                {livePartial && (
+                {Boolean(livePartial && livePartial.trim()) && (
                   <div
                     style={{
                       display: 'flex',
@@ -2794,7 +3003,7 @@ export default function VoiceCallSimulator({
                 )}
 
                 {/* Live Assistant Streaming Bubble */}
-                {liveAssistantText && (
+                {Boolean(liveAssistantText && liveAssistantText.trim()) && (
                   <div
                     style={{
                       display: 'flex',
@@ -3021,8 +3230,8 @@ export default function VoiceCallSimulator({
                 {sttIsRecording
                   ? 'Speaking into microphone... Click square button when finished'
                   : sttIsProcessing
-                  ? 'Whisper is converting your audio to text...'
-                  : 'Click the microphone button to start recording speech'}
+                    ? 'Whisper is converting your audio to text...'
+                    : 'Click the microphone button to start recording speech'}
               </p>
             </div>
 
@@ -3379,25 +3588,25 @@ export default function VoiceCallSimulator({
               <button
                 onClick={handleGenerateTtsSpeech}
                 disabled={ttsIsGenerating || !ttsInputText.trim()}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.6rem',
-                padding: '0.8rem 2rem',
-                borderRadius: '999px',
-                background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
-                color: '#ffffff',
-                border: 'none',
-                fontWeight: 700,
-                fontSize: '0.95rem',
-                cursor: ttsIsGenerating ? 'not-allowed' : 'pointer',
-                boxShadow: '0 8px 25px rgba(168, 85, 247, 0.45)',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <Play size={18} />
-              <span>{ttsIsGenerating ? 'Synthesizing Speech...' : 'Generate Spoken Voice'}</span>
-            </button>
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.6rem',
+                  padding: '0.8rem 2rem',
+                  borderRadius: '999px',
+                  background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.95rem',
+                  cursor: ttsIsGenerating ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 8px 25px rgba(168, 85, 247, 0.45)',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <Play size={18} />
+                <span>{ttsIsGenerating ? 'Synthesizing Speech...' : 'Generate Spoken Voice'}</span>
+              </button>
             </div>
           </div>
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mic2, Settings, Cpu, CheckCircle2, XCircle, Sun, Moon } from 'lucide-react';
 
-export default function Header({ health, onOpenSettings }) {
+export default function Header({ health, onOpenSettings, onOpenSherpa, sttEngine, sttModel }) {
   const isOnline = health && health.status === 'online';
   const isCuda = health && health.device === 'cuda';
 
@@ -18,6 +18,18 @@ export default function Header({ health, onOpenSettings }) {
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
+  const getSherpaLabel = () => {
+    const active = sttModel || health?.sherpa_active_model || '';
+    if (active.includes('20M')) return '20M Small (Streaming)';
+    if (active.includes('large')) return 'Large (~146M Offline)';
+    if (active.includes('small-en')) return 'Small (~63M Offline)';
+    if (active.includes('gigaspeech')) return 'GigaSpeech (~129M)';
+    if (active.includes('2023-02-21')) return 'Zipformer Standard (~65M)';
+    return 'Zipformer Standard (Streaming)';
+  };
+
+  const activeEngine = sttEngine || (sttModel && sttModel.startsWith('sherpa') ? 'sherpa' : 'whisper');
+
   return (
     <header className="app-header glass-panel">
       <div className="brand-title">
@@ -31,28 +43,31 @@ export default function Header({ health, onOpenSettings }) {
           <span>{isOnline ? 'FastAPI Online' : 'Connecting...'}</span>
         </div>
 
+        {/* Active STT Engine & Model Interactive Badge */}
         {isOnline && (
-          <div className={`badge ${isCuda ? 'badge-blue' : 'badge-amber'}`}>
-            <Cpu size={13} />
-            <span>{health.whisper_model} ({health.device.toUpperCase()})</span>
-          </div>
-        )}
-
-        {isOnline && health?.sherpa_available && (
-          <div
+          <button
+            type="button"
             className="badge"
+            onClick={onOpenSherpa}
             style={{
-              background: 'rgba(168, 85, 247, 0.12)',
-              color: '#9333ea',
-              border: '1px solid rgba(168, 85, 247, 0.3)',
+              background: activeEngine === 'sherpa' ? 'rgba(168, 85, 247, 0.14)' : 'rgba(2, 132, 199, 0.14)',
+              color: activeEngine === 'sherpa' ? '#9333ea' : '#0284c7',
+              border: `1px solid ${activeEngine === 'sherpa' ? 'rgba(168, 85, 247, 0.35)' : 'rgba(2, 132, 199, 0.35)'}`,
               display: 'flex',
               alignItems: 'center',
-              gap: '0.35rem'
+              gap: '0.35rem',
+              cursor: 'pointer',
+              fontWeight: 600,
+              padding: '0.3rem 0.7rem',
+              borderRadius: '9999px',
+              transition: 'all 0.2s ease'
             }}
-            title="Sherpa-ONNX Zipformer Streaming ASR Engine Ready"
+            title="Click to switch STT engines, select models, or view benchmark metrics"
           >
-            <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>⚡ Sherpa Full-Duplex</span>
-          </div>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>
+              {activeEngine === 'sherpa' ? `⚡ Sherpa: ${getSherpaLabel()}` : `🎙️ Whisper: ${sttModel || health.whisper_model} (${health.device.toUpperCase()})`}
+            </span>
+          </button>
         )}
 
 

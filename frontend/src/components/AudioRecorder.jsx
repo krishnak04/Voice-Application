@@ -44,14 +44,26 @@ export const OTHER_LANGUAGES = [
 
 export const LANGUAGES = [...GENERAL_LANGUAGES, ...INDIAN_LANGUAGES, ...OTHER_LANGUAGES];
 
-export const MODELS = [
-  { id: 'base', label: 'base (Dev PC - Fast Multi)' },
-  { id: 'small', label: 'small (Higher accuracy)' },
-  { id: 'medium', label: 'medium (Production Indic)' },
-  { id: 'large-v3-turbo', label: 'large-v3-turbo (SOTA)' },
-  { id: 'tiny', label: 'tiny (Ultra-fast)' },
-  { id: 'base.en', label: 'base.en (English-only)' },
+export const WHISPER_MODELS = [
+  { id: 'tiny', label: 'tiny (~39M - Ultra-fast)', type: 'offline', category: 'Small' },
+  { id: 'base', label: 'base (~74M - Fast Multi)', type: 'offline', category: 'Standard' },
+  { id: 'small', label: 'small (~244M - Higher accuracy)', type: 'offline', category: 'Large' },
+  { id: 'medium', label: 'medium (~769M - Production Indic)', type: 'offline', category: 'Large' },
+  { id: 'large-v3-turbo', label: 'large-v3-turbo (~809M - SOTA)', type: 'offline', category: 'Large' },
+  { id: 'base.en', label: 'base.en (~74M - English-only)', type: 'offline', category: 'Standard' },
 ];
+
+export const SHERPA_MODELS = [
+  { id: 'sherpa-onnx-streaming-zipformer-en-2023-06-26', label: '⚡ Streaming Standard (~65.6M)', type: 'streaming', category: 'Standard' },
+  { id: 'sherpa-onnx-streaming-zipformer-en-20M-2023-02-17', label: '⚡ Streaming Small Lightweight (~20M)', type: 'streaming', category: 'Small' },
+  { id: 'sherpa-onnx-streaming-zipformer-en-2023-06-21', label: '⚡ Streaming LibriSpeech (~65.6M)', type: 'streaming', category: 'Standard' },
+  { id: 'sherpa-onnx-streaming-zipformer-en-2023-02-21', label: '⚡ Streaming LibriSpeech (~65.6M)', type: 'streaming', category: 'Standard' },
+  { id: 'sherpa-onnx-zipformer-small-en-2023-06-26', label: '📦 Offline Small (~30M Fast Batch)', type: 'offline', category: 'Small' },
+  { id: 'sherpa-onnx-zipformer-large-en-2023-06-26', label: '📦 Offline Large (~148M High Accuracy)', type: 'offline', category: 'Large' },
+  { id: 'sherpa-onnx-zipformer-gigaspeech-2023-12-12', label: '📦 Offline GigaSpeech (~65.6M Robust)', type: 'offline', category: 'Standard' },
+];
+
+export const MODELS = WHISPER_MODELS;
 
 export default function AudioRecorder({
   isRecording,
@@ -63,6 +75,8 @@ export default function AudioRecorder({
   onLanguageChange,
   model,
   onModelChange,
+  engine = 'whisper',
+  onEngineChange,
   onStart,
   onStop,
 }) {
@@ -149,8 +163,41 @@ export default function AudioRecorder({
           </select>
         </div>
 
+        {/* STT Engine Selector */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Cpu size={15} color="var(--accent-benchmark)" />
+          <select
+            value={engine}
+            onChange={(e) => {
+              const nextEngine = e.target.value;
+              if (onEngineChange) onEngineChange(nextEngine);
+              if (nextEngine === 'sherpa') {
+                onModelChange('sherpa-onnx-streaming-zipformer-en-2023-06-26');
+              } else {
+                onModelChange('base');
+              }
+            }}
+            disabled={isRecording || isProcessing}
+            style={{
+              padding: '0.45rem 0.65rem',
+              borderRadius: '8px',
+              background: 'var(--bg-input)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-main)',
+              fontSize: '0.85rem',
+              fontFamily: 'var(--font-sans)',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+            title="Select Speech-to-Text Recognition Engine"
+          >
+            <option value="whisper">🎙️ Faster-Whisper</option>
+            <option value="sherpa">⚡ Sherpa-ONNX</option>
+          </select>
+        </div>
+
+        {/* Model Selector Filtered by Engine */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <Cpu size={15} color={engine === 'sherpa' ? '#9333ea' : 'var(--accent-benchmark)'} />
           <select
             value={model}
             onChange={(e) => onModelChange(e.target.value)}
@@ -159,20 +206,43 @@ export default function AudioRecorder({
               padding: '0.45rem 0.75rem',
               borderRadius: '8px',
               background: 'var(--bg-input)',
-              border: '1px solid var(--border)',
+              border: `1px solid ${engine === 'sherpa' ? 'rgba(168, 85, 247, 0.4)' : 'var(--border)'}`,
               color: 'var(--text-main)',
               fontSize: '0.85rem',
               fontFamily: 'var(--font-sans)',
               cursor: 'pointer'
             }}
           >
-            {MODELS.map((m) => (
+            {(engine === 'sherpa' ? SHERPA_MODELS : WHISPER_MODELS).map((m) => (
               <option key={m.id} value={m.id}>
                 {m.label}
               </option>
             ))}
           </select>
         </div>
+
+        {/* Model Type Badge */}
+        <span
+          style={{
+            fontSize: '0.72rem',
+            fontWeight: 600,
+            padding: '0.2rem 0.5rem',
+            borderRadius: '6px',
+            background: (engine === 'sherpa' && model.includes('streaming')) ? 'rgba(5, 150, 105, 0.15)' : 'rgba(124, 58, 237, 0.15)',
+            color: (engine === 'sherpa' && model.includes('streaming')) ? '#059669' : '#7c3aed',
+            fontFamily: 'var(--font-mono)'
+          }}
+        >
+          {engine === 'sherpa'
+            ? (model.includes('streaming') ? '⚡ Streaming Engine' : '📦 Offline Transducer')
+            : '📦 Offline Transducer'}
+        </span>
+
+        {engine === 'sherpa' && language !== 'en' && language !== 'auto' && (
+          <span style={{ fontSize: '0.72rem', color: '#f59e0b', width: '100%', textAlign: 'center' }}>
+            ⚠️ Sherpa models are English-only. For Indic/Hindi speech, switch engine to Faster-Whisper.
+          </span>
+        )}
       </div>
 
       <div className="mic-button-wrapper">

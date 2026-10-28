@@ -59,7 +59,7 @@ async def run_single_turn_benchmark(session: aiohttp.ClientSession, ws_url: str,
             for chunk in chunks:
                 await ws.send_bytes(chunk)
                 await asyncio.sleep(0.04) # Real-time streaming speed
-            for _ in range(12):
+            for _ in range(30):
                 await ws.send_bytes(silence_chunk)
                 await asyncio.sleep(0.05)
 
@@ -165,4 +165,4 @@ async def run_benchmark_suite(num_runs: int = 5):
     print("=" * 76 + "\n")
 
 if __name__ == "__main__":
-    asyncio.run(run_benchmark_suite(num_runs=5))
+    asyncio.run(run_benchmark_suite(num_runs=2))

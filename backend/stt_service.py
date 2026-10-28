@@ -96,6 +96,75 @@ INDIAN_LANGUAGES_MAP = {
     "22": "mai", "maithili": "mai",
 }
 
+WHISPER_MODELS_CATALOG = {
+    "tiny": {
+        "id": "tiny",
+        "name": "Whisper Tiny",
+        "description": "Ultra-fast ~39M parameters, lowest memory footprint (~75MB VRAM / RAM).",
+        "params": "~39M",
+        "languages": "multilingual",
+        "type": "offline",
+        "category": "Small",
+        "is_english_only": False,
+        "is_supported": True,
+    },
+    "base": {
+        "id": "base",
+        "name": "Whisper Base",
+        "description": "Standard fast baseline ~74M parameters. Balanced speed and multi-lingual accuracy.",
+        "params": "~74M",
+        "languages": "multilingual",
+        "type": "offline",
+        "category": "Standard",
+        "is_english_only": False,
+        "is_supported": True,
+    },
+    "small": {
+        "id": "small",
+        "name": "Whisper Small",
+        "description": "High accuracy ~244M parameters for complex acoustic environments.",
+        "params": "~244M",
+        "languages": "multilingual",
+        "type": "offline",
+        "category": "Large",
+        "is_english_only": False,
+        "is_supported": True,
+    },
+    "medium": {
+        "id": "medium",
+        "name": "Whisper Medium",
+        "description": "Production ~769M parameters for high-fidelity multi-lingual and Indic recognition.",
+        "params": "~769M",
+        "languages": "multilingual",
+        "type": "offline",
+        "category": "Large",
+        "is_english_only": False,
+        "is_supported": True,
+    },
+    "large-v3-turbo": {
+        "id": "large-v3-turbo",
+        "name": "Whisper Large-v3-Turbo",
+        "description": "State-of-the-art ~809M parameters with optimized decoder depth (4 layers) for rapid inference.",
+        "params": "~809M",
+        "languages": "multilingual",
+        "type": "offline",
+        "category": "Large",
+        "is_english_only": False,
+        "is_supported": True,
+    },
+    "base.en": {
+        "id": "base.en",
+        "name": "Whisper Base.en",
+        "description": "English-specialized ~74M parameters with enhanced phonetics for US/UK/IN accents.",
+        "params": "~74M",
+        "languages": "en",
+        "type": "offline",
+        "category": "Standard",
+        "is_english_only": True,
+        "is_supported": True,
+    },
+}
+
 class STTEngine:
     def __init__(self):
         self.device = config.WHISPER_DEVICE
@@ -151,6 +220,55 @@ class STTEngine:
 
     def get_loaded_models(self) -> list[str]:
         return list(self.models.keys())
+
+    def list_models(self) -> list[dict]:
+        """List all verified Whisper models with loaded and active status."""
+        result = []
+        for model_id, meta in WHISPER_MODELS_CATALOG.items():
+            is_loaded = model_id in self.models
+            is_active = (model_id == self.default_model_name)
+            result.append({
+                "id": model_id,
+                "name": meta["name"],
+                "description": meta["description"],
+                "params": meta["params"],
+                "languages": meta["languages"],
+                "type": meta["type"],  # 'offline'
+                "category": meta["category"],  # 'Small' | 'Standard' | 'Large'
+                "is_english_only": meta["is_english_only"],
+                "is_downloaded": True,
+                "downloaded": True,
+                "is_loaded": is_loaded,
+                "is_active": is_active,
+                "device": self.device,
+                "compute_type": self.compute_type
+            })
+        return result
+
+    def select_model(self, model_name: str) -> dict:
+        """Safely switch and preload the active Whisper model."""
+        model_id = model_name.strip()
+        if model_id not in WHISPER_MODELS_CATALOG:
+            return {
+                "success": False,
+                "message": f"Model '{model_id}' is not in the verified Whisper catalog."
+            }
+        try:
+            model, name = self.get_model(model_id)
+            self.default_model_name = name
+            return {
+                "success": True,
+                "message": f"Switched active Whisper model to '{name}'.",
+                "active_model": name,
+                "device": self.device,
+                "compute_type": self.compute_type
+            }
+        except Exception as e:
+            logger.error(f"Failed to load Whisper model '{model_id}': {e}")
+            return {
+                "success": False,
+                "message": f"Failed to load Whisper model '{model_id}': {str(e)}"
+            }
 
     def transcribe_audio_bytes(
         self,

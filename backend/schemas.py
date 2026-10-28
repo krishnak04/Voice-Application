@@ -107,3 +107,64 @@ class HealthResponse(BaseModel):
     tts_voice: Optional[str] = "default"
     sherpa_available: Optional[bool] = False
     sherpa_model: Optional[str] = None
+    sherpa_active_model: Optional[str] = None
+    sherpa_type: Optional[str] = "streaming"
+    sherpa_category: Optional[str] = "Standard"
+
+class SherpaModelItem(BaseModel):
+    id: str
+    name: str
+    language: str
+    lang_code: str
+    type: str
+    category: str
+    params: str
+    dataset: str
+    streaming_supported: bool
+    offline_supported: bool
+    is_downloaded: bool
+    is_active: bool
+    disk_size_mb: float
+    license: str
+    description: str
+
+class SherpaModelsResponse(BaseModel):
+    models: List[SherpaModelItem]
+    active_model: str
+    active_type: str
+    active_category: str
+
+class SherpaSelectRequest(BaseModel):
+    model_id: str
+
+class SherpaDownloadRequest(BaseModel):
+    model_id: str
+
+class WhisperModelItem(BaseModel):
+    id: str
+    name: str
+    description: str
+    params: str
+    languages: str
+    type: str
+    category: str
+    is_english_only: bool
+    is_downloaded: bool
+    downloaded: bool
+    is_loaded: bool
+    is_active: bool
+    device: str
+    compute_type: str
+
+class WhisperSelectRequest(BaseModel):
+    model_id: str
+
+class STTSelectRequest(BaseModel):
+    engine: str = Field(..., description="'whisper' or 'sherpa'")
+    model_id: str = Field(..., description="Target model ID for the selected engine")
+
+class STTModelsResponse(BaseModel):
+    engines: List[str]
+    active_engine: str
+    whisper: Dict[str, Any]
+    sherpa: Dict[str, Any]
