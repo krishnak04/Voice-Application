@@ -4,7 +4,7 @@ venv_windows/
 .venv/
 env/
 
-# Secrets & Environment variables
+# Secrets & Environment variables (Security protection)
 .env
 backend/.env
 *.env.local
@@ -12,7 +12,6 @@ backend/.env
 # Node dependencies & builds
 node_modules/
 frontend/node_modules/
-frontend/dist/
 dist/
 build/
 
@@ -23,24 +22,6 @@ backend/__pycache__/
 *.pyo
 *.pyd
 .pytest_cache/
-
-# Large model archives & raw binaries (>100MB cannot be pushed to standard GitHub)
-*.tar.bz2
-*.tar.gz
-*.zip
-*.onnx
-sherpa-model.tar.bz2
-sherpa-onnx-streaming-zipformer-en-2023-06-26/
-
-# Audio test files
-*.mp3
-*.webm
-*.ogg
-*.wav
-
-# Allow test accents dataset and accent model checkpoint
-!backend/test_accents/**
-!backend/tmp_accent_model/**
 
 # IDE & OS
 .DS_Store
