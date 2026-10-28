@@ -492,6 +492,27 @@ export default function VoiceCallSimulator({
     interruptionLatency: null
   });
 
+  // Automatic English Accent Detection States
+  const [detectedAccent, setDetectedAccent] = useState(null);
+  const [isDetectingAccent, setIsDetectingAccent] = useState(false);
+  const [autoAdaptVoice, setAutoAdaptVoice] = useState(() => {
+    const saved = localStorage.getItem('call_auto_adapt_voice');
+    return saved !== null ? saved === 'true' : true;
+  });
+  const [voiceAdaptationNotice, setVoiceAdaptationNotice] = useState(null);
+  const voiceAdaptTimerRef = useRef(null);
+
+  const handleToggleAutoAdaptVoice = (enabled) => {
+    setAutoAdaptVoice(enabled);
+    localStorage.setItem('call_auto_adapt_voice', enabled ? 'true' : 'false');
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'set_auto_adapt_voice',
+        enabled: enabled
+      }));
+    }
+  };
+
   // Full-Duplex Refs
   const wsRef = useRef(null);
   const audioQueueRef = useRef([]);
@@ -1047,6 +1068,28 @@ export default function VoiceCallSimulator({
             { role: 'assistant', content: aiReply }
           ]);
 
+          if (result.accent_analysis) {
+            setDetectedAccent({
+              accent: result.accent_analysis.accent,
+              code: result.accent_analysis.code,
+              flag: result.accent_analysis.flag || '🌐',
+              confidence: result.accent_analysis.confidence,
+              status: result.accent_analysis.status,
+              sampleDuration: result.accent_analysis.sample_duration,
+              latencyMs: result.accent_analysis.latency_ms,
+              suggestedTtsVoice: result.accent_analysis.tts_voice,
+              details: result.accent_analysis.details,
+              isSmoothed: false
+            });
+            if (autoAdaptVoice && result.accent_analysis.tts_voice) {
+              setSelectedVoice(result.accent_analysis.tts_voice);
+              localStorage.setItem('call_selected_voice', result.accent_analysis.tts_voice);
+              setVoiceAdaptationNotice(`AI voice adapted to ${result.accent_analysis.accent} (${result.accent_analysis.tts_voice})`);
+              if (voiceAdaptTimerRef.current) clearTimeout(voiceAdaptTimerRef.current);
+              voiceAdaptTimerRef.current = setTimeout(() => setVoiceAdaptationNotice(null), 4000);
+            }
+          }
+
           if (onCallResult) {
             onCallResult(result);
           }
@@ -1281,7 +1324,8 @@ export default function VoiceCallSimulator({
               tts_speed: ttsSpeed,
               tts_engine: activeTtsEngine,
               groq_model: groqModel,
-              is_phone_call: true
+              is_phone_call: true,
+              auto_adapt_voice: autoAdaptVoice
             })
           );
 
@@ -1330,9 +1374,32 @@ export default function VoiceCallSimulator({
             if (data.type === 'partial_transcript') {
               setLivePartial(data.text);
               setCallStatus('speaking');
+              if (!detectedAccent || detectedAccent.status !== 'detected') {
+                setIsDetectingAccent(true);
+              }
               if (data.first_partial_latency_ms) {
                 setFdMetrics((m) => ({ ...m, timeToFirstPartial: data.first_partial_latency_ms }));
               }
+            } else if (data.type === 'accent_detected') {
+              setDetectedAccent({
+                accent: data.accent,
+                code: data.code,
+                flag: data.flag || '🌐',
+                confidence: data.confidence,
+                status: data.status,
+                sampleDuration: data.sample_duration,
+                latencyMs: data.latency_ms,
+                suggestedTtsVoice: data.suggested_tts_voice,
+                details: data.details,
+                isSmoothed: data.is_smoothed
+              });
+              setIsDetectingAccent(false);
+            } else if (data.type === 'voice_adapted') {
+              setSelectedVoice(data.voice);
+              localStorage.setItem('call_selected_voice', data.voice);
+              setVoiceAdaptationNotice(`AI voice adapted to ${data.accent} (${data.voice})`);
+              if (voiceAdaptTimerRef.current) clearTimeout(voiceAdaptTimerRef.current);
+              voiceAdaptTimerRef.current = setTimeout(() => setVoiceAdaptationNotice(null), 4000);
             } else if (data.type === 'final_transcript') {
               setLivePartial('');
               currentTurnIdRef.current = data.turn_id;
@@ -2459,6 +2526,97 @@ export default function VoiceCallSimulator({
                 </div>
               )}
 
+              {/* Automatic English Accent Variety Status Badge */}
+              {callState === 'active' && (
+                <div style={{ marginTop: '0.85rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.45rem' }}>
+                  <div
+                    style={{
+                      padding: '0.45rem 1rem',
+                      borderRadius: '9999px',
+                      background: detectedAccent
+                        ? (detectedAccent.status === 'detected' ? 'rgba(16, 185, 129, 0.14)' : 'rgba(245, 158, 11, 0.14)')
+                        : 'rgba(56, 189, 248, 0.12)',
+                      border: `1px solid ${detectedAccent
+                        ? (detectedAccent.status === 'detected' ? 'rgba(16, 185, 129, 0.35)' : 'rgba(245, 158, 11, 0.35)')
+                        : 'rgba(56, 189, 248, 0.3)'}`,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.55rem',
+                      fontSize: '0.84rem',
+                      fontWeight: 600,
+                      color: detectedAccent
+                        ? (detectedAccent.status === 'detected' ? '#059669' : '#d97706')
+                        : '#0284c7',
+                      boxShadow: 'var(--shadow-sm)',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <Globe size={15} />
+                    <span>
+                      {detectedAccent ? (
+                        detectedAccent.status === 'detected' ? (
+                          <>
+                            <span style={{ marginRight: '0.3rem' }}>{detectedAccent.flag}</span>
+                            Detected speech variety: <strong>{detectedAccent.accent}</strong>
+                            <span style={{ fontSize: '0.74rem', opacity: 0.85, marginLeft: '0.35rem' }}>
+                              ({Math.round(detectedAccent.confidence * 100)}% confidence • {detectedAccent.latencyMs}ms)
+                            </span>
+                          </>
+                        ) : detectedAccent.status === 'insufficient_audio' ? (
+                          'Detecting English accent... (speak a full phrase)'
+                        ) : (
+                          `Accent: ${detectedAccent.accent}`
+                        )
+                      ) : isDetectingAccent ? (
+                        'Detecting English accent...'
+                      ) : (
+                        'Automatic English accent detection active'
+                      )}
+                    </span>
+                  </div>
+
+                  {/* Auto-adapt AI Voice Toggle */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', userSelect: 'none' }}>
+                      <input
+                        type="checkbox"
+                        checked={autoAdaptVoice}
+                        onChange={(e) => handleToggleAutoAdaptVoice(e.target.checked)}
+                        style={{ cursor: 'pointer', accentColor: '#0284c7' }}
+                      />
+                      <span>Auto-adapt AI response voice to caller accent</span>
+                    </label>
+                    {selectedVoice && (
+                      <span style={{ fontSize: '0.73rem', background: 'var(--bg-subtle)', border: '1px solid var(--border)', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
+                        Voice: <strong>{selectedVoice}</strong>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Voice Adaptation Banner */}
+              {voiceAdaptationNotice && (
+                <div
+                  style={{
+                    marginTop: '0.55rem',
+                    padding: '0.4rem 0.95rem',
+                    borderRadius: '8px',
+                    background: 'rgba(59, 130, 246, 0.12)',
+                    border: '1px solid rgba(59, 130, 246, 0.35)',
+                    color: '#2563eb',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.45rem'
+                  }}
+                >
+                  <Sparkles size={14} />
+                  <span>{voiceAdaptationNotice}</span>
+                </div>
+              )}
+
               {/* Live Full-Duplex Real-Time Metrics Panel */}
               {sttModel === 'sherpa-streaming' && callState === 'active' && (
                 <div
@@ -3394,6 +3552,56 @@ export default function VoiceCallSimulator({
                   </div>
                 </div>
               </div>
+
+              {/* Automatic English Accent Variety Analysis Card */}
+              {sttTranscriptResult.accent_analysis && (
+                <div
+                  style={{
+                    padding: '0.85rem 1.15rem',
+                    borderRadius: '10px',
+                    background: sttTranscriptResult.accent_analysis.status === 'detected' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)',
+                    border: `1px solid ${sttTranscriptResult.accent_analysis.status === 'detected' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(245, 158, 11, 0.25)'}`,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '0.75rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <span style={{ fontSize: '1.5rem' }}>{sttTranscriptResult.accent_analysis.flag || '🌐'}</span>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                        DETECTED ENGLISH SPEECH VARIETY (ACOUSTIC)
+                      </div>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 700, color: sttTranscriptResult.accent_analysis.status === 'detected' ? '#10b981' : '#f59e0b' }}>
+                        {sttTranscriptResult.accent_analysis.accent}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '1.15rem', alignItems: 'center', fontSize: '0.82rem', flexWrap: 'wrap' }}>
+                    <div>
+                      <span style={{ color: 'var(--text-muted)' }}>Confidence: </span>
+                      <strong style={{ color: sttTranscriptResult.accent_analysis.status === 'detected' ? '#10b981' : '#f59e0b' }}>
+                        {Math.round(sttTranscriptResult.accent_analysis.confidence * 100)}%
+                      </strong>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--text-muted)' }}>Accent Latency: </span>
+                      <strong style={{ fontFamily: 'var(--font-mono)', color: '#38bdf8' }}>
+                        {sttTranscriptResult.accent_analysis.latency_ms}ms
+                      </strong>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--text-muted)' }}>Matched Edge-TTS Voice: </span>
+                      <strong style={{ background: 'var(--bg-subtle)', padding: '0.15rem 0.45rem', borderRadius: '4px', fontSize: '0.76rem' }}>
+                        {sttTranscriptResult.accent_analysis.tts_voice || 'en-US-JennyNeural'}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </section>

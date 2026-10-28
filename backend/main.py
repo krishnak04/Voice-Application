@@ -29,12 +29,15 @@ from schemas import (
     SherpaDownloadRequest,
     WhisperSelectRequest,
     STTSelectRequest,
-    STTModelsResponse
+    STTModelsResponse,
+    AccentDetectionResponse,
+    AccentInfoResponse
 )
 from stt_service import get_stt_engine
 from groq_service import get_groq_engine
 from tts_service import get_tts_engine
 from sherpa_service import get_sherpa_engine
+from accent_service import get_accent_detector
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("voice_api")
@@ -227,22 +230,70 @@ def get_sherpa_benchmark():
 
 
 # ==========================================
-# 2. Pure Voice-to-Text (STT) API
+# 2. Pure Voice-to-Text (STT) & Accent APIs
 # ==========================================
+@app.get("/api/accent/info", response_model=AccentInfoResponse, tags=["Accent Detection"])
+def get_accent_info():
+    """Return model architecture, candidate variety classes, and status of acoustic accent detector."""
+    detector = get_accent_detector()
+    return AccentInfoResponse(
+        model_name=detector.model_name,
+        license=detector.model_license,
+        device=detector.device,
+        classes=[
+            "Indian English",
+            "American English",
+            "British English",
+            "Australian English",
+            "Canadian English",
+            "New Zealand English",
+            "Irish English",
+            "South African English",
+            "Other English variety",
+            "Unknown / insufficient audio"
+        ],
+        min_audio_seconds=1.5,
+        confidence_threshold=0.28,
+        status="ready" if detector.is_available() else "unavailable"
+    )
+
+@app.post("/api/accent/detect", response_model=AccentDetectionResponse, tags=["Accent Detection"])
+async def detect_accent_endpoint(
+    audio: UploadFile = File(..., description="Audio recording (.wav, .webm, etc.)"),
+    session_id: Optional[str] = Form(None, description="Optional WebSocket session ID for smoothing")
+):
+    """
+    Automatic audio-based English accent / variety estimation.
+    Acoustic classification using ECAPA-TDNN trained on Common Voice CommonAccent.
+    """
+    audio_bytes = await audio.read()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Audio file is empty")
+    detector = get_accent_detector()
+    return await detector.detect_accent_async(audio_bytes, session_id=session_id)
+
 @app.post("/api/transcribe", response_model=TranscriptionResponse, tags=["Speech to Text"])
 async def transcribe_audio(
     audio: UploadFile = File(..., description="Audio file to transcribe (.wav, .webm, .mp3, .m4a, .ogg)"),
     language: Optional[str] = Form(None, description="Language code (e.g. 'en', 'hi', 'auto')"),
     model: Optional[str] = Form(None, description="Model name (e.g. 'base', 'small', 'medium')"),
-    engine: Optional[str] = Form(None, description="STT engine ('whisper' or 'sherpa')")
+    engine: Optional[str] = Form(None, description="STT engine ('whisper' or 'sherpa')"),
+    detect_accent: Optional[bool] = Form(True, description="Whether to also perform acoustic accent analysis")
 ):
-    """Standalone Voice-to-Text endpoint supporting both Faster-Whisper and Sherpa-ONNX."""
+    """Standalone Voice-to-Text endpoint supporting Faster-Whisper, Sherpa-ONNX, and decoupled accent estimation."""
     audio_bytes = await audio.read()
     if not audio_bytes:
         raise HTTPException(status_code=400, detail="Audio payload is empty")
 
     filename = audio.filename or "audio.webm"
     ext = "." + filename.split(".")[-1] if "." in filename else ".webm"
+
+    # Start decoupled accent detection concurrently if requested
+    accent_task = None
+    if detect_accent:
+        detector = get_accent_detector()
+        if detector.is_available():
+            accent_task = asyncio.create_task(detector.detect_accent_async(audio_bytes))
 
     # Route based on engine selection or model prefix
     use_sherpa = (engine == "sherpa") or (model and (model.startswith("sherpa-") or model == "sherpa-streaming"))
@@ -264,6 +315,15 @@ async def transcribe_audio(
             model_name=model
         )
 
+    # Collect accent detection result if task was launched
+    accent_res = None
+    if accent_task:
+        try:
+            accent_dict = await accent_task
+            accent_res = AccentDetectionResponse(**accent_dict)
+        except Exception as e:
+            logger.warning(f"Decoupled accent detection warning: {e}")
+
     return TranscriptionResponse(
         transcript=stt_result["transcript"],
         language=stt_result["language"],
@@ -273,7 +333,8 @@ async def transcribe_audio(
         rtf=stt_result["rtf"],
         speed_factor=stt_result["speed_factor"],
         device=stt_result["device"],
-        model_name=stt_result["model_name"]
+        model_name=stt_result["model_name"],
+        accent_analysis=accent_res
     )
 
 # ==========================================
@@ -395,10 +456,15 @@ async def voice_call_turn(
     groq = get_groq_engine()
     tts = get_tts_engine()
     sherpa = get_sherpa_engine()
+    accent_detector = get_accent_detector()
 
     audio_bytes = await audio.read()
     if not audio_bytes:
         raise HTTPException(status_code=400, detail="Audio file is empty")
+
+    accent_task = None
+    if accent_detector.is_available():
+        accent_task = asyncio.create_task(accent_detector.detect_accent_async(audio_bytes))
 
     filename = audio.filename or "call_audio.webm"
     ext = "." + filename.split(".")[-1] if "." in filename else ".webm"
@@ -441,7 +507,7 @@ async def voice_call_turn(
         groq_latency = groq_result["groq_latency"]
 
         # 3. Low-VRAM Text-to-Speech
-        tts_result = tts.synthesize(
+        tts_result = await tts.async_synthesize(
             text=ai_reply,
             voice=tts_voice,
             speed=1.05,
@@ -475,6 +541,14 @@ async def voice_call_turn(
         total_server_time=total_server_time
     )
 
+    accent_res = None
+    if accent_task:
+        try:
+            accent_dict = await accent_task
+            accent_res = AccentDetectionResponse(**accent_dict)
+        except Exception as e:
+            logger.warning(f"Turn accent estimation error: {e}")
+
     return CallTurnResponse(
         transcript=user_transcript,
         reply=ai_reply,
@@ -484,7 +558,8 @@ async def voice_call_turn(
         device=stt_result["device"],
         whisper_model=stt_result["model_name"],
         tts_engine=tts_engine_name,
-        tts_voice=tts_voice_name
+        tts_voice=tts_voice_name,
+        accent_analysis=accent_res
     )
 
 # ==========================================
@@ -504,10 +579,15 @@ async def process_voice(
     stt = get_stt_engine()
     groq = get_groq_engine()
     sherpa = get_sherpa_engine()
+    accent_detector = get_accent_detector()
 
     audio_bytes = await audio.read()
     if not audio_bytes:
         raise HTTPException(status_code=400, detail="Audio payload is empty")
+
+    accent_task = None
+    if accent_detector.is_available():
+        accent_task = asyncio.create_task(accent_detector.detect_accent_async(audio_bytes))
 
     filename = audio.filename or "recording.webm"
     ext = "." + filename.split(".")[-1] if "." in filename else ".webm"
@@ -551,12 +631,21 @@ async def process_voice(
         total_server_time=total_server_time
     )
 
+    accent_res = None
+    if accent_task:
+        try:
+            accent_dict = await accent_task
+            accent_res = AccentDetectionResponse(**accent_dict)
+        except Exception as e:
+            logger.warning(f"Voice benchmark accent estimation error: {e}")
+
     return VoiceResponse(
         transcript=transcript,
         reply=groq_result["reply"],
         latency=latency,
         device=stt_result["device"],
-        model_name=stt_result["model_name"]
+        model_name=stt_result["model_name"],
+        accent_analysis=accent_res
     )
 
 # ==========================================
@@ -609,8 +698,13 @@ async def websocket_call_endpoint(websocket: WebSocket):
         "groq_model": config.GROQ_MODEL,
         "system_prompt": None,
         "is_phone_call": True,
-        "tts_speed": 1.05
+        "tts_speed": 1.05,
+        "auto_adapt_voice": True
     }
+
+    accent_detector = get_accent_detector()
+    accent_session = accent_detector.get_session(session_id)
+    turn_audio_bytes = bytearray()
 
     history: List[dict] = []
     active_turn_id = 0
@@ -823,6 +917,7 @@ async def websocket_call_endpoint(websocket: WebSocket):
 
             if "bytes" in message and message["bytes"]:
                 raw_bytes = message["bytes"]
+                turn_audio_bytes.extend(raw_bytes)
                 # Convert PCM16 LE bytes to float32 samples [-1.0, 1.0]
                 audio_np = np.frombuffer(raw_bytes, dtype=np.int16).astype(np.float32) / 32768.0
 
@@ -901,6 +996,10 @@ async def websocket_call_endpoint(websocket: WebSocket):
                         turn_id = active_turn_id
                         logger.info(f"[{session_id}] Sherpa finalized turn {turn_id}: '{final_text}' (vad_endpoint={is_vad_endpoint}, trailing_silence={has_trailing_silence})")
 
+                        # Harvest audio for accent estimation and reset turn audio buffer
+                        utterance_audio = bytes(turn_audio_bytes)
+                        turn_audio_bytes.clear()
+
                         await websocket.send_json({
                             "type": "final_transcript",
                             "text": final_text,
@@ -911,11 +1010,50 @@ async def websocket_call_endpoint(websocket: WebSocket):
                         # Cancel any previous active task
                         await cancel_active_ai_response("new_turn_start")
 
-                        # Spawn assistant response task
+                        # Spawn assistant response task immediately (0 latency penalty)
                         ai_turn_start_time = time.perf_counter()
                         current_ai_task = asyncio.create_task(
                             execute_ai_turn(turn_id, final_text, t_endpoint)
                         )
+
+                        # Concurrently run automatic accent estimation in the background
+                        async def process_turn_accent(audio_chunk: bytes, turn_num: int):
+                            try:
+                                acc_res = await accent_detector.detect_accent_async(audio_chunk, session_id=session_id)
+                                logger.info(f"[{session_id}] Accent turn {turn_num}: {acc_res['accent']} ({int(acc_res['confidence']*100)}%, {acc_res['status']})")
+                                await websocket.send_json({
+                                    "type": "accent_detected",
+                                    "turn_id": turn_num,
+                                    "accent": acc_res["accent"],
+                                    "code": acc_res["code"],
+                                    "flag": acc_res.get("flag", "🌐"),
+                                    "confidence": acc_res["confidence"],
+                                    "status": acc_res["status"],
+                                    "sample_duration": acc_res["sample_duration"],
+                                    "latency_ms": acc_res["latency_ms"],
+                                    "suggested_tts_voice": acc_res.get("tts_voice"),
+                                    "details": acc_res.get("details", ""),
+                                    "is_smoothed": acc_res.get("is_smoothed", False)
+                                })
+
+                                # Auto voice adaptation if enabled and accent was reliably detected
+                                if config_state.get("auto_adapt_voice", True) and acc_res["status"] == "detected":
+                                    target_voice = acc_res.get("tts_voice")
+                                    if target_voice and target_voice != config_state["tts_voice"]:
+                                        old_voice = config_state["tts_voice"]
+                                        config_state["tts_voice"] = target_voice
+                                        logger.info(f"[{session_id}] Auto-adapted response voice: {old_voice} -> {target_voice} ({acc_res['accent']})")
+                                        await websocket.send_json({
+                                            "type": "voice_adapted",
+                                            "voice": target_voice,
+                                            "accent": acc_res["accent"],
+                                            "flag": acc_res.get("flag", "🌐")
+                                        })
+                            except Exception as e:
+                                logger.warning(f"[{session_id}] Accent detection background error: {e}")
+
+                        if utterance_audio:
+                            asyncio.create_task(process_turn_accent(utterance_audio, turn_id))
 
             elif "text" in message and message["text"]:
                 data = json.loads(message["text"])
@@ -928,7 +1066,15 @@ async def websocket_call_endpoint(websocket: WebSocket):
                     if "groq_model" in data: config_state["groq_model"] = data["groq_model"]
                     if "system_prompt" in data: config_state["system_prompt"] = data["system_prompt"]
                     if "tts_speed" in data: config_state["tts_speed"] = float(data["tts_speed"])
+                    if "auto_adapt_voice" in data: config_state["auto_adapt_voice"] = bool(data["auto_adapt_voice"])
                     logger.info(f"[{session_id}] Updated config: {config_state}")
+
+                elif msg_type == "set_auto_adapt_voice":
+                    config_state["auto_adapt_voice"] = bool(data.get("enabled", True))
+                    await websocket.send_json({
+                        "type": "auto_adapt_voice_changed",
+                        "enabled": config_state["auto_adapt_voice"]
+                    })
 
                 elif msg_type == "interrupt":
                     interrupt_start = time.perf_counter()
@@ -967,5 +1113,6 @@ async def websocket_call_endpoint(websocket: WebSocket):
     finally:
         await cancel_active_ai_response("session_closed")
         sherpa.close_stream(session_id)
-        logger.info(f"[{session_id}] Cleaned up session stream.")
+        accent_detector.clear_session(session_id)
+        logger.info(f"[{session_id}] Cleaned up session stream and accent session.")
 

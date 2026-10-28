@@ -10,6 +10,31 @@ class LatencyMetrics(BaseModel):
     tts_latency: Optional[float] = Field(0.0, description="TTS synthesis elapsed time in seconds")
     total_server_time: Optional[float] = Field(0.0, description="Total pipeline latency on server")
 
+class AccentDetectionResponse(BaseModel):
+    accent: str = Field(..., description="Estimated English accent / variety name")
+    code: str = Field(..., description="Locale / variety code (e.g. en-IN, en-US, en-GB, en-AU, en-CA, en-NZ, en-IE, en-ZA, en-OTHER, unknown)")
+    flag: Optional[str] = Field("🌐", description="Flag emoji for variety")
+    confidence: float = Field(..., description="Classification confidence (0.0 to 1.0)")
+    status: str = Field(..., description="'detected', 'detecting', 'uncertain', 'insufficient_audio', or 'error'")
+    sample_duration: float = Field(..., description="Duration of audio analyzed in seconds")
+    model: str = Field(..., description="Audio classifier model used")
+    license: Optional[str] = Field("MIT", description="Model open-source license")
+    device: str = Field("cpu", description="Inference device (cpu or cuda)")
+    latency_ms: float = Field(..., description="Elapsed accent detection latency in ms")
+    inference_latency_ms: Optional[float] = Field(None, description="Pure model forward pass latency in ms")
+    tts_voice: Optional[str] = Field(None, description="Mapped native Edge-TTS voice ID for this variety")
+    details: Optional[str] = Field(None, description="Detailed explanation or status context")
+    is_smoothed: Optional[bool] = Field(False, description="Whether result was stabilized using session smoothing")
+
+class AccentInfoResponse(BaseModel):
+    model_name: str
+    license: str
+    device: str
+    classes: List[str]
+    min_audio_seconds: float
+    confidence_threshold: float
+    status: str
+
 class TranscriptionResponse(BaseModel):
     transcript: str = Field(..., description="Faster-Whisper speech transcript")
     language: Optional[str] = Field("en", description="Detected or requested language code")
@@ -20,6 +45,7 @@ class TranscriptionResponse(BaseModel):
     speed_factor: float = Field(..., description="Processing speed factor relative to real-time")
     device: str = Field(..., description="Inference device (cuda or cpu)")
     model_name: str = Field(..., description="Whisper model name used")
+    accent_analysis: Optional[AccentDetectionResponse] = Field(None, description="Acoustic English accent variety analysis")
 
 class ChatMessage(BaseModel):
     role: str = Field(..., description="Message role: 'user', 'assistant', or 'system'")
@@ -82,6 +108,7 @@ class VoiceResponse(BaseModel):
     latency: LatencyMetrics = Field(..., description="Detailed latency metrics")
     device: str = Field(..., description="STT inference device (cuda or cpu)")
     model_name: str = Field(..., description="Whisper model name")
+    accent_analysis: Optional[AccentDetectionResponse] = Field(None, description="Acoustic English accent variety analysis")
 
 class CallTurnResponse(BaseModel):
     transcript: str = Field(..., description="User transcribed speech")
@@ -93,6 +120,7 @@ class CallTurnResponse(BaseModel):
     whisper_model: str = Field(..., description="Whisper model name used")
     tts_engine: str = Field(..., description="TTS engine used")
     tts_voice: str = Field(..., description="Voice used for caller")
+    accent_analysis: Optional[AccentDetectionResponse] = Field(None, description="Acoustic English accent variety analysis")
 
 class HealthResponse(BaseModel):
     status: str

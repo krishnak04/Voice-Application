@@ -345,9 +345,12 @@ export async function sendAudioForBenchmark(audioBlob, options = {}) {
     transcript: sttData.transcript,
     reply: chatData ? chatData.reply : '',
     language: sttData.language,
+    accent_analysis: sttData.accent_analysis || null,
     latency: {
       audio_duration: sttData.duration,
       stt_latency: sttData.stt_latency,
+      accent_latency_ms: sttData.accent_analysis ? sttData.accent_analysis.latency_ms : null,
+      accent_latency_sec: sttData.accent_analysis ? +(sttData.accent_analysis.latency_ms / 1000).toFixed(3) : null,
       rtf: sttData.rtf,
       speed_factor: sttData.speed_factor,
       groq_latency: groqLatency,
@@ -443,4 +446,35 @@ export async function selectWhisperModel(modelId) {
   }
   return await res.json();
 }
+
+/**
+ * Automatic English Accent Detection APIs
+ */
+export async function getAccentInfo() {
+  const baseUrl = getServerUrl();
+  const res = await fetch(`${baseUrl}/api/accent/info`);
+  if (!res.ok) throw new Error(`Failed to fetch accent detector info: ${res.statusText}`);
+  return await res.json();
+}
+
+export async function detectAudioAccent(audioBlob, sessionId = null) {
+  const baseUrl = getServerUrl();
+  const formData = new FormData();
+  formData.append('audio', audioBlob, 'accent_sample.webm');
+  if (sessionId) {
+    formData.append('session_id', sessionId);
+  }
+
+  const res = await fetch(`${baseUrl}/api/accent/detect`, {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Accent detection failed with ${res.status}`);
+  }
+  return await res.json();
+}
+
 

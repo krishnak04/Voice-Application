@@ -79,6 +79,7 @@ export default function AudioRecorder({
   onEngineChange,
   onStart,
   onStop,
+  lastAccentAnalysis = null,
 }) {
   const canvasRef = useRef(null);
   const animationFrameRef = useRef(null);
@@ -245,6 +246,49 @@ export default function AudioRecorder({
         )}
       </div>
 
+      {/* Automatic English Accent Status Banner in Benchmark Mode */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.15rem' }}>
+        <div
+          style={{
+            padding: '0.38rem 1rem',
+            borderRadius: '9999px',
+            background: lastAccentAnalysis && lastAccentAnalysis.status === 'detected'
+              ? 'rgba(16, 185, 129, 0.12)'
+              : 'rgba(56, 189, 248, 0.10)',
+            border: `1px solid ${
+              lastAccentAnalysis && lastAccentAnalysis.status === 'detected'
+                ? 'rgba(16, 185, 129, 0.35)'
+                : 'rgba(56, 189, 248, 0.3)'
+            }`,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '0.82rem',
+            fontWeight: 600,
+            color: lastAccentAnalysis && lastAccentAnalysis.status === 'detected' ? '#059669' : '#0284c7',
+            boxShadow: 'var(--shadow-xs)'
+          }}
+        >
+          <span>{lastAccentAnalysis?.flag || '🌐'}</span>
+          <span>
+            {lastAccentAnalysis && lastAccentAnalysis.status === 'detected' ? (
+              <>
+                Detected Variety: <strong>{lastAccentAnalysis.accent}</strong>
+                <span style={{ fontSize: '0.74rem', opacity: 0.85, marginLeft: '0.35rem' }}>
+                  ({Math.round(lastAccentAnalysis.confidence * 100)}% • {lastAccentAnalysis.latency_ms}ms)
+                </span>
+              </>
+            ) : isRecording ? (
+              'Capturing mic audio for automatic accent & STT analysis...'
+            ) : isProcessing ? (
+              'Acoustic accent detection & speech transcription...'
+            ) : (
+              'Automatic English Accent Detection Active (ECAPA-TDNN)'
+            )}
+          </span>
+        </div>
+      </div>
+
       <div className="mic-button-wrapper">
         <button
           className={`mic-btn ${isRecording ? 'recording' : ''}`}
@@ -274,7 +318,7 @@ export default function AudioRecorder({
 
         {isProcessing && (
           <p style={{ color: 'var(--accent-cyan)', fontSize: '0.95rem' }}>
-            Transcribing audio with Faster-Whisper & requesting Groq reply...
+            Transcribing audio with {engine === 'sherpa' ? 'Sherpa-ONNX' : 'Faster-Whisper'} & analyzing English accent...
           </p>
         )}
 

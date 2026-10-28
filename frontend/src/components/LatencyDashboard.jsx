@@ -7,6 +7,8 @@ export default function LatencyDashboard({ latency }) {
   const {
     audio_duration = 0,
     stt_latency = 0,
+    accent_latency_ms = null,
+    accent_latency_sec = null,
     rtf = 0,
     speed_factor = 0,
     groq_latency = 0,
@@ -16,6 +18,7 @@ export default function LatencyDashboard({ latency }) {
   } = latency;
 
   const hasTTS = tts_latency > 0;
+  const hasAccent = accent_latency_ms !== null && accent_latency_ms !== undefined;
   const networkOverhead = Math.max(0, +(client_rtt - total_server_time).toFixed(3));
 
   const totalTime = Math.max(client_rtt, total_server_time, 0.01);
@@ -36,7 +39,7 @@ export default function LatencyDashboard({ latency }) {
         </span>
       </div>
 
-      <div className="metrics-grid" style={{ gridTemplateColumns: hasTTS ? 'repeat(auto-fit, minmax(130px, 1fr))' : undefined }}>
+      <div className="metrics-grid" style={{ gridTemplateColumns: hasTTS || hasAccent ? 'repeat(auto-fit, minmax(135px, 1fr))' : undefined }}>
         <div className="metric-card">
           <span className="metric-label">Voice-to-Voice RTT</span>
           <span className="metric-val" style={{ color: client_rtt < 1.0 ? '#34d399' : '#38bdf8' }}>{client_rtt}s</span>
@@ -44,10 +47,18 @@ export default function LatencyDashboard({ latency }) {
         </div>
 
         <div className="metric-card">
-          <span className="metric-label">Whisper STT</span>
+          <span className="metric-label">Speech Recognition (STT)</span>
           <span className="metric-val" style={{ color: '#34d399' }}>{stt_latency}s</span>
           <span className="metric-sub">For {audio_duration}s speech</span>
         </div>
+
+        {hasAccent && (
+          <div className="metric-card" style={{ border: '1px solid rgba(56, 189, 248, 0.35)', background: 'rgba(56, 189, 248, 0.05)' }}>
+            <span className="metric-label" style={{ color: '#38bdf8' }}>Accent Detection</span>
+            <span className="metric-val" style={{ color: '#38bdf8' }}>{accent_latency_ms}ms</span>
+            <span className="metric-sub">Acoustic ECAPA-TDNN</span>
+          </div>
+        )}
 
         <div className="metric-card">
           <span className="metric-label">Groq LLM</span>

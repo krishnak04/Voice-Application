@@ -495,10 +495,62 @@ export default function App() {
             onEngineChange={handleEngineChange}
             onStart={startRecording}
             onStop={handleStopRecording}
+            lastAccentAnalysis={result?.accent_analysis}
           />
         )}
 
         {result && <LatencyDashboard latency={result.latency} />}
+
+        {result && result.accent_analysis && (
+          <section
+            className="glass-panel"
+            style={{
+              padding: '1.25rem 1.5rem',
+              borderRadius: '16px',
+              background: result.accent_analysis.status === 'detected'
+                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(2, 132, 199, 0.08))'
+                : 'linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(100, 116, 139, 0.08))',
+              border: `1px solid ${result.accent_analysis.status === 'detected' ? 'rgba(16, 185, 129, 0.35)' : 'rgba(245, 158, 11, 0.35)'}`,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.85rem'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span style={{ fontSize: '1.75rem' }}>{result.accent_analysis.flag || '🌐'}</span>
+                <div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                    AUTOMATIC ENGLISH ACCENT IDENTIFICATION (ACOUSTIC)
+                  </div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 700, color: result.accent_analysis.status === 'detected' ? '#10b981' : '#f59e0b' }}>
+                    {result.accent_analysis.accent}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <span className="badge badge-green" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                  Confidence: {Math.round(result.accent_analysis.confidence * 100)}%
+                </span>
+                <span className="badge" style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
+                  Latency: {result.accent_analysis.latency_ms}ms
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)', paddingTop: '0.4rem', borderTop: '1px solid var(--border)' }}>
+              <div>
+                Classifier: <strong>{result.accent_analysis.model}</strong> ({result.accent_analysis.license || 'MIT'} License • {result.accent_analysis.device})
+              </div>
+              {result.accent_analysis.tts_voice && (
+                <div>
+                  Matched Response Voice: <strong style={{ color: 'var(--text-main)' }}>{result.accent_analysis.tts_voice}</strong>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         {result && activeTab === 'benchmark' && (
           <ChatTranscript

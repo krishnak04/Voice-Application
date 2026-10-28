@@ -29,8 +29,11 @@ backend/__pycache__/
 *.tar.gz
 *.zip
 *.onnx
+*.ckpt
 sherpa-model.tar.bz2
 sherpa-onnx-streaming-zipformer-en-2023-06-26/
+backend/tmp_accent_model/
+tmp_accent_model/
 
 # Audio test files
 *.wav
