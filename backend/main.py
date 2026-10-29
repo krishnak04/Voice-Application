@@ -671,28 +671,19 @@ async def websocket_call_endpoint(websocket: WebSocket):
     groq = get_groq_engine()
     tts = get_tts_engine()
 
-    if not sherpa.is_available():
-        await websocket.send_json({
-            "type": "error",
-            "message": "Sherpa-ONNX streaming engine is not available on this server."
-        })
-        await websocket.close()
-        return
-
-    if not sherpa.is_streaming:
-        await websocket.send_json({
-            "type": "error",
-            "message": f"Active model '{sherpa.model_name}' is an Offline ASR model. Full-duplex live voice calling requires a Streaming model (e.g. Small or Standard Streaming Zipformer). Please switch model in the ASR Model Selector."
-        })
-        await websocket.close()
-        return
-
-    # Create isolated recognition stream for this session
-    stream = sherpa.create_stream(session_id)
-    logger.info(f"[{session_id}] WebSocket call connected. Sherpa-ONNX stream established.")
+    has_sherpa_stream = sherpa.is_available() and sherpa.is_streaming
+    stream = None
+    if has_sherpa_stream:
+        stream = sherpa.create_stream(session_id)
+        logger.info(f"[{session_id}] WebSocket call connected. Sherpa-ONNX stream established.")
+    else:
+        logger.info(f"[{session_id}] WebSocket call connected. Using Faster-Whisper / ASR engine.")
 
     # Session settings
     config_state = {
+        "stt_engine": "whisper",
+        "stt_model": "base.en",
+        "stt_language": "auto",
         "tts_voice": "en-IN-NeerjaNeural",
         "tts_engine": "edge_tts",
         "tts_pitch": "+0Hz",
@@ -706,7 +697,7 @@ async def websocket_call_endpoint(websocket: WebSocket):
     accent_detector = get_accent_detector()
     accent_session = accent_detector.get_session(session_id)
     turn_audio_bytes = bytearray()
-    pre_roll_chunks = deque(maxlen=4)  # ~500ms pre-roll to catch speech onset
+    pre_roll_chunks = deque(maxlen=8)  # ~1000ms pre-roll to catch soft voiceless initial consonants
     speech_started = False
     speech_start_time = None
     last_speech_time = None
@@ -959,7 +950,7 @@ async def websocket_call_endpoint(websocket: WebSocket):
                 # Speech activity tracking: only buffer and start turn timer when user actually speaks
                 if not speech_started:
                     pre_roll_chunks.append(raw_bytes)
-                    if rms > 0.008:
+                    if rms > 0.005:
                         speech_started = True
                         speech_start_time = now_t
                         last_speech_time = now_t
@@ -968,14 +959,15 @@ async def websocket_call_endpoint(websocket: WebSocket):
                         pre_roll_chunks.clear()
                 else:
                     turn_audio_bytes.extend(raw_bytes)
-                    if rms > 0.008:
+                    if rms > 0.005:
                         last_speech_time = now_t
 
-                # Feed audio chunk to Sherpa streaming recognizer
-                sherpa.feed_audio(session_id, audio_np)
+                # Feed audio chunk to Sherpa streaming recognizer if active
+                partial = ""
+                if has_sherpa_stream:
+                    sherpa.feed_audio(session_id, audio_np)
+                    partial = sherpa.get_partial_transcript(session_id)
 
-                # Check partial transcript
-                partial = sherpa.get_partial_transcript(session_id)
                 if partial:
                     if not speech_started:
                         speech_started = True
@@ -1018,10 +1010,10 @@ async def websocket_call_endpoint(websocket: WebSocket):
                                     "partial_text": partial
                                 })
 
-                # Endpoint detection: tuned conversational trailing silence (0.75s)
-                has_speech = bool(last_partial.strip())
-                is_vad_endpoint = sherpa.is_endpoint(session_id) and has_speech
-                trailing_silence_threshold = getattr(config, "SHERPA_RULE2_MIN_TRAILING_SILENCE", 0.8)
+                # Endpoint detection: tuned conversational trailing silence (1.2s)
+                has_speech = bool(last_partial.strip()) or speech_started
+                is_vad_endpoint = (sherpa.is_endpoint(session_id) and bool(last_partial.strip())) if has_sherpa_stream else False
+                trailing_silence_threshold = getattr(config, "SHERPA_RULE2_MIN_TRAILING_SILENCE", 1.2)
                 has_trailing_silence = (
                     has_speech
                     and last_speech_time is not None
@@ -1029,12 +1021,37 @@ async def websocket_call_endpoint(websocket: WebSocket):
                     and not is_ai_speaking
                 )
 
-                if is_vad_endpoint or has_trailing_silence:
-                    final_text = sherpa.get_final_transcript(session_id).strip()
-                    if not final_text and last_partial:
-                        final_text = last_partial.strip()
+                if (is_vad_endpoint or has_trailing_silence) and len(turn_audio_bytes) > 0:
+                    active_engine = config_state.get("stt_engine", "whisper").lower()
+                    active_model = config_state.get("stt_model")
+                    target_lang = config_state.get("stt_language")
+                    utterance_audio = bytes(turn_audio_bytes)
 
-                    sherpa.reset_stream(session_id)
+                    final_text = ""
+                    # 1. High-accuracy Faster-Whisper turn finalization
+                    if active_engine == "whisper" or (active_model and not str(active_model).startswith("sherpa")):
+                        stt = get_stt_engine()
+                        whisper_res = stt.transcribe_audio_bytes(
+                            audio_bytes=utterance_audio,
+                            file_ext=".wav",
+                            language=target_lang if target_lang not in ("auto", "none", None) else None,
+                            model_name=active_model
+                        )
+                        final_text = whisper_res.get("transcript", "").strip()
+                        if not final_text and last_partial:
+                            final_text = last_partial.strip()
+                    elif not has_sherpa_stream:
+                        # Offline Sherpa model (e.g. GigaSpeech - 3% WER, 0.15s)
+                        sherpa_res = sherpa.transcribe_audio_source(utterance_audio)
+                        final_text = sherpa_res.get("transcript", "").strip()
+                    else:
+                        # Streaming Zipformer with lookahead silence flush
+                        final_text = sherpa.get_final_transcript(session_id).strip()
+                        if not final_text and last_partial:
+                            final_text = last_partial.strip()
+
+                    if has_sherpa_stream:
+                        sherpa.reset_stream(session_id)
                     last_partial = ""
                     first_partial_sent = False
 
@@ -1042,6 +1059,10 @@ async def websocket_call_endpoint(websocket: WebSocket):
                         t_endpoint = time.perf_counter()
                         utterance_audio = bytes(turn_audio_bytes)
                         audio_duration_sec = round(len(utterance_audio) / 32000.0, 3)
+                        utt_np = np.frombuffer(utterance_audio, dtype=np.int16).astype(np.float32) / 32768.0 if len(utterance_audio) > 0 else np.zeros(0, dtype=np.float32)
+                        peak_val = float(np.max(np.abs(utt_np))) if len(utt_np) > 0 else 0.0
+                        peak_dbfs = round(20 * float(np.log10(max(peak_val, 1e-5))), 1)
+                        rms_val = round(float(np.sqrt(np.mean(utt_np**2))), 4) if len(utt_np) > 0 else 0.0
                         # Real endpointing delay is from speech completion to endpoint declaration
                         endpoint_latency_ms = round((t_endpoint - (last_speech_time or speech_start_time or t_endpoint)) * 1000, 1)
                         stt_rtf = round((endpoint_latency_ms / 1000.0) / max(audio_duration_sec, 0.001), 3) if audio_duration_sec > 0 else None
@@ -1055,7 +1076,11 @@ async def websocket_call_endpoint(websocket: WebSocket):
 
                         active_turn_id += 1
                         turn_id = active_turn_id
-                        logger.info(f"[{session_id}] Sherpa finalized turn {turn_id}: '{final_text}' (audio={audio_duration_sec}s, endpoint={endpoint_latency_ms}ms, vad={is_vad_endpoint}, silence={has_trailing_silence})")
+                        logger.info(
+                            f"[{session_id}] Sherpa finalized turn {turn_id}: '{final_text}' "
+                            f"(audio={audio_duration_sec}s, peak={peak_dbfs} dBFS, rms={rms_val}, "
+                            f"endpoint={endpoint_latency_ms}ms, vad={is_vad_endpoint}, silence={has_trailing_silence})"
+                        )
 
                         stt_metrics = {
                             "first_partial_latency_ms": last_first_partial_latency,
@@ -1137,6 +1162,9 @@ async def websocket_call_endpoint(websocket: WebSocket):
                     if "system_prompt" in data: config_state["system_prompt"] = data["system_prompt"]
                     if "tts_speed" in data: config_state["tts_speed"] = float(data["tts_speed"])
                     if "auto_adapt_voice" in data: config_state["auto_adapt_voice"] = bool(data["auto_adapt_voice"])
+                    if "stt_engine" in data: config_state["stt_engine"] = data["stt_engine"]
+                    if "stt_model" in data: config_state["stt_model"] = data["stt_model"]
+                    if "stt_language" in data: config_state["stt_language"] = data["stt_language"]
                     logger.info(f"[{session_id}] Updated config: {config_state}")
 
                 elif msg_type == "set_auto_adapt_voice":

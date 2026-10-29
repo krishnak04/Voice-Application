@@ -96,7 +96,7 @@ async def test_mode_1_phone_call_simulator():
         start_wait = time.perf_counter()
         while time.perf_counter() - start_wait < 15.0 and not turn_complete:
             try:
-                msg = await asyncio.wait_for(ws.recv(), timeout=4.0)
+                msg = await asyncio.wait_for(ws.recv(), timeout=12.0)
                 if isinstance(msg, str):
                     data = json.loads(msg)
                     events_received.append(data.get("type"))

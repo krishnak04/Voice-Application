@@ -163,6 +163,17 @@ WHISPER_MODELS_CATALOG = {
         "is_english_only": True,
         "is_supported": True,
     },
+    "small.en": {
+        "id": "small.en",
+        "name": "Whisper Small.en",
+        "description": "English-specialized ~244M parameters for superior accuracy across diverse English accents.",
+        "params": "~244M",
+        "languages": "en",
+        "type": "offline",
+        "category": "Large",
+        "is_english_only": True,
+        "is_supported": True,
+    },
 }
 
 class STTEngine:
@@ -282,6 +293,22 @@ class STTEngine:
         language: Optional[str] = None,
         model_name: Optional[str] = None
     ):
+        if len(audio_bytes) == 0:
+            return {"transcript": "", "language": language or "en", "duration": 0.0, "stt_latency": 0.0, "rtf": 0.0, "model_name": model_name or self.default_model_name}
+
+        # Handle raw PCM16 audio bytes directly without requiring container header
+        is_container = (
+            audio_bytes.startswith(b"RIFF")
+            or audio_bytes.startswith(b"\x1a\x45\xdf\xa3")
+            or audio_bytes.startswith(b"ID3")
+            or audio_bytes.startswith(b"\xff\xfb")
+            or audio_bytes.startswith(b"OggS")
+            or audio_bytes.startswith(b"fLaC")
+        )
+        if not is_container and (len(audio_bytes) % 2 == 0):
+            pcm_np = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+            return self.transcribe_file(pcm_np, language=language, model_name=model_name)
+
         # 1. High-speed in-memory transcription (avoids disk write/read latency)
         try:
             bio = io.BytesIO(audio_bytes)
@@ -336,48 +363,168 @@ class STTEngine:
             logger.info(f"Language '{lang_param}' requested with English-only model '{req_model}'. Switching to multilingual '{multilingual_alt}'.")
             req_model = multilingual_alt
 
+        if req_model.endswith(".en") and not lang_param:
+            lang_param = "en"
+
         model, active_model_name = self.get_model(req_model)
 
+        # 1. Decode audio source to 16kHz mono float32 with telemetry
         start_time = time.perf_counter()
+        samples_np = None
+        orig_rate = 16000
+        orig_channels = 1
+
+        if isinstance(audio_source, np.ndarray):
+            samples_np = audio_source.astype(np.float32)
+        else:
+            if isinstance(audio_source, (bytes, bytearray)):
+                is_container = (
+                    audio_source.startswith(b"RIFF")
+                    or audio_source.startswith(b"\x1a\x45\xdf\xa3")
+                    or audio_source.startswith(b"ID3")
+                    or audio_source.startswith(b"\xff\xfb")
+                    or audio_source.startswith(b"OggS")
+                    or audio_source.startswith(b"fLaC")
+                )
+                if not is_container and (len(audio_source) % 2 == 0):
+                    samples_np = np.frombuffer(audio_source, dtype=np.int16).astype(np.float32) / 32768.0
+                else:
+                    audio_input = io.BytesIO(audio_source)
+            elif isinstance(audio_source, io.BytesIO):
+                raw = audio_source.getvalue()
+                is_container = (
+                    raw.startswith(b"RIFF")
+                    or raw.startswith(b"\x1a\x45\xdf\xa3")
+                    or raw.startswith(b"ID3")
+                    or raw.startswith(b"\xff\xfb")
+                    or raw.startswith(b"OggS")
+                    or raw.startswith(b"fLaC")
+                )
+                if not is_container and (len(raw) % 2 == 0):
+                    samples_np = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+                else:
+                    audio_input = audio_source
+            elif isinstance(audio_source, str) and not os.path.exists(audio_source):
+                raise FileNotFoundError(f"Audio file not found: {audio_source}")
+            else:
+                audio_input = audio_source
+
+            if samples_np is None:
+                import av
+                try:
+                    container = av.open(audio_input)
+                    audio_stream = next(s for s in container.streams if s.type == 'audio')
+                    orig_rate = getattr(audio_stream, 'rate', 16000)
+                    orig_channels = getattr(audio_stream, 'channels', 1)
+                    resampler = av.AudioResampler(format='fltp', layout='mono', rate=16000)
+                    decoded_frames = []
+                    for frame in container.decode(audio_stream):
+                        for rf in resampler.resample(frame):
+                            decoded_frames.append(rf.to_ndarray()[0])
+                    for rf in resampler.resample(None):
+                        decoded_frames.append(rf.to_ndarray()[0])
+                    container.close()
+                    if decoded_frames:
+                        samples_np = np.concatenate(decoded_frames)
+                    else:
+                        samples_np = np.zeros(0, dtype=np.float32)
+                except Exception as decode_err:
+                    logger.debug(f"PyAV decode error ({decode_err}), using audio_source directly.")
+                    samples_np = audio_source
+
+        # Telemetry & Normalization if samples array was extracted
+        if isinstance(samples_np, np.ndarray) and len(samples_np) > 0:
+            audio_dur = len(samples_np) / 16000.0
+            peak_val = float(np.max(np.abs(samples_np)))
+            peak_dbfs = round(20 * float(np.log10(max(peak_val, 1e-5))), 1)
+            rms_val = round(float(np.sqrt(np.mean(samples_np**2))), 4)
+            logger.info(
+                f"[Whisper STT Audio Telemetry] duration={audio_dur:.2f}s, in_rate={orig_rate}Hz, "
+                f"in_channels={orig_channels}, peak={peak_dbfs} dBFS, rms={rms_val}, model={active_model_name}"
+            )
+
+            # Normalization: DC bias removal and natural headroom leveling
+            mean_v = np.mean(samples_np)
+            samples_np = samples_np - mean_v
+            if peak_val > 0.98:
+                samples_np = samples_np * (0.95 / peak_val)
+            elif peak_val < 0.04 and peak_val > 1e-4:
+                # Conservative boost only for faint signals, strictly capped to 2.0x
+                samples_np = np.clip(samples_np * min(2.0, 0.15 / max(rms_val, 1e-4)), -1.0, 1.0)
+            transcribe_target = samples_np
+        else:
+            transcribe_target = audio_source
+
+        beam_size = getattr(config, "WHISPER_BEAM_SIZE", 3)
+        vad_params = dict(
+            threshold=0.35,
+            min_speech_duration_ms=200,
+            min_silence_duration_ms=400,
+            speech_pad_ms=200
+        )
+
         try:
             try:
                 segments, info = model.transcribe(
-                    audio_source,
+                    transcribe_target,
                     language=lang_param,
-                    beam_size=1,
-                    vad_filter=False,
+                    beam_size=beam_size,
+                    patience=1.0,
+                    vad_filter=True,
+                    vad_parameters=vad_params,
                     condition_on_previous_text=False
                 )
                 segment_list = list(segments)
             except ValueError as ve:
                 logger.warning(f"Language code '{lang_param}' raised ValueError ({ve}). Retrying with auto-detect...")
                 segments, info = model.transcribe(
-                    audio_source,
+                    transcribe_target,
                     language=None,
-                    beam_size=1,
-                    vad_filter=False,
+                    beam_size=beam_size,
+                    patience=1.0,
+                    vad_filter=True,
+                    vad_parameters=vad_params,
                     condition_on_previous_text=False
                 )
                 segment_list = list(segments)
+
+            # Fallback if VAD filter was overly aggressive on soft audible speech
+            if not any(s.text.strip() for s in segment_list) and isinstance(samples_np, np.ndarray) and len(samples_np) > 4000:
+                peak_check = float(np.max(np.abs(samples_np)))
+                if peak_check > 0.015:
+                    logger.info("VAD filter produced empty transcript on audible audio. Retrying without VAD filter...")
+                    segments, info = model.transcribe(
+                        transcribe_target,
+                        language=lang_param,
+                        beam_size=beam_size,
+                        patience=1.0,
+                        vad_filter=False,
+                        condition_on_previous_text=False
+                    )
+                    segment_list = list(segments)
         except Exception as e:
             if self.device == "cuda":
                 logger.error(f"CUDA transcription error with {active_model_name}: {e}. Switching to CPU fallback...")
                 model = self._fallback_to_cpu(active_model_name, str(e))
                 try:
                     segments, info = model.transcribe(
-                        audio_source,
+                        transcribe_target,
                         language=lang_param,
-                        beam_size=1,
-                        vad_filter=False,
+                        beam_size=beam_size,
+                        patience=1.0,
+                        vad_filter=True,
+                        vad_parameters=vad_params,
                         condition_on_previous_text=False
                     )
                     segment_list = list(segments)
                 except ValueError:
                     segments, info = model.transcribe(
-                        audio_source,
+                        transcribe_target,
                         language=None,
-                        beam_size=1,
-                        vad_filter=False,
+                        beam_size=beam_size,
+                        patience=1.0,
+                        vad_filter=True,
+                        vad_parameters=vad_params,
                         condition_on_previous_text=False
                     )
                     segment_list = list(segments)
@@ -389,7 +536,10 @@ class STTEngine:
 
         duration = getattr(info, "duration", 0.0)
         if duration <= 0.0:
-            duration = max(elapsed_time, 0.01)
+            if isinstance(samples_np, np.ndarray) and len(samples_np) > 0:
+                duration = len(samples_np) / 16000.0
+            else:
+                duration = max(elapsed_time, 0.01)
 
         rtf = elapsed_time / duration if duration > 0 else 0.0
         speed_factor = duration / elapsed_time if elapsed_time > 0 else 0.0

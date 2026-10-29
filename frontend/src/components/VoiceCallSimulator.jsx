@@ -427,18 +427,18 @@ export const CALL_VOICES = [
 const KOKORO_VOICES = CALL_VOICES;
 
 const SILENCE_OPTIONS = [
-  { label: 'Ultra-Fast (450ms - Immediate)', value: 450 },
-  { label: 'Snappy (600ms - Recommended)', value: 600 },
-  { label: 'Normal (850ms - Balanced)', value: 850 },
-  { label: 'Relaxed (1200ms - Long Pauses)', value: 1200 },
+  { label: 'Fast (800ms - Short Queries)', value: 800 },
+  { label: 'Conversational (1200ms - Recommended)', value: 1200 },
+  { label: 'Relaxed (1600ms - Natural Pauses)', value: 1600 },
+  { label: 'Extended (2000ms - Thoughtful Speech)', value: 2000 },
 ];
 
 export default function VoiceCallSimulator({
   language: initialLanguage = 'auto',
   onLanguageChange,
-  model: initialModel = 'base',
+  model: initialModel = 'base.en',
   onModelChange,
-  engine: initialEngine = 'sherpa',
+  engine: initialEngine = 'whisper',
   onEngineChange,
   onCallResult,
   health,
@@ -454,8 +454,14 @@ export default function VoiceCallSimulator({
   const [isMuted, setIsMuted] = useState(false);
 
   // STT Engine, Model & Language State
-  const [sttEngine, setSttEngine] = useState(() => initialEngine || localStorage.getItem('stt_engine') || 'sherpa');
-  const [sttModel, setSttModel] = useState(() => initialModel || localStorage.getItem('whisper_model') || (sttEngine === 'sherpa' ? 'sherpa-onnx-streaming-zipformer-en-2023-06-26' : 'base'));
+  const [sttEngine, setSttEngine] = useState(() => {
+    const saved = localStorage.getItem('stt_engine');
+    return (saved && saved !== 'sherpa') ? saved : (initialEngine && initialEngine !== 'sherpa' ? initialEngine : 'whisper');
+  });
+  const [sttModel, setSttModel] = useState(() => {
+    const saved = localStorage.getItem('whisper_model');
+    return (saved && saved !== 'sherpa-streaming') ? saved : (initialModel && initialModel !== 'sherpa-streaming' ? initialModel : 'base.en');
+  });
   const [sttLanguage, setSttLanguage] = useState(() => initialLanguage || localStorage.getItem('whisper_language') || 'auto');
 
   // Text-to-Voice (TTS) Model & Human Voice State
@@ -547,7 +553,7 @@ export default function VoiceCallSimulator({
 
   const [silenceTimeoutMs, setSilenceTimeoutMs] = useState(() => {
     const saved = localStorage.getItem('call_silence_timeout');
-    return saved ? Number(saved) : 600;
+    return saved ? Math.max(800, Number(saved)) : 1200;
   });
   const [chatHistory, setChatHistory] = useState([]);
   const [audioLevel, setAudioLevel] = useState(0); // 0 to 100 for visualizer
@@ -663,8 +669,16 @@ export default function VoiceCallSimulator({
     if (onEngineChange) {
       onEngineChange(newEngine);
     }
-    const defaultModel = newEngine === 'sherpa' ? 'sherpa-onnx-streaming-zipformer-en-2023-06-26' : 'base';
+    const defaultModel = newEngine === 'sherpa' ? 'sherpa-onnx-streaming-zipformer-en-2023-06-26' : 'base.en';
     handleSttModelChange(defaultModel);
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'config',
+        stt_engine: newEngine,
+        stt_model: defaultModel,
+        stt_language: sttLanguage
+      }));
+    }
   };
 
   const handleSttModelChange = (newModel) => {
@@ -673,6 +687,14 @@ export default function VoiceCallSimulator({
     if (onModelChange) {
       onModelChange(newModel);
     }
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'config',
+        stt_engine: sttEngine,
+        stt_model: newModel,
+        stt_language: sttLanguage
+      }));
+    }
   };
 
   const handleSttLanguageChange = (newLang) => {
@@ -680,6 +702,14 @@ export default function VoiceCallSimulator({
     localStorage.setItem('whisper_language', newLang);
     if (onLanguageChange) {
       onLanguageChange(newLang);
+    }
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'config',
+        stt_engine: sttEngine,
+        stt_model: sttModel,
+        stt_language: newLang
+      }));
     }
   };
 
@@ -801,8 +831,12 @@ export default function VoiceCallSimulator({
     return selectedVoiceObj?.engine || 'edge_tts';
   }, [ttsModel, selectedVoiceObj]);
 
+  const resamplePhaseRef = useRef(0);
+
   /**
-   * Resample Float32 audio to 16kHz mono PCM16 Int16Array for Sherpa-ONNX
+   * Resample Float32 audio to 16kHz mono PCM16 Int16Array for Sherpa-ONNX streaming.
+   * Tracks phase continuity across buffer chunks to prevent boundary clicking.
+   * Uses area-weighted averaging / linear interpolation to eliminate high-frequency aliasing.
    */
   const resampleAndEncodePCM16 = useCallback((audioBuffer, fromSampleRate, toSampleRate = 16000) => {
     if (fromSampleRate === toSampleRate) {
@@ -813,13 +847,45 @@ export default function VoiceCallSimulator({
       }
       return pcm16;
     }
+
     const ratio = fromSampleRate / toSampleRate;
-    const newLength = Math.round(audioBuffer.length / ratio);
-    const pcm16 = new Int16Array(newLength);
-    for (let i = 0; i < newLength; i++) {
-      const origIndex = Math.min(audioBuffer.length - 1, Math.round(i * ratio));
-      const s = Math.max(-1, Math.min(1, audioBuffer[origIndex]));
-      pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    let phase = resamplePhaseRef.current || 0;
+    const outSamples = [];
+
+    if (ratio > 1.0) {
+      // Downsampling (e.g. 48kHz / 44.1kHz -> 16kHz): box / area averaging acts as low-pass anti-aliasing filter
+      while (phase < audioBuffer.length) {
+        const start = Math.floor(phase);
+        const end = Math.min(audioBuffer.length, Math.floor(phase + ratio));
+        let sum = 0;
+        let count = 0;
+        for (let j = start; j < end; j++) {
+          sum += audioBuffer[j];
+          count++;
+        }
+        const s = count > 0 ? sum / count : (audioBuffer[start] || 0);
+        const clamped = Math.max(-1, Math.min(1, s));
+        outSamples.push(clamped < 0 ? clamped * 0x8000 : clamped * 0x7FFF);
+        phase += ratio;
+      }
+    } else {
+      // Upsampling: linear interpolation
+      while (phase < audioBuffer.length - 1) {
+        const i = Math.floor(phase);
+        const frac = phase - i;
+        const s = audioBuffer[i] * (1 - frac) + audioBuffer[i + 1] * frac;
+        const clamped = Math.max(-1, Math.min(1, s));
+        outSamples.push(clamped < 0 ? clamped * 0x8000 : clamped * 0x7FFF);
+        phase += ratio;
+      }
+    }
+
+    // Save fractional phase offset for seamless continuation on the next chunk
+    resamplePhaseRef.current = Math.max(0, phase - audioBuffer.length);
+
+    const pcm16 = new Int16Array(outSamples.length);
+    for (let k = 0; k < outSamples.length; k++) {
+      pcm16[k] = outSamples[k];
     }
     return pcm16;
   }, []);
@@ -940,6 +1006,7 @@ export default function VoiceCallSimulator({
     }
 
     audioChunksRef.current = [];
+    resamplePhaseRef.current = 0;
     setAudioLevel(0);
     setLivePartial('');
     setLiveAssistantText('');
@@ -1031,11 +1098,7 @@ export default function VoiceCallSimulator({
 
     recorder.onstop = async () => {
       const mimeType = recorder.mimeType || 'audio/webm';
-      let chunks = audioChunksRef.current;
-      // Trim the trailing silence chunks (~150-200ms of dead air waiting for VAD trigger)
-      if (chunks.length > 5) {
-        chunks = chunks.slice(0, chunks.length - 2);
-      }
+      const chunks = audioChunksRef.current;
       const audioBlob = new Blob(chunks, { type: mimeType });
       audioChunksRef.current = [];
 
@@ -1242,9 +1305,13 @@ export default function VoiceCallSimulator({
 
           if (silenceDuration >= silenceTimeoutMs) {
             if (totalSpeechDuration >= 220) {
-              // Valid utterance turn completed! Automatically send to AI!
+              // Valid utterance turn completed!
               isSpeakingRef.current = false;
-              handleCompleteUtterance();
+              // If real-time WebSocket is open, server handles turn streaming.
+              // ONLY dispatch to REST handleCompleteUtterance if WebSocket is NOT open!
+              if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+                handleCompleteUtterance();
+              }
             } else {
               // Too short (minor click/cough), return to listening
               isSpeakingRef.current = false;
@@ -1311,7 +1378,7 @@ export default function VoiceCallSimulator({
       audioContextRef.current = audioCtx;
       analyserRef.current = analyser;
 
-      if (isStreamingSherpa) {
+      if (true) {
         // --- REAL-TIME FULL-DUPLEX WEBSOCKET PIPELINE ---
         const wsUrl = getWebSocketUrl('/ws/call');
         const ws = new WebSocket(wsUrl);
@@ -1333,7 +1400,10 @@ export default function VoiceCallSimulator({
               tts_engine: activeTtsEngine,
               groq_model: groqModel,
               is_phone_call: true,
-              auto_adapt_voice: autoAdaptVoice
+              auto_adapt_voice: autoAdaptVoice,
+              stt_engine: sttEngine,
+              stt_model: sttModel,
+              stt_language: sttLanguage
             })
           );
 

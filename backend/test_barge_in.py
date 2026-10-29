@@ -77,10 +77,14 @@ async def test_live_barge_in():
                     elif mtype == "final_transcript":
                         print(f"\nFinal: {data['text']}")
                     elif mtype == "assistant_text_delta":
-                        print(f"[AI]: {data['delta']}", end="", flush=True)
+                        safe_delta = data.get('delta', '').encode('ascii', 'replace').decode()
+                        print(f"[AI]: {safe_delta}", end="", flush=True)
+                        if not ai_speaking_event.is_set():
+                            ai_speaking_event.set()
                     elif mtype == "audio_chunk":
-                        print(f"\n[AI Audio Chunk #{data['chunk_index']}] ({len(data.get('audio_base64', ''))} b64 chars) Playing...")
-                        ai_speaking_event.set()
+                        print(f"\n[AI Audio Chunk #{data['chunk_index']}] ({len(data.get('audio_base64', ''))} b64 chars) Playing...", flush=True)
+                        if not ai_speaking_event.is_set():
+                            ai_speaking_event.set()
                     elif mtype == "turn_complete":
                         print(f"\n[Turn Complete]: {data.get('metrics', {})}")
                     elif mtype == "interrupted":

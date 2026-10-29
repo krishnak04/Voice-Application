@@ -45,12 +45,13 @@ export const OTHER_LANGUAGES = [
 export const LANGUAGES = [...GENERAL_LANGUAGES, ...INDIAN_LANGUAGES, ...OTHER_LANGUAGES];
 
 export const WHISPER_MODELS = [
+  { id: 'base.en', label: 'base.en (~74M - English Recommended)', type: 'offline', category: 'Standard' },
+  { id: 'small.en', label: 'small.en (~244M - English High Accuracy)', type: 'offline', category: 'Large' },
+  { id: 'base', label: 'base (~74M - Multilingual Fast)', type: 'offline', category: 'Standard' },
+  { id: 'small', label: 'small (~244M - Multilingual Accurate)', type: 'offline', category: 'Large' },
   { id: 'tiny', label: 'tiny (~39M - Ultra-fast)', type: 'offline', category: 'Small' },
-  { id: 'base', label: 'base (~74M - Fast Multi)', type: 'offline', category: 'Standard' },
-  { id: 'small', label: 'small (~244M - Higher accuracy)', type: 'offline', category: 'Large' },
   { id: 'medium', label: 'medium (~769M - Production Indic)', type: 'offline', category: 'Large' },
   { id: 'large-v3-turbo', label: 'large-v3-turbo (~809M - SOTA)', type: 'offline', category: 'Large' },
-  { id: 'base.en', label: 'base.en (~74M - English-only)', type: 'offline', category: 'Standard' },
 ];
 
 export const SHERPA_MODELS = [
@@ -173,7 +174,7 @@ export default function AudioRecorder({
               if (nextEngine === 'sherpa') {
                 onModelChange('sherpa-onnx-streaming-zipformer-en-2023-06-26');
               } else {
-                onModelChange('base');
+                onModelChange('base.en');
               }
             }}
             disabled={isRecording || isProcessing}

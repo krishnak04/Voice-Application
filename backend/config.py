@@ -32,7 +32,7 @@ def _detect_hardware():
 HAS_CUDA, CUDA_COUNT = _detect_hardware()
 
 # Faster Whisper Configuration
-WHISPER_MODEL = os.getenv("WHISPER_MODEL", "base")
+WHISPER_MODEL = os.getenv("WHISPER_MODEL", "base.en")
 # Auto-detect optimal device if not explicitly set in env or if requested cuda is unavailable
 _req_whisper_dev = os.getenv("WHISPER_DEVICE", "auto").lower()
 if _req_whisper_dev == "auto":
@@ -49,6 +49,8 @@ else:
     WHISPER_COMPUTE_TYPE = _req_compute
 
 WHISPER_CPU_THREADS = int(os.getenv("WHISPER_CPU_THREADS", str(min(8, max(2, (os.cpu_count() or 4) // 2)))))
+WHISPER_BEAM_SIZE = int(os.getenv("WHISPER_BEAM_SIZE", "3"))
+WHISPER_BEST_OF = int(os.getenv("WHISPER_BEST_OF", "3"))
 
 # Text-to-Speech (TTS) Configuration
 TTS_ENGINE = os.getenv("TTS_ENGINE", "auto")          # 'auto', 'kokoro', 'piper', 'edge_tts'
@@ -63,7 +65,7 @@ SHERPA_MODEL_DIR = os.getenv("SHERPA_MODEL_DIR", str(ROOT_DIR / "sherpa-onnx-str
 SHERPA_USE_INT8 = os.getenv("SHERPA_USE_INT8", "true").lower() in ("true", "1", "yes")
 SHERPA_NUM_THREADS = int(os.getenv("SHERPA_NUM_THREADS", str(min(8, max(2, (os.cpu_count() or 4) // 2)))))
 SHERPA_RULE1_MIN_TRAILING_SILENCE = float(os.getenv("SHERPA_RULE1_MIN_TRAILING_SILENCE", "2.0"))
-SHERPA_RULE2_MIN_TRAILING_SILENCE = float(os.getenv("SHERPA_RULE2_MIN_TRAILING_SILENCE", "0.8"))
+SHERPA_RULE2_MIN_TRAILING_SILENCE = float(os.getenv("SHERPA_RULE2_MIN_TRAILING_SILENCE", "1.2"))
 SHERPA_RULE3_MIN_UTTERANCE_LENGTH = float(os.getenv("SHERPA_RULE3_MIN_UTTERANCE_LENGTH", "20.0"))
 SHERPA_PROVIDER = os.getenv("SHERPA_PROVIDER", "cpu")
 

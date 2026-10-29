@@ -34,11 +34,17 @@ export function useAudioRecorder() {
         );
       }
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 16000 },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+          sampleRate: 16000
+        },
       });
       streamRef.current = stream;
 
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
       const analyser = audioCtx.createAnalyser();
       analyser.fftSize = 64;
       const source = audioCtx.createMediaStreamSource(stream);

@@ -1,0 +1,2562 @@
+{
+  "Faster-Whisper (base, beam=3, vad=True, normalized)": {
+    "model_config": {
+      "engine": "whisper",
+      "model": "base",
+      "label": "Faster-Whisper (base, beam=3, vad=True, normalized)"
+    },
+    "average_wer": 0.1167,
+    "exact_match_rate": 0.66,
+    "average_latency_sec": 1.229,
+    "samples": [
+      {
+        "id": "sample_01",
+        "category": "Customer Support / Greeting",
+        "accent": "US",
+        "duration": 5.64,
+        "reference": "Hello, thank you for calling customer service. How can I help you today?",
+        "hypothesis": "Hello, thank you for calling customer service. How can I help you today?",
+        "wer": 0.0,
+        "latency_sec": 3.236
+      },
+      {
+        "id": "sample_02",
+        "category": "Banking / Account",
+        "accent": "Indian",
+        "duration": 5.97,
+        "reference": "I would like to check the current balance on my account and review recent transactions.",
+        "hypothesis": "I would like to check the current balance on my account and review recent transactions.",
+        "wer": 0.0,
+        "latency_sec": 1.401
+      },
+      {
+        "id": "sample_03",
+        "category": "Delivery / Tracking",
+        "accent": "British",
+        "duration": 4.51,
+        "reference": "Could you please tell me when my package is scheduled to arrive at my address?",
+        "hypothesis": "Could you please tell me when my package is scheduled to arrive at my address?",
+        "wer": 0.0,
+        "latency_sec": 1.275
+      },
+      {
+        "id": "sample_04",
+        "category": "Technical Support",
+        "accent": "Australian",
+        "duration": 6.48,
+        "reference": "Yes, I am calling because my internet connection has been dropping frequently since yesterday.",
+        "hypothesis": "Yes, I am calling because my internet connection has been dropping frequently since yesterday.",
+        "wer": 0.0,
+        "latency_sec": 1.092
+      },
+      {
+        "id": "sample_05",
+        "category": "Scheduling / Appointment",
+        "accent": "Canadian",
+        "duration": 5.16,
+        "reference": "Can I schedule an appointment with a technical specialist for next Tuesday afternoon?",
+        "hypothesis": "Can I schedule an appointment with a technical specialist for next Tuesday afternoon?",
+        "wer": 0.0,
+        "latency_sec": 1.016
+      },
+      {
+        "id": "sample_06",
+        "category": "Fast Speech (1.25x)",
+        "accent": "US",
+        "duration": 3.77,
+        "reference": "Please hold the line while I quickly transfer your call to the billing department.",
+        "hypothesis": "Please hold the line while I quickly transfer your call to the billing department.",
+        "wer": 0.0,
+        "latency_sec": 1.216
+      },
+      {
+        "id": "sample_07",
+        "category": "Fast Speech (1.20x)",
+        "accent": "Indian",
+        "duration": 6.0,
+        "reference": "I need to urgently update my primary shipping address before the order leaves the warehouse.",
+        "hypothesis": "I need to urgently update my primary shipping address before the order leaves the warehouse.",
+        "wer": 0.0,
+        "latency_sec": 1.613
+      },
+      {
+        "id": "sample_08",
+        "category": "Slow Speech (0.85x)",
+        "accent": "British",
+        "duration": 6.02,
+        "reference": "I am speaking slowly and clearly so that every word can be transcribed accurately.",
+        "hypothesis": "I am speaking slowly and clearly so that every word can be transcribed accurately.",
+        "wer": 0.0,
+        "latency_sec": 1.242
+      },
+      {
+        "id": "sample_09",
+        "category": "Deliberate Pacing (0.90x)",
+        "accent": "Irish",
+        "duration": 6.17,
+        "reference": "Take your time and verify the six digit security code sent to your registered phone number.",
+        "hypothesis": "Take your time and verify the 6-digit security code sent to your registered phone number.",
+        "wer": 0.125,
+        "latency_sec": 1.035
+      },
+      {
+        "id": "sample_10",
+        "category": "Verification / Moderate Fast",
+        "accent": "US",
+        "duration": 4.17,
+        "reference": "Let me confirm that your email address is spelled correctly in our records.",
+        "hypothesis": "Let me confirm that your email address is spelled correctly in our records.",
+        "wer": 0.0,
+        "latency_sec": 1.065
+      },
+      {
+        "id": "sample_11",
+        "category": "Short Phrase / Affirmation",
+        "accent": "Indian",
+        "duration": 3.1,
+        "reference": "Yes, that sounds perfect.",
+        "hypothesis": "Yes, that sounds perfect.",
+        "wer": 0.0,
+        "latency_sec": 1.071
+      },
+      {
+        "id": "sample_12",
+        "category": "Short Command / Cancellation",
+        "accent": "US",
+        "duration": 3.29,
+        "reference": "No, cancel the reservation immediately.",
+        "hypothesis": "No, cancel the reservation immediately.",
+        "wer": 0.0,
+        "latency_sec": 1.087
+      },
+      {
+        "id": "sample_13",
+        "category": "Alphanumeric / Digits",
+        "accent": "British",
+        "duration": 4.1,
+        "reference": "My confirmation number is four eight two nine one five.",
+        "hypothesis": "My confirmation number is 482915.",
+        "wer": 0.6,
+        "latency_sec": 1.178
+      },
+      {
+        "id": "sample_14",
+        "category": "Short Question",
+        "accent": "Australian",
+        "duration": 3.17,
+        "reference": "What are your business hours on weekends?",
+        "hypothesis": "What are your business hours on weekends?",
+        "wer": 0.0,
+        "latency_sec": 1.25
+      },
+      {
+        "id": "sample_15",
+        "category": "Short Request",
+        "accent": "Indian",
+        "duration": 2.62,
+        "reference": "Repeat that again please.",
+        "hypothesis": "Repeat that again please.",
+        "wer": 0.0,
+        "latency_sec": 1.117
+      },
+      {
+        "id": "sample_16",
+        "category": "Long Complex Multi-Clause",
+        "accent": "US",
+        "duration": 9.62,
+        "reference": "Although the flight was delayed by two hours due to severe weather, the airline provided meal vouchers and rebooked all connecting passengers without additional fees.",
+        "hypothesis": "Although the flight was delayed by two hours due to severe weather, the airline provided meal vouchers and rebooked all connecting passengers without additional fees.",
+        "wer": 0.0,
+        "latency_sec": 1.209
+      },
+      {
+        "id": "sample_17",
+        "category": "Instructions / Conditional Clause",
+        "accent": "Indian",
+        "duration": 9.0,
+        "reference": "If you wish to initiate a formal warranty claim, please make sure you upload the original receipt and photograph the damaged component clearly.",
+        "hypothesis": "If you wish to initiate a formal warranty claim, please make sure you upload the original receipt and photograph the damaged component clearly.",
+        "wer": 0.0,
+        "latency_sec": 1.159
+      },
+      {
+        "id": "sample_18",
+        "category": "Business / Financial",
+        "accent": "British",
+        "duration": 9.24,
+        "reference": "The quarterly financial report highlighted substantial growth in international markets, driven primarily by strong adoption of cloud subscription services.",
+        "hypothesis": "The quarterly financial report highlighted substantial growth in international markets, driven primarily by strong adoption of cloud subscription services.",
+        "wer": 0.0,
+        "latency_sec": 1.184
+      },
+      {
+        "id": "sample_19",
+        "category": "Product Comparison",
+        "accent": "Canadian",
+        "duration": 7.1,
+        "reference": "Could you provide more information about the differences between standard annual subscriptions and the premium enterprise tier?",
+        "hypothesis": "Could you provide more information about the differences between standard annual subscriptions and the premium enterprise tier?",
+        "wer": 0.0,
+        "latency_sec": 1.098
+      },
+      {
+        "id": "sample_20",
+        "category": "Technical Problem / Compound",
+        "accent": "Indian",
+        "duration": 9.34,
+        "reference": "I have been trying to reset my password for the past thirty minutes, but the verification link seems to have expired before I could open it.",
+        "hypothesis": "I have been trying to reset my password for the past 30 minutes, but the verification link seems to have expired before I could open it.",
+        "wer": 0.0385,
+        "latency_sec": 1.604
+      },
+      {
+        "id": "sample_21",
+        "category": "Location Question",
+        "accent": "Indian",
+        "duration": 4.42,
+        "reference": "Where is the nearest branch office located in Bangalore?",
+        "hypothesis": "Where is the nearest branch office located in Bangalore?.",
+        "wer": 0.0,
+        "latency_sec": 1.216
+      },
+      {
+        "id": "sample_22",
+        "category": "Inquiry / Transfer",
+        "accent": "British",
+        "duration": 4.46,
+        "reference": "Who should I speak with to get approval for an international wire transfer?",
+        "hypothesis": "Who should I speak with to get approval for an international wire transfer?",
+        "wer": 0.0,
+        "latency_sec": 1.303
+      },
+      {
+        "id": "sample_23",
+        "category": "Troubleshooting Question",
+        "accent": "US",
+        "duration": 4.92,
+        "reference": "Why has my debit card been blocked after entering the correct PIN three times?",
+        "hypothesis": "Why has my debit card been blocked after entering the correct pin three times?",
+        "wer": 0.0,
+        "latency_sec": 1.064
+      },
+      {
+        "id": "sample_24",
+        "category": "Technical Setup",
+        "accent": "Australian",
+        "duration": 5.69,
+        "reference": "How do I configure two factor authentication on my mobile banking application?",
+        "hypothesis": "How do I configure two-factor authentication on my mobile banking application?",
+        "wer": 0.1667,
+        "latency_sec": 1.075
+      },
+      {
+        "id": "sample_25",
+        "category": "Billing / Refund Question",
+        "accent": "Canadian",
+        "duration": 5.52,
+        "reference": "When will the refund of one hundred and forty five dollars be credited back to my account?",
+        "hypothesis": "When will the refund of $145 be credited back to my account?",
+        "wer": 0.3529,
+        "latency_sec": 1.22
+      },
+      {
+        "id": "sample_26",
+        "category": "Smart Home / Office Command",
+        "accent": "US",
+        "duration": 4.06,
+        "reference": "Turn off all lights in the conference room and lock the glass door.",
+        "hypothesis": "Turn off all lights in the conference room and lock the glass door.",
+        "wer": 0.0,
+        "latency_sec": 1.306
+      },
+      {
+        "id": "sample_27",
+        "category": "Financial Action Command",
+        "accent": "Indian",
+        "duration": 6.07,
+        "reference": "Transfer five thousand rupees from my savings account to my current account immediately.",
+        "hypothesis": "Transfer 5,000 rupees from my savings account to my current account immediately.",
+        "wer": 0.1538,
+        "latency_sec": 1.121
+      },
+      {
+        "id": "sample_28",
+        "category": "Notification Command",
+        "accent": "British",
+        "duration": 6.43,
+        "reference": "Send an urgent email notification to the engineering team regarding the unexpected server outage.",
+        "hypothesis": "Send an urgent email notification to the engineering team regarding the unexpected server outage.",
+        "wer": 0.0,
+        "latency_sec": 1.093
+      },
+      {
+        "id": "sample_29",
+        "category": "Document Retrieval Command",
+        "accent": "US",
+        "duration": 4.73,
+        "reference": "Download the quarterly billing statement for the month of September twenty twenty four.",
+        "hypothesis": "Download the quarterly billing statement for the month of September 2024.",
+        "wer": 0.2308,
+        "latency_sec": 1.076
+      },
+      {
+        "id": "sample_30",
+        "category": "Audio Control Command",
+        "accent": "Irish",
+        "duration": 4.06,
+        "reference": "Mute my microphone and pause the active audio recording.",
+        "hypothesis": "mute my microphone and pause the active audio recording.",
+        "wer": 0.0,
+        "latency_sec": 1.225
+      },
+      {
+        "id": "sample_31",
+        "category": "Alphanumeric / Flight",
+        "accent": "British",
+        "duration": 5.16,
+        "reference": "The flight number is British Airways seven eight four departing at fourteen thirty hours.",
+        "hypothesis": "The flight number is British Airway 7-8 for departing at 14.30 hours.",
+        "wer": 0.4286,
+        "latency_sec": 1.174
+      },
+      {
+        "id": "sample_32",
+        "category": "Phone Digits",
+        "accent": "Indian",
+        "duration": 6.29,
+        "reference": "My telephone number is nine eight seven six five four three two one zero.",
+        "hypothesis": "My telephone number is 9876-543-10.",
+        "wer": 0.7143,
+        "latency_sec": 1.163
+      },
+      {
+        "id": "sample_33",
+        "category": "Financial Numbers & Cents",
+        "accent": "US",
+        "duration": 5.3,
+        "reference": "The total invoice amount is twelve thousand four hundred and fifty dollars and fifty cents.",
+        "hypothesis": "The total invoice amount is $12,450.50.",
+        "wer": 0.6667,
+        "latency_sec": 1.378
+      },
+      {
+        "id": "sample_34",
+        "category": "Tracking Code / Dates",
+        "accent": "Canadian",
+        "duration": 6.41,
+        "reference": "Tracking code X Y Z nine nine zero one four seven was dispatched on October twenty first.",
+        "hypothesis": "Tracking code XYZ9901 for 7 was dispatched on October 21st.",
+        "wer": 0.6471,
+        "latency_sec": 1.132
+      },
+      {
+        "id": "sample_35",
+        "category": "Scientific Decimals & Percentages",
+        "accent": "Indian",
+        "duration": 6.43,
+        "reference": "The room temperature is thirty two point five degrees Celsius with seventy percent humidity.",
+        "hypothesis": "The room temperature is 32.5 degrees Celsius with 70% humidity.",
+        "wer": 0.4286,
+        "latency_sec": 1.082
+      },
+      {
+        "id": "sample_36",
+        "category": "Technical / Database",
+        "accent": "US",
+        "duration": 5.86,
+        "reference": "The PostgreSQL database cluster experienced high memory pressure on the primary replica node.",
+        "hypothesis": "The PostgreSQL Database Cluster experienced high memory pressure on the primary replica node.",
+        "wer": 0.0,
+        "latency_sec": 1.123
+      },
+      {
+        "id": "sample_37",
+        "category": "Medical / Pharmaceutical",
+        "accent": "Indian",
+        "duration": 6.5,
+        "reference": "The physician prescribed amoxicillin five hundred milligrams twice daily after meals.",
+        "hypothesis": "The physician prescribed AMOXI seal in 500mg twice daily after meals.",
+        "wer": 0.3636,
+        "latency_sec": 1.066
+      },
+      {
+        "id": "sample_38",
+        "category": "Machine Learning Technical",
+        "accent": "British",
+        "duration": 6.62,
+        "reference": "The convolutional neural network was fine tuned using stochastic gradient descent and cross entropy loss.",
+        "hypothesis": "The convolutional neural network was fine-tuned using stochastic gradient descent and cross-entropy loss.",
+        "wer": 0.2667,
+        "latency_sec": 1.267
+      },
+      {
+        "id": "sample_39",
+        "category": "Cybersecurity / Protocols",
+        "accent": "Australian",
+        "duration": 7.34,
+        "reference": "Ensure that transport layer security version one point three encryption is enforced on all endpoints.",
+        "hypothesis": "Ensure that Transport Layer Security version 1.3 encryption is enforced on all endpoints.",
+        "wer": 0.2,
+        "latency_sec": 1.324
+      },
+      {
+        "id": "sample_40",
+        "category": "Clinical / Medical Symptoms",
+        "accent": "US",
+        "duration": 6.7,
+        "reference": "The patient reported acute abdominal pain and mild hypertension during the physical examination.",
+        "hypothesis": "The patient reported acute abdominal pain and mild hypertension during the physical examination.",
+        "wer": 0.0,
+        "latency_sec": 1.249
+      },
+      {
+        "id": "sample_41",
+        "category": "Short Phrase / Courtesy",
+        "accent": "US",
+        "duration": 2.69,
+        "reference": "Okay, thank you very much.",
+        "hypothesis": "Okay, thank you very much.",
+        "wer": 0.0,
+        "latency_sec": 1.166
+      },
+      {
+        "id": "sample_42",
+        "category": "Short Phrase / Agreement",
+        "accent": "Indian",
+        "duration": 3.17,
+        "reference": "Yes, I agree completely.",
+        "hypothesis": "Yes, I agree completely.",
+        "wer": 0.0,
+        "latency_sec": 1.051
+      },
+      {
+        "id": "sample_43",
+        "category": "Short Command",
+        "accent": "British",
+        "duration": 2.38,
+        "reference": "Stop the playback now.",
+        "hypothesis": "Stop the playback now.",
+        "wer": 0.0,
+        "latency_sec": 1.026
+      },
+      {
+        "id": "sample_44",
+        "category": "Short Question",
+        "accent": "Australian",
+        "duration": 2.35,
+        "reference": "How much does it cost?",
+        "hypothesis": "How much does it cost?",
+        "wer": 0.0,
+        "latency_sec": 1.114
+      },
+      {
+        "id": "sample_45",
+        "category": "Short Farewells",
+        "accent": "US",
+        "duration": 2.52,
+        "reference": "Goodbye, have a nice day.",
+        "hypothesis": "But bye, have a nice day.",
+        "wer": 0.4,
+        "latency_sec": 1.282
+      },
+      {
+        "id": "sample_46",
+        "category": "Conversational Fillers & Pauses",
+        "accent": "US",
+        "duration": 7.46,
+        "reference": "Well, let me see, I think our product kickoff meeting was originally scheduled for Thursday morning at ten o'clock.",
+        "hypothesis": "Well, let me see, I think our product kickoff meeting was originally scheduled for Thursday morning at 10 o'clock.",
+        "wer": 0.0526,
+        "latency_sec": 1.187
+      },
+      {
+        "id": "sample_47",
+        "category": "Conversational Inquiry / Multi-Clause",
+        "accent": "Indian",
+        "duration": 9.89,
+        "reference": "Actually, before we proceed with the payment, could you please double check if there are any promotional discounts available for annual subscribers?",
+        "hypothesis": "Actually, before we proceed with the payment, could you please double check if there are any promotional discounts available for annual subscribers?",
+        "wer": 0.0,
+        "latency_sec": 1.188
+      },
+      {
+        "id": "sample_48",
+        "category": "Compound Sentence / Request",
+        "accent": "British",
+        "duration": 6.74,
+        "reference": "I was wondering whether you could email me a copy of the contract, or if not, let me know who I should contact in legal.",
+        "hypothesis": "I was wondering whether you could email me a copy of the contract, or if not, let me know who I should contact in legal.",
+        "wer": 0.0,
+        "latency_sec": 1.192
+      },
+      {
+        "id": "sample_49",
+        "category": "Conversational Feedback / Long",
+        "accent": "Canadian",
+        "duration": 8.45,
+        "reference": "To be completely honest with you, the customer feedback on our new mobile interface has been overwhelmingly positive across every demographic.",
+        "hypothesis": "To be completely honest with you, the customer feedback on our new mobile interface has been overwhelmingly positive across every demographic.",
+        "wer": 0.0,
+        "latency_sec": 1.172
+      },
+      {
+        "id": "sample_50",
+        "category": "Formal Summary / Complex Vocabulary",
+        "accent": "Indian",
+        "duration": 11.14,
+        "reference": "In conclusion, despite several initial logistical obstacles, the entire infrastructure migration was delivered on schedule and well within the allocated budget.",
+        "hypothesis": "In conclusion, despite several initial logistical obstacles, the entire infrastructure migration was delivered on schedule and well within the allocated budget.",
+        "wer": 0.0,
+        "latency_sec": 1.279
+      }
+    ]
+  },
+  "Faster-Whisper (base.en, beam=3, vad=True, normalized)": {
+    "model_config": {
+      "engine": "whisper",
+      "model": "base.en",
+      "label": "Faster-Whisper (base.en, beam=3, vad=True, normalized)"
+    },
+    "average_wer": 0.1056,
+    "exact_match_rate": 0.66,
+    "average_latency_sec": 0.684,
+    "samples": [
+      {
+        "id": "sample_01",
+        "category": "Customer Support / Greeting",
+        "accent": "US",
+        "duration": 5.64,
+        "reference": "Hello, thank you for calling customer service. How can I help you today?",
+        "hypothesis": "Hello, thank you for calling Customer Service. How can I help you today? //",
+        "wer": 0.0,
+        "latency_sec": 0.815
+      },
+      {
+        "id": "sample_02",
+        "category": "Banking / Account",
+        "accent": "Indian",
+        "duration": 5.97,
+        "reference": "I would like to check the current balance on my account and review recent transactions.",
+        "hypothesis": "I would like to check the current balance on my account and review recent transactions.",
+        "wer": 0.0,
+        "latency_sec": 0.673
+      },
+      {
+        "id": "sample_03",
+        "category": "Delivery / Tracking",
+        "accent": "British",
+        "duration": 4.51,
+        "reference": "Could you please tell me when my package is scheduled to arrive at my address?",
+        "hypothesis": "Could you please tell me when my package is scheduled to arrive at my address?",
+        "wer": 0.0,
+        "latency_sec": 0.649
+      },
+      {
+        "id": "sample_04",
+        "category": "Technical Support",
+        "accent": "Australian",
+        "duration": 6.48,
+        "reference": "Yes, I am calling because my internet connection has been dropping frequently since yesterday.",
+        "hypothesis": "Yes, I am calling because my internet connection has been dropping frequently since yesterday.",
+        "wer": 0.0,
+        "latency_sec": 0.665
+      },
+      {
+        "id": "sample_05",
+        "category": "Scheduling / Appointment",
+        "accent": "Canadian",
+        "duration": 5.16,
+        "reference": "Can I schedule an appointment with a technical specialist for next Tuesday afternoon?",
+        "hypothesis": "Can I schedule an appointment with a technical specialist for next Tuesday afternoon?",
+        "wer": 0.0,
+        "latency_sec": 0.621
+      },
+      {
+        "id": "sample_06",
+        "category": "Fast Speech (1.25x)",
+        "accent": "US",
+        "duration": 3.77,
+        "reference": "Please hold the line while I quickly transfer your call to the billing department.",
+        "hypothesis": "Please hold the line while I quickly transfer your call to the billing department.",
+        "wer": 0.0,
+        "latency_sec": 0.662
+      },
+      {
+        "id": "sample_07",
+        "category": "Fast Speech (1.20x)",
+        "accent": "Indian",
+        "duration": 6.0,
+        "reference": "I need to urgently update my primary shipping address before the order leaves the warehouse.",
+        "hypothesis": "I need to urgently update my primary shipping address before the order leaves the warehouse.",
+        "wer": 0.0,
+        "latency_sec": 0.657
+      },
+      {
+        "id": "sample_08",
+        "category": "Slow Speech (0.85x)",
+        "accent": "British",
+        "duration": 6.02,
+        "reference": "I am speaking slowly and clearly so that every word can be transcribed accurately.",
+        "hypothesis": "I am speaking slowly and clearly so that every word can be transcribed accurately.",
+        "wer": 0.0,
+        "latency_sec": 0.695
+      },
+      {
+        "id": "sample_09",
+        "category": "Deliberate Pacing (0.90x)",
+        "accent": "Irish",
+        "duration": 6.17,
+        "reference": "Take your time and verify the six digit security code sent to your registered phone number.",
+        "hypothesis": "Take your time and verify the 6-digit security code sent to your registered phone number.",
+        "wer": 0.125,
+        "latency_sec": 0.671
+      },
+      {
+        "id": "sample_10",
+        "category": "Verification / Moderate Fast",
+        "accent": "US",
+        "duration": 4.17,
+        "reference": "Let me confirm that your email address is spelled correctly in our records.",
+        "hypothesis": "Let me confirm that your email address is spelled correctly in our records.",
+        "wer": 0.0,
+        "latency_sec": 0.599
+      },
+      {
+        "id": "sample_11",
+        "category": "Short Phrase / Affirmation",
+        "accent": "Indian",
+        "duration": 3.1,
+        "reference": "Yes, that sounds perfect.",
+        "hypothesis": "Yes, that sounds perfect",
+        "wer": 0.0,
+        "latency_sec": 0.595
+      },
+      {
+        "id": "sample_12",
+        "category": "Short Command / Cancellation",
+        "accent": "US",
+        "duration": 3.29,
+        "reference": "No, cancel the reservation immediately.",
+        "hypothesis": "No, cancel the reservation immediately.",
+        "wer": 0.0,
+        "latency_sec": 0.57
+      },
+      {
+        "id": "sample_13",
+        "category": "Alphanumeric / Digits",
+        "accent": "British",
+        "duration": 4.1,
+        "reference": "My confirmation number is four eight two nine one five.",
+        "hypothesis": "My confirmation number is 482915.",
+        "wer": 0.6,
+        "latency_sec": 0.606
+      },
+      {
+        "id": "sample_14",
+        "category": "Short Question",
+        "accent": "Australian",
+        "duration": 3.17,
+        "reference": "What are your business hours on weekends?",
+        "hypothesis": "What are your business hours on weekends?",
+        "wer": 0.0,
+        "latency_sec": 0.706
+      },
+      {
+        "id": "sample_15",
+        "category": "Short Request",
+        "accent": "Indian",
+        "duration": 2.62,
+        "reference": "Repeat that again please.",
+        "hypothesis": "Repeat that again, please",
+        "wer": 0.0,
+        "latency_sec": 0.6
+      },
+      {
+        "id": "sample_16",
+        "category": "Long Complex Multi-Clause",
+        "accent": "US",
+        "duration": 9.62,
+        "reference": "Although the flight was delayed by two hours due to severe weather, the airline provided meal vouchers and rebooked all connecting passengers without additional fees.",
+        "hypothesis": "Although the flight was delayed by two hours due to severe weather, the airline provided meal vouchers and re-booked all connecting passengers without additional fees.",
+        "wer": 0.0,
+        "latency_sec": 0.721
+      },
+      {
+        "id": "sample_17",
+        "category": "Instructions / Conditional Clause",
+        "accent": "Indian",
+        "duration": 9.0,
+        "reference": "If you wish to initiate a formal warranty claim, please make sure you upload the original receipt and photograph the damaged component clearly.",
+        "hypothesis": "If you wish to initiate a formal warranty claim, please make sure you upload the original receipt and photograph the damaged component clearly.",
+        "wer": 0.0,
+        "latency_sec": 0.756
+      },
+      {
+        "id": "sample_18",
+        "category": "Business / Financial",
+        "accent": "British",
+        "duration": 9.24,
+        "reference": "The quarterly financial report highlighted substantial growth in international markets, driven primarily by strong adoption of cloud subscription services.",
+        "hypothesis": "The quarterly financial report highlighted substantial growth in international markets, driven primarily by strong adoption of cloud subscription services.",
+        "wer": 0.0,
+        "latency_sec": 0.71
+      },
+      {
+        "id": "sample_19",
+        "category": "Product Comparison",
+        "accent": "Canadian",
+        "duration": 7.1,
+        "reference": "Could you provide more information about the differences between standard annual subscriptions and the premium enterprise tier?",
+        "hypothesis": "Could you provide more information about the differences between standard annual subscriptions and the premium enterprise tier?",
+        "wer": 0.0,
+        "latency_sec": 0.699
+      },
+      {
+        "id": "sample_20",
+        "category": "Technical Problem / Compound",
+        "accent": "Indian",
+        "duration": 9.34,
+        "reference": "I have been trying to reset my password for the past thirty minutes, but the verification link seems to have expired before I could open it.",
+        "hypothesis": "I have been trying to reset my password for the past 30 minutes, but the verification link seems to have expired before I could open it.",
+        "wer": 0.0385,
+        "latency_sec": 0.824
+      },
+      {
+        "id": "sample_21",
+        "category": "Location Question",
+        "accent": "Indian",
+        "duration": 4.42,
+        "reference": "Where is the nearest branch office located in Bangalore?",
+        "hypothesis": "Where is the nearest branch office located in Bangalore?",
+        "wer": 0.0,
+        "latency_sec": 0.739
+      },
+      {
+        "id": "sample_22",
+        "category": "Inquiry / Transfer",
+        "accent": "British",
+        "duration": 4.46,
+        "reference": "Who should I speak with to get approval for an international wire transfer?",
+        "hypothesis": "Who should I speak with to get approval for an international wire transfer?",
+        "wer": 0.0,
+        "latency_sec": 0.67
+      },
+      {
+        "id": "sample_23",
+        "category": "Troubleshooting Question",
+        "accent": "US",
+        "duration": 4.92,
+        "reference": "Why has my debit card been blocked after entering the correct PIN three times?",
+        "hypothesis": "Why has my debit card been blocked after entering the correct pin three times?",
+        "wer": 0.0,
+        "latency_sec": 0.72
+      },
+      {
+        "id": "sample_24",
+        "category": "Technical Setup",
+        "accent": "Australian",
+        "duration": 5.69,
+        "reference": "How do I configure two factor authentication on my mobile banking application?",
+        "hypothesis": "How do I configure two-factor authentication on my mobile banking application?",
+        "wer": 0.1667,
+        "latency_sec": 0.798
+      },
+      {
+        "id": "sample_25",
+        "category": "Billing / Refund Question",
+        "accent": "Canadian",
+        "duration": 5.52,
+        "reference": "When will the refund of one hundred and forty five dollars be credited back to my account?",
+        "hypothesis": "When will the refund of $145 be credited back to my account?",
+        "wer": 0.3529,
+        "latency_sec": 0.672
+      },
+      {
+        "id": "sample_26",
+        "category": "Smart Home / Office Command",
+        "accent": "US",
+        "duration": 4.06,
+        "reference": "Turn off all lights in the conference room and lock the glass door.",
+        "hypothesis": "Turn off all lights in the conference room and lock the glass door. // //",
+        "wer": 0.0,
+        "latency_sec": 0.704
+      },
+      {
+        "id": "sample_27",
+        "category": "Financial Action Command",
+        "accent": "Indian",
+        "duration": 6.07,
+        "reference": "Transfer five thousand rupees from my savings account to my current account immediately.",
+        "hypothesis": "Transfer 5,000 rupees from my savings account to my current account immediately.",
+        "wer": 0.1538,
+        "latency_sec": 0.652
+      },
+      {
+        "id": "sample_28",
+        "category": "Notification Command",
+        "accent": "British",
+        "duration": 6.43,
+        "reference": "Send an urgent email notification to the engineering team regarding the unexpected server outage.",
+        "hypothesis": "Send an urgent email notification to the engineering team regarding the unexpected server outage.",
+        "wer": 0.0,
+        "latency_sec": 0.634
+      },
+      {
+        "id": "sample_29",
+        "category": "Document Retrieval Command",
+        "accent": "US",
+        "duration": 4.73,
+        "reference": "Download the quarterly billing statement for the month of September twenty twenty four.",
+        "hypothesis": "Download the quarterly billing statement for the month of September 2024.",
+        "wer": 0.2308,
+        "latency_sec": 0.634
+      },
+      {
+        "id": "sample_30",
+        "category": "Audio Control Command",
+        "accent": "Irish",
+        "duration": 4.06,
+        "reference": "Mute my microphone and pause the active audio recording.",
+        "hypothesis": "Mute my microphone and pause the active audio recording.",
+        "wer": 0.0,
+        "latency_sec": 0.669
+      },
+      {
+        "id": "sample_31",
+        "category": "Alphanumeric / Flight",
+        "accent": "British",
+        "duration": 5.16,
+        "reference": "The flight number is British Airways seven eight four departing at fourteen thirty hours.",
+        "hypothesis": "The flight number is British Airways 7.8 for departing at 14.30 hours.",
+        "wer": 0.3571,
+        "latency_sec": 0.697
+      },
+      {
+        "id": "sample_32",
+        "category": "Phone Digits",
+        "accent": "Indian",
+        "duration": 6.29,
+        "reference": "My telephone number is nine eight seven six five four three two one zero.",
+        "hypothesis": "My telephone number is 9876543210",
+        "wer": 0.7143,
+        "latency_sec": 0.625
+      },
+      {
+        "id": "sample_33",
+        "category": "Financial Numbers & Cents",
+        "accent": "US",
+        "duration": 5.3,
+        "reference": "The total invoice amount is twelve thousand four hundred and fifty dollars and fifty cents.",
+        "hypothesis": "The total invoice amount is $12,450.50.",
+        "wer": 0.6667,
+        "latency_sec": 0.609
+      },
+      {
+        "id": "sample_34",
+        "category": "Tracking Code / Dates",
+        "accent": "Canadian",
+        "duration": 6.41,
+        "reference": "Tracking code X Y Z nine nine zero one four seven was dispatched on October twenty first.",
+        "hypothesis": "Tracking code XYZ990147 was dispatched on October 21.",
+        "wer": 0.6471,
+        "latency_sec": 0.653
+      },
+      {
+        "id": "sample_35",
+        "category": "Scientific Decimals & Percentages",
+        "accent": "Indian",
+        "duration": 6.43,
+        "reference": "The room temperature is thirty two point five degrees Celsius with seventy percent humidity.",
+        "hypothesis": "The room temperature is 32.5 degrees Celsius with 70% humidity.",
+        "wer": 0.4286,
+        "latency_sec": 0.678
+      },
+      {
+        "id": "sample_36",
+        "category": "Technical / Database",
+        "accent": "US",
+        "duration": 5.86,
+        "reference": "The PostgreSQL database cluster experienced high memory pressure on the primary replica node.",
+        "hypothesis": "The PostgreSQL database cluster experienced high memory pressure on the primary replica node. // // // // // // // // // // // // // // // // // // // // // // // //",
+        "wer": 0.0,
+        "latency_sec": 1.092
+      },
+      {
+        "id": "sample_37",
+        "category": "Medical / Pharmaceutical",
+        "accent": "Indian",
+        "duration": 6.5,
+        "reference": "The physician prescribed amoxicillin five hundred milligrams twice daily after meals.",
+        "hypothesis": "The physician prescribed amoxy-celin 500 mg twice daily after meals.",
+        "wer": 0.3636,
+        "latency_sec": 0.667
+      },
+      {
+        "id": "sample_38",
+        "category": "Machine Learning Technical",
+        "accent": "British",
+        "duration": 6.62,
+        "reference": "The convolutional neural network was fine tuned using stochastic gradient descent and cross entropy loss.",
+        "hypothesis": "The convolutional neural network was fine-tuned using stochastic gradient descent and cross entropy loss.",
+        "wer": 0.1333,
+        "latency_sec": 0.854
+      },
+      {
+        "id": "sample_39",
+        "category": "Cybersecurity / Protocols",
+        "accent": "Australian",
+        "duration": 7.34,
+        "reference": "Ensure that transport layer security version one point three encryption is enforced on all endpoints.",
+        "hypothesis": "Ensure that transport layer security version 1.3 encryption is enforced on all endpoints.",
+        "wer": 0.2,
+        "latency_sec": 0.708
+      },
+      {
+        "id": "sample_40",
+        "category": "Clinical / Medical Symptoms",
+        "accent": "US",
+        "duration": 6.7,
+        "reference": "The patient reported acute abdominal pain and mild hypertension during the physical examination.",
+        "hypothesis": "The patient reported acute abdominal pain and mild hypertension during the physical examination.",
+        "wer": 0.0,
+        "latency_sec": 0.646
+      },
+      {
+        "id": "sample_41",
+        "category": "Short Phrase / Courtesy",
+        "accent": "US",
+        "duration": 2.69,
+        "reference": "Okay, thank you very much.",
+        "hypothesis": "Okay, thank you very much.",
+        "wer": 0.0,
+        "latency_sec": 0.643
+      },
+      {
+        "id": "sample_42",
+        "category": "Short Phrase / Agreement",
+        "accent": "Indian",
+        "duration": 3.17,
+        "reference": "Yes, I agree completely.",
+        "hypothesis": "Yes, I agree completely",
+        "wer": 0.0,
+        "latency_sec": 0.602
+      },
+      {
+        "id": "sample_43",
+        "category": "Short Command",
+        "accent": "British",
+        "duration": 2.38,
+        "reference": "Stop the playback now.",
+        "hypothesis": "Stop the playback now.",
+        "wer": 0.0,
+        "latency_sec": 0.561
+      },
+      {
+        "id": "sample_44",
+        "category": "Short Question",
+        "accent": "Australian",
+        "duration": 2.35,
+        "reference": "How much does it cost?",
+        "hypothesis": "How much does it cost?",
+        "wer": 0.0,
+        "latency_sec": 0.547
+      },
+      {
+        "id": "sample_45",
+        "category": "Short Farewells",
+        "accent": "US",
+        "duration": 2.52,
+        "reference": "Goodbye, have a nice day.",
+        "hypothesis": "Goodbye, have a nice day.",
+        "wer": 0.0,
+        "latency_sec": 0.663
+      },
+      {
+        "id": "sample_46",
+        "category": "Conversational Fillers & Pauses",
+        "accent": "US",
+        "duration": 7.46,
+        "reference": "Well, let me see, I think our product kickoff meeting was originally scheduled for Thursday morning at ten o'clock.",
+        "hypothesis": "Well, let me see, I think our product kickoff meeting was originally scheduled for Thursday morning at 10 o'clock.",
+        "wer": 0.0526,
+        "latency_sec": 0.782
+      },
+      {
+        "id": "sample_47",
+        "category": "Conversational Inquiry / Multi-Clause",
+        "accent": "Indian",
+        "duration": 9.89,
+        "reference": "Actually, before we proceed with the payment, could you please double check if there are any promotional discounts available for annual subscribers?",
+        "hypothesis": "Actually, before we proceed with the payment, could you please double check if there are any promotional discounts available for annual subscribers?",
+        "wer": 0.0,
+        "latency_sec": 0.755
+      },
+      {
+        "id": "sample_48",
+        "category": "Compound Sentence / Request",
+        "accent": "British",
+        "duration": 6.74,
+        "reference": "I was wondering whether you could email me a copy of the contract, or if not, let me know who I should contact in legal.",
+        "hypothesis": "I was wondering whether you could email me a copy of the contract, or if not, let me know who I should contact in legal.",
+        "wer": 0.0,
+        "latency_sec": 0.721
+      },
+      {
+        "id": "sample_49",
+        "category": "Conversational Feedback / Long",
+        "accent": "Canadian",
+        "duration": 8.45,
+        "reference": "To be completely honest with you, the customer feedback on our new mobile interface has been overwhelmingly positive across every demographic.",
+        "hypothesis": "To be completely honest with you, the customer feedback on our new mobile interface has been overwhelmingly positive across every demographic.",
+        "wer": 0.0,
+        "latency_sec": 0.636
+      },
+      {
+        "id": "sample_50",
+        "category": "Formal Summary / Complex Vocabulary",
+        "accent": "Indian",
+        "duration": 11.14,
+        "reference": "In conclusion, despite several initial logistical obstacles, the entire infrastructure migration was delivered on schedule and well within the allocated budget.",
+        "hypothesis": "In conclusion, despite several initial logistic obstacles, the entire infrastructure migration was delivered on schedule and well within the allocated budget.",
+        "wer": 0.0476,
+        "latency_sec": 0.695
+      }
+    ]
+  },
+  "Faster-Whisper (small.en, beam=3, vad=True, normalized)": {
+    "model_config": {
+      "engine": "whisper",
+      "model": "small.en",
+      "label": "Faster-Whisper (small.en, beam=3, vad=True, normalized)"
+    },
+    "average_wer": 0.1069,
+    "exact_match_rate": 0.66,
+    "average_latency_sec": 1.921,
+    "samples": [
+      {
+        "id": "sample_01",
+        "category": "Customer Support / Greeting",
+        "accent": "US",
+        "duration": 5.64,
+        "reference": "Hello, thank you for calling customer service. How can I help you today?",
+        "hypothesis": "Hello, thank you for calling customer service. How can I help you today?",
+        "wer": 0.0,
+        "latency_sec": 3.907
+      },
+      {
+        "id": "sample_02",
+        "category": "Banking / Account",
+        "accent": "Indian",
+        "duration": 5.97,
+        "reference": "I would like to check the current balance on my account and review recent transactions.",
+        "hypothesis": "I would like to check the current balance on my account and review recent transactions.",
+        "wer": 0.0,
+        "latency_sec": 1.785
+      },
+      {
+        "id": "sample_03",
+        "category": "Delivery / Tracking",
+        "accent": "British",
+        "duration": 4.51,
+        "reference": "Could you please tell me when my package is scheduled to arrive at my address?",
+        "hypothesis": "Could you please tell me when my package is scheduled to arrive at my address?",
+        "wer": 0.0,
+        "latency_sec": 1.777
+      },
+      {
+        "id": "sample_04",
+        "category": "Technical Support",
+        "accent": "Australian",
+        "duration": 6.48,
+        "reference": "Yes, I am calling because my internet connection has been dropping frequently since yesterday.",
+        "hypothesis": "Yes, I am calling because my Internet connection has been dropping frequently since yesterday.",
+        "wer": 0.0,
+        "latency_sec": 1.796
+      },
+      {
+        "id": "sample_05",
+        "category": "Scheduling / Appointment",
+        "accent": "Canadian",
+        "duration": 5.16,
+        "reference": "Can I schedule an appointment with a technical specialist for next Tuesday afternoon?",
+        "hypothesis": "Can I schedule an appointment with a technical specialist for next Tuesday afternoon?",
+        "wer": 0.0,
+        "latency_sec": 1.789
+      },
+      {
+        "id": "sample_06",
+        "category": "Fast Speech (1.25x)",
+        "accent": "US",
+        "duration": 3.77,
+        "reference": "Please hold the line while I quickly transfer your call to the billing department.",
+        "hypothesis": "Please hold the line while I quickly transfer your call to the billing department.",
+        "wer": 0.0,
+        "latency_sec": 1.76
+      },
+      {
+        "id": "sample_07",
+        "category": "Fast Speech (1.20x)",
+        "accent": "Indian",
+        "duration": 6.0,
+        "reference": "I need to urgently update my primary shipping address before the order leaves the warehouse.",
+        "hypothesis": "I need to urgently update my primary shipping address before the order leaves the warehouse.",
+        "wer": 0.0,
+        "latency_sec": 1.869
+      },
+      {
+        "id": "sample_08",
+        "category": "Slow Speech (0.85x)",
+        "accent": "British",
+        "duration": 6.02,
+        "reference": "I am speaking slowly and clearly so that every word can be transcribed accurately.",
+        "hypothesis": "I am speaking slowly and clearly so that every word can be transcribed accurately.",
+        "wer": 0.0,
+        "latency_sec": 1.892
+      },
+      {
+        "id": "sample_09",
+        "category": "Deliberate Pacing (0.90x)",
+        "accent": "Irish",
+        "duration": 6.17,
+        "reference": "Take your time and verify the six digit security code sent to your registered phone number.",
+        "hypothesis": "Take your time and verify the six-digit security code sent to your registered phone number.",
+        "wer": 0.125,
+        "latency_sec": 1.955
+      },
+      {
+        "id": "sample_10",
+        "category": "Verification / Moderate Fast",
+        "accent": "US",
+        "duration": 4.17,
+        "reference": "Let me confirm that your email address is spelled correctly in our records.",
+        "hypothesis": "Let me confirm that your email address is spelled correctly in our records.",
+        "wer": 0.0,
+        "latency_sec": 1.91
+      },
+      {
+        "id": "sample_11",
+        "category": "Short Phrase / Affirmation",
+        "accent": "Indian",
+        "duration": 3.1,
+        "reference": "Yes, that sounds perfect.",
+        "hypothesis": "Yes, that sounds perfect.",
+        "wer": 0.0,
+        "latency_sec": 1.665
+      },
+      {
+        "id": "sample_12",
+        "category": "Short Command / Cancellation",
+        "accent": "US",
+        "duration": 3.29,
+        "reference": "No, cancel the reservation immediately.",
+        "hypothesis": "No, cancel the reservation immediately.",
+        "wer": 0.0,
+        "latency_sec": 1.714
+      },
+      {
+        "id": "sample_13",
+        "category": "Alphanumeric / Digits",
+        "accent": "British",
+        "duration": 4.1,
+        "reference": "My confirmation number is four eight two nine one five.",
+        "hypothesis": "My confirmation number is 482915.",
+        "wer": 0.6,
+        "latency_sec": 1.671
+      },
+      {
+        "id": "sample_14",
+        "category": "Short Question",
+        "accent": "Australian",
+        "duration": 3.17,
+        "reference": "What are your business hours on weekends?",
+        "hypothesis": "What are your business hours on weekends?",
+        "wer": 0.0,
+        "latency_sec": 1.817
+      },
+      {
+        "id": "sample_15",
+        "category": "Short Request",
+        "accent": "Indian",
+        "duration": 2.62,
+        "reference": "Repeat that again please.",
+        "hypothesis": "Repeat that again, please.",
+        "wer": 0.0,
+        "latency_sec": 1.777
+      },
+      {
+        "id": "sample_16",
+        "category": "Long Complex Multi-Clause",
+        "accent": "US",
+        "duration": 9.62,
+        "reference": "Although the flight was delayed by two hours due to severe weather, the airline provided meal vouchers and rebooked all connecting passengers without additional fees.",
+        "hypothesis": "Although the flight was delayed by two hours due to severe weather, the airline provided meal vouchers and rebooked all connecting passengers without additional fees.",
+        "wer": 0.0,
+        "latency_sec": 2.122
+      },
+      {
+        "id": "sample_17",
+        "category": "Instructions / Conditional Clause",
+        "accent": "Indian",
+        "duration": 9.0,
+        "reference": "If you wish to initiate a formal warranty claim, please make sure you upload the original receipt and photograph the damaged component clearly.",
+        "hypothesis": "If you wish to initiate a formal warranty claim, please make sure you upload the original receipt and photograph the damaged component clearly.",
+        "wer": 0.0,
+        "latency_sec": 2.189
+      },
+      {
+        "id": "sample_18",
+        "category": "Business / Financial",
+        "accent": "British",
+        "duration": 9.24,
+        "reference": "The quarterly financial report highlighted substantial growth in international markets, driven primarily by strong adoption of cloud subscription services.",
+        "hypothesis": "The quarterly financial report highlighted substantial growth in international markets, driven primarily by strong adoption of cloud subscription services.",
+        "wer": 0.0,
+        "latency_sec": 2.003
+      },
+      {
+        "id": "sample_19",
+        "category": "Product Comparison",
+        "accent": "Canadian",
+        "duration": 7.1,
+        "reference": "Could you provide more information about the differences between standard annual subscriptions and the premium enterprise tier?",
+        "hypothesis": "Could you provide more information about the differences between standard annual subscriptions and the premium enterprise tier?",
+        "wer": 0.0,
+        "latency_sec": 2.012
+      },
+      {
+        "id": "sample_20",
+        "category": "Technical Problem / Compound",
+        "accent": "Indian",
+        "duration": 9.34,
+        "reference": "I have been trying to reset my password for the past thirty minutes, but the verification link seems to have expired before I could open it.",
+        "hypothesis": "I have been trying to reset my password for the past 30 minutes, but the verification link seems to have expired before I could open it.",
+        "wer": 0.0385,
+        "latency_sec": 2.254
+      },
+      {
+        "id": "sample_21",
+        "category": "Location Question",
+        "accent": "Indian",
+        "duration": 4.42,
+        "reference": "Where is the nearest branch office located in Bangalore?",
+        "hypothesis": "Where is the nearest branch office located in Bangalore?",
+        "wer": 0.0,
+        "latency_sec": 1.812
+      },
+      {
+        "id": "sample_22",
+        "category": "Inquiry / Transfer",
+        "accent": "British",
+        "duration": 4.46,
+        "reference": "Who should I speak with to get approval for an international wire transfer?",
+        "hypothesis": "Who should I speak with to get approval for an international wire transfer?",
+        "wer": 0.0,
+        "latency_sec": 1.951
+      },
+      {
+        "id": "sample_23",
+        "category": "Troubleshooting Question",
+        "accent": "US",
+        "duration": 4.92,
+        "reference": "Why has my debit card been blocked after entering the correct PIN three times?",
+        "hypothesis": "Why has my debit card been blocked after entering the correct PIN 3 times?",
+        "wer": 0.0714,
+        "latency_sec": 1.771
+      },
+      {
+        "id": "sample_24",
+        "category": "Technical Setup",
+        "accent": "Australian",
+        "duration": 5.69,
+        "reference": "How do I configure two factor authentication on my mobile banking application?",
+        "hypothesis": "How do I configure two-factor authentication on my mobile banking application?",
+        "wer": 0.1667,
+        "latency_sec": 1.925
+      },
+      {
+        "id": "sample_25",
+        "category": "Billing / Refund Question",
+        "accent": "Canadian",
+        "duration": 5.52,
+        "reference": "When will the refund of one hundred and forty five dollars be credited back to my account?",
+        "hypothesis": "When will the refund of $145 be credited back to my account?",
+        "wer": 0.3529,
+        "latency_sec": 1.763
+      },
+      {
+        "id": "sample_26",
+        "category": "Smart Home / Office Command",
+        "accent": "US",
+        "duration": 4.06,
+        "reference": "Turn off all lights in the conference room and lock the glass door.",
+        "hypothesis": "Turn off all lights in the conference room and lock the glass door.",
+        "wer": 0.0,
+        "latency_sec": 1.961
+      },
+      {
+        "id": "sample_27",
+        "category": "Financial Action Command",
+        "accent": "Indian",
+        "duration": 6.07,
+        "reference": "Transfer five thousand rupees from my savings account to my current account immediately.",
+        "hypothesis": "Transfer 5000 rupees from my savings account to my current account immediately.",
+        "wer": 0.1538,
+        "latency_sec": 1.73
+      },
+      {
+        "id": "sample_28",
+        "category": "Notification Command",
+        "accent": "British",
+        "duration": 6.43,
+        "reference": "Send an urgent email notification to the engineering team regarding the unexpected server outage.",
+        "hypothesis": "Send an urgent email notification to the engineering team regarding the unexpected server outage.",
+        "wer": 0.0,
+        "latency_sec": 1.846
+      },
+      {
+        "id": "sample_29",
+        "category": "Document Retrieval Command",
+        "accent": "US",
+        "duration": 4.73,
+        "reference": "Download the quarterly billing statement for the month of September twenty twenty four.",
+        "hypothesis": "Download the quarterly billing statement for the month of September 2024.",
+        "wer": 0.2308,
+        "latency_sec": 1.863
+      },
+      {
+        "id": "sample_30",
+        "category": "Audio Control Command",
+        "accent": "Irish",
+        "duration": 4.06,
+        "reference": "Mute my microphone and pause the active audio recording.",
+        "hypothesis": "Mute my microphone and pause the active audio recording.",
+        "wer": 0.0,
+        "latency_sec": 1.838
+      },
+      {
+        "id": "sample_31",
+        "category": "Alphanumeric / Flight",
+        "accent": "British",
+        "duration": 5.16,
+        "reference": "The flight number is British Airways seven eight four departing at fourteen thirty hours.",
+        "hypothesis": "The flight number is British Airways 78 for departing at 1430 hours.",
+        "wer": 0.3571,
+        "latency_sec": 1.995
+      },
+      {
+        "id": "sample_32",
+        "category": "Phone Digits",
+        "accent": "Indian",
+        "duration": 6.29,
+        "reference": "My telephone number is nine eight seven six five four three two one zero.",
+        "hypothesis": "My telephone number is 9876543210.",
+        "wer": 0.7143,
+        "latency_sec": 1.962
+      },
+      {
+        "id": "sample_33",
+        "category": "Financial Numbers & Cents",
+        "accent": "US",
+        "duration": 5.3,
+        "reference": "The total invoice amount is twelve thousand four hundred and fifty dollars and fifty cents.",
+        "hypothesis": "The total invoice amount is $12,450.50.",
+        "wer": 0.6667,
+        "latency_sec": 1.864
+      },
+      {
+        "id": "sample_34",
+        "category": "Tracking Code / Dates",
+        "accent": "Canadian",
+        "duration": 6.41,
+        "reference": "Tracking code X Y Z nine nine zero one four seven was dispatched on October twenty first.",
+        "hypothesis": "Tracking code XYZ990147 was dispatched on October 21.",
+        "wer": 0.6471,
+        "latency_sec": 1.846
+      },
+      {
+        "id": "sample_35",
+        "category": "Scientific Decimals & Percentages",
+        "accent": "Indian",
+        "duration": 6.43,
+        "reference": "The room temperature is thirty two point five degrees Celsius with seventy percent humidity.",
+        "hypothesis": "The room temperature is 32.5 degrees Celsius with 70% humidity.",
+        "wer": 0.4286,
+        "latency_sec": 1.777
+      },
+      {
+        "id": "sample_36",
+        "category": "Technical / Database",
+        "accent": "US",
+        "duration": 5.86,
+        "reference": "The PostgreSQL database cluster experienced high memory pressure on the primary replica node.",
+        "hypothesis": "The PostgreSQL database cluster experienced high memory pressure on the primary replica node.",
+        "wer": 0.0,
+        "latency_sec": 1.841
+      },
+      {
+        "id": "sample_37",
+        "category": "Medical / Pharmaceutical",
+        "accent": "Indian",
+        "duration": 6.5,
+        "reference": "The physician prescribed amoxicillin five hundred milligrams twice daily after meals.",
+        "hypothesis": "The physician prescribed amoxy sealant 500 milligrams twice daily after meals.",
+        "wer": 0.2727,
+        "latency_sec": 1.817
+      },
+      {
+        "id": "sample_38",
+        "category": "Machine Learning Technical",
+        "accent": "British",
+        "duration": 6.62,
+        "reference": "The convolutional neural network was fine tuned using stochastic gradient descent and cross entropy loss.",
+        "hypothesis": "The convolutional neural network was fine-tuned using stochastic gradient descent and cross-entropy loss.",
+        "wer": 0.2667,
+        "latency_sec": 2.06
+      },
+      {
+        "id": "sample_39",
+        "category": "Cybersecurity / Protocols",
+        "accent": "Australian",
+        "duration": 7.34,
+        "reference": "Ensure that transport layer security version one point three encryption is enforced on all endpoints.",
+        "hypothesis": "Ensure that transport layer security version 1.3 encryption is enforced on all endpoints.",
+        "wer": 0.2,
+        "latency_sec": 1.925
+      },
+      {
+        "id": "sample_40",
+        "category": "Clinical / Medical Symptoms",
+        "accent": "US",
+        "duration": 6.7,
+        "reference": "The patient reported acute abdominal pain and mild hypertension during the physical examination.",
+        "hypothesis": "The patient reported acute abdominal pain and mild hypertension during the physical examination.",
+        "wer": 0.0,
+        "latency_sec": 1.871
+      },
+      {
+        "id": "sample_41",
+        "category": "Short Phrase / Courtesy",
+        "accent": "US",
+        "duration": 2.69,
+        "reference": "Okay, thank you very much.",
+        "hypothesis": "Okay, thank you very much.",
+        "wer": 0.0,
+        "latency_sec": 1.689
+      },
+      {
+        "id": "sample_42",
+        "category": "Short Phrase / Agreement",
+        "accent": "Indian",
+        "duration": 3.17,
+        "reference": "Yes, I agree completely.",
+        "hypothesis": "Yes, I agree completely.",
+        "wer": 0.0,
+        "latency_sec": 1.728
+      },
+      {
+        "id": "sample_43",
+        "category": "Short Command",
+        "accent": "British",
+        "duration": 2.38,
+        "reference": "Stop the playback now.",
+        "hypothesis": "Stop the playback now.",
+        "wer": 0.0,
+        "latency_sec": 1.803
+      },
+      {
+        "id": "sample_44",
+        "category": "Short Question",
+        "accent": "Australian",
+        "duration": 2.35,
+        "reference": "How much does it cost?",
+        "hypothesis": "How much does it cost?",
+        "wer": 0.0,
+        "latency_sec": 1.903
+      },
+      {
+        "id": "sample_45",
+        "category": "Short Farewells",
+        "accent": "US",
+        "duration": 2.52,
+        "reference": "Goodbye, have a nice day.",
+        "hypothesis": "Goodbye, have a nice day!",
+        "wer": 0.0,
+        "latency_sec": 1.781
+      },
+      {
+        "id": "sample_46",
+        "category": "Conversational Fillers & Pauses",
+        "accent": "US",
+        "duration": 7.46,
+        "reference": "Well, let me see, I think our product kickoff meeting was originally scheduled for Thursday morning at ten o'clock.",
+        "hypothesis": "Well, let me see, I think our product kickoff meeting was originally scheduled for Thursday morning at 10 o'clock.",
+        "wer": 0.0526,
+        "latency_sec": 1.932
+      },
+      {
+        "id": "sample_47",
+        "category": "Conversational Inquiry / Multi-Clause",
+        "accent": "Indian",
+        "duration": 9.89,
+        "reference": "Actually, before we proceed with the payment, could you please double check if there are any promotional discounts available for annual subscribers?",
+        "hypothesis": "Actually, before we proceed with the payment, could you please double check if there are any promotional discounts available for annual subscribers?",
+        "wer": 0.0,
+        "latency_sec": 2.065
+      },
+      {
+        "id": "sample_48",
+        "category": "Compound Sentence / Request",
+        "accent": "British",
+        "duration": 6.74,
+        "reference": "I was wondering whether you could email me a copy of the contract, or if not, let me know who I should contact in legal.",
+        "hypothesis": "I was wondering whether you could email me a copy of the contract, or if not, let me know who I should contact in legal.",
+        "wer": 0.0,
+        "latency_sec": 2.04
+      },
+      {
+        "id": "sample_49",
+        "category": "Conversational Feedback / Long",
+        "accent": "Canadian",
+        "duration": 8.45,
+        "reference": "To be completely honest with you, the customer feedback on our new mobile interface has been overwhelmingly positive across every demographic.",
+        "hypothesis": "To be completely honest with you, the customer feedback on our new mobile interface has been overwhelmingly positive across every demographic.",
+        "wer": 0.0,
+        "latency_sec": 1.97
+      },
+      {
+        "id": "sample_50",
+        "category": "Formal Summary / Complex Vocabulary",
+        "accent": "Indian",
+        "duration": 11.14,
+        "reference": "In conclusion, despite several initial logistical obstacles, the entire infrastructure migration was delivered on schedule and well within the allocated budget.",
+        "hypothesis": "In conclusion, despite several initial logistical obstacles, the entire infrastructure migration was delivered on schedule and well within the allocated budget.",
+        "wer": 0.0,
+        "latency_sec": 2.084
+      }
+    ]
+  },
+  "Sherpa Streaming (2023-06-26 Standard with lookahead silence flush)": {
+    "model_config": {
+      "engine": "sherpa",
+      "model": "sherpa-onnx-streaming-zipformer-en-2023-06-26",
+      "label": "Sherpa Streaming (2023-06-26 Standard with lookahead silence flush)"
+    },
+    "average_wer": 0.1491,
+    "exact_match_rate": 0.28,
+    "average_latency_sec": 0.64,
+    "samples": [
+      {
+        "id": "sample_01",
+        "category": "Customer Support / Greeting",
+        "accent": "US",
+        "duration": 5.64,
+        "reference": "Hello, thank you for calling customer service. How can I help you today?",
+        "hypothesis": "HULLO THANK YOU FOR CALLING CUSTOMER'S SERVICE HOW CAN I HELP YOU TO DAY",
+        "wer": 0.3077,
+        "latency_sec": 0.742
+      },
+      {
+        "id": "sample_02",
+        "category": "Banking / Account",
+        "accent": "Indian",
+        "duration": 5.97,
+        "reference": "I would like to check the current balance on my account and review recent transactions.",
+        "hypothesis": "I WOULD LIKE TO CHECK THE CURRANT BALANCE ON MY ACCOUNT AND REVIEW RECENT TRANSACTIONS",
+        "wer": 0.0667,
+        "latency_sec": 0.688
+      },
+      {
+        "id": "sample_03",
+        "category": "Delivery / Tracking",
+        "accent": "British",
+        "duration": 4.51,
+        "reference": "Could you please tell me when my package is scheduled to arrive at my address?",
+        "hypothesis": "COULD YOU PLEASE TELL ME WHEN MY PACKAGE IS SHEDLED TO ARRIVE AT MY ADDRESS",
+        "wer": 0.0667,
+        "latency_sec": 0.275
+      },
+      {
+        "id": "sample_04",
+        "category": "Technical Support",
+        "accent": "Australian",
+        "duration": 6.48,
+        "reference": "Yes, I am calling because my internet connection has been dropping frequently since yesterday.",
+        "hypothesis": "YES I AM CALLING BECAUSE MY INTIMATE CONNECTION HAS BEEN DROPPING FREQUENTLY SINCE YESTERDAY",
+        "wer": 0.0714,
+        "latency_sec": 0.683
+      },
+      {
+        "id": "sample_05",
+        "category": "Scheduling / Appointment",
+        "accent": "Canadian",
+        "duration": 5.16,
+        "reference": "Can I schedule an appointment with a technical specialist for next Tuesday afternoon?",
+        "hypothesis": "CAN I SCHEDULE AN APPOINTMENT WITH A TECHNICAL SPECIALIST FOR NEXT TUESDAY AFTERNOON",
+        "wer": 0.0,
+        "latency_sec": 0.47
+      },
+      {
+        "id": "sample_06",
+        "category": "Fast Speech (1.25x)",
+        "accent": "US",
+        "duration": 3.77,
+        "reference": "Please hold the line while I quickly transfer your call to the billing department.",
+        "hypothesis": "PLEASE HOLD THE LINE WHILE I QUICKLY TRANSFER YOUR CALL TO THE BUILDING DEPARTMENT",
+        "wer": 0.0714,
+        "latency_sec": 0.32
+      },
+      {
+        "id": "sample_07",
+        "category": "Fast Speech (1.20x)",
+        "accent": "Indian",
+        "duration": 6.0,
+        "reference": "I need to urgently update my primary shipping address before the order leaves the warehouse.",
+        "hypothesis": "I NEED GO URGENTLY UP DATE MY PRIMARY SHIPPING ADDRESS BEFORE THE ORDERED LEAVES THE WAREHOUS",
+        "wer": 0.3333,
+        "latency_sec": 0.508
+      },
+      {
+        "id": "sample_08",
+        "category": "Slow Speech (0.85x)",
+        "accent": "British",
+        "duration": 6.02,
+        "reference": "I am speaking slowly and clearly so that every word can be transcribed accurately.",
+        "hypothesis": "I AM SPEAKING SLOWLY AND CLEARLY SO THAT EVERY WORD CAN BE TRANSCRIBED ACCURATELY",
+        "wer": 0.0,
+        "latency_sec": 0.603
+      },
+      {
+        "id": "sample_09",
+        "category": "Deliberate Pacing (0.90x)",
+        "accent": "Irish",
+        "duration": 6.17,
+        "reference": "Take your time and verify the six digit security code sent to your registered phone number.",
+        "hypothesis": "TAKE YOUR TIME AND VERIFY THE SIX DIGIT SECURITY CODE SENT TO YOUR REGISTERED PHONE NUMBER",
+        "wer": 0.0,
+        "latency_sec": 1.064
+      },
+      {
+        "id": "sample_10",
+        "category": "Verification / Moderate Fast",
+        "accent": "US",
+        "duration": 4.17,
+        "reference": "Let me confirm that your email address is spelled correctly in our records.",
+        "hypothesis": "LET ME CONFIRM THAT YOUR EMILE ADDRESS IS SPELLED CORRECTLY IN OUR RECORDS",
+        "wer": 0.0769,
+        "latency_sec": 0.661
+      },
+      {
+        "id": "sample_11",
+        "category": "Short Phrase / Affirmation",
+        "accent": "Indian",
+        "duration": 3.1,
+        "reference": "Yes, that sounds perfect.",
+        "hypothesis": "YES THAT SOUNDS PERFECT",
+        "wer": 0.0,
+        "latency_sec": 0.695
+      },
+      {
+        "id": "sample_12",
+        "category": "Short Command / Cancellation",
+        "accent": "US",
+        "duration": 3.29,
+        "reference": "No, cancel the reservation immediately.",
+        "hypothesis": "NO CANCEL THE RESERVATION IMMEDIATELY",
+        "wer": 0.0,
+        "latency_sec": 0.687
+      },
+      {
+        "id": "sample_13",
+        "category": "Alphanumeric / Digits",
+        "accent": "British",
+        "duration": 4.1,
+        "reference": "My confirmation number is four eight two nine one five.",
+        "hypothesis": "MY CONFIRMATION NUMBER IS FOUR EIGHT TWO NINE ONE FIVE",
+        "wer": 0.0,
+        "latency_sec": 1.079
+      },
+      {
+        "id": "sample_14",
+        "category": "Short Question",
+        "accent": "Australian",
+        "duration": 3.17,
+        "reference": "What are your business hours on weekends?",
+        "hypothesis": "WHAT ARE YOUR BUSINESS HOURS ON WEEK ENDS",
+        "wer": 0.2857,
+        "latency_sec": 0.795
+      },
+      {
+        "id": "sample_15",
+        "category": "Short Request",
+        "accent": "Indian",
+        "duration": 2.62,
+        "reference": "Repeat that again please.",
+        "hypothesis": "REPEAT THAT AGAIN PLEASE",
+        "wer": 0.0,
+        "latency_sec": 0.578
+      },
+      {
+        "id": "sample_16",
+        "category": "Long Complex Multi-Clause",
+        "accent": "US",
+        "duration": 9.62,
+        "reference": "Although the flight was delayed by two hours due to severe weather, the airline provided meal vouchers and rebooked all connecting passengers without additional fees.",
+        "hypothesis": "ALTHOUGH THE FLIGHT WAS DELAYED BY TWO HOURS DUE TO SEVERE WEATHER THE AIR LINE PROVIDED MEAL VOUCHERS AND REBOOKED ALL CONNECTING PASSENGERS WITHOUT ADDITIONAL FEES",
+        "wer": 0.08,
+        "latency_sec": 1.03
+      },
+      {
+        "id": "sample_17",
+        "category": "Instructions / Conditional Clause",
+        "accent": "Indian",
+        "duration": 9.0,
+        "reference": "If you wish to initiate a formal warranty claim, please make sure you upload the original receipt and photograph the damaged component clearly.",
+        "hypothesis": "IF YOU WISH TO INITIATE A FORMAL ROARANTIC CLAIM PLEASE MAKE SHOW YOU APPLAUDE THE ORIGINAL RECEIPT AND PHOTOGRAPH THE DAMAGED COMPONENT CLEARLY",
+        "wer": 0.1304,
+        "latency_sec": 0.794
+      },
+      {
+        "id": "sample_18",
+        "category": "Business / Financial",
+        "accent": "British",
+        "duration": 9.24,
+        "reference": "The quarterly financial report highlighted substantial growth in international markets, driven primarily by strong adoption of cloud subscription services.",
+        "hypothesis": "THE QUARTERLY FINANCIAL REPORT HIGH LIGHTED SUBSTANTIAL GROWTH IN INTERNATIONAL MARKETS DRIVEN PRIMARILY BY STRONG ADOPTION OF CLOUD SUBSCRIPTION SERVICES",
+        "wer": 0.1053,
+        "latency_sec": 0.918
+      },
+      {
+        "id": "sample_19",
+        "category": "Product Comparison",
+        "accent": "Canadian",
+        "duration": 7.1,
+        "reference": "Could you provide more information about the differences between standard annual subscriptions and the premium enterprise tier?",
+        "hypothesis": "COULD YOU PROVIDE MORE INFORMATION ABOUT THE DIFFERENCES BETWEEN STANDARD ANNUAL SUBSCRIPTIONS AND THE PREMIUM ENTERPRISE HERE",
+        "wer": 0.0588,
+        "latency_sec": 0.68
+      },
+      {
+        "id": "sample_20",
+        "category": "Technical Problem / Compound",
+        "accent": "Indian",
+        "duration": 9.34,
+        "reference": "I have been trying to reset my password for the past thirty minutes, but the verification link seems to have expired before I could open it.",
+        "hypothesis": "I HAVE BEEN TRYING TO RESET MY PASSWORD FOR THE PAST THIRTY MINUTES BUT THE VERIFICATION LINK SEEMS TO HAVE EXPIRED BEFORE I COULD OPEN IT",
+        "wer": 0.0,
+        "latency_sec": 0.788
+      },
+      {
+        "id": "sample_21",
+        "category": "Location Question",
+        "accent": "Indian",
+        "duration": 4.42,
+        "reference": "Where is the nearest branch office located in Bangalore?",
+        "hypothesis": "WHERE IS THE NEAREST BRANCH OF ITS LOCATED IN BANGLO",
+        "wer": 0.3333,
+        "latency_sec": 0.61
+      },
+      {
+        "id": "sample_22",
+        "category": "Inquiry / Transfer",
+        "accent": "British",
+        "duration": 4.46,
+        "reference": "Who should I speak with to get approval for an international wire transfer?",
+        "hypothesis": "WHO SHOULD I SPEAK WITH TO GET APPROVAL FOR AN INTERNATIONAL WIRE TRANSFER",
+        "wer": 0.0,
+        "latency_sec": 0.398
+      },
+      {
+        "id": "sample_23",
+        "category": "Troubleshooting Question",
+        "accent": "US",
+        "duration": 4.92,
+        "reference": "Why has my debit card been blocked after entering the correct PIN three times?",
+        "hypothesis": "WHY HAS MY DEBAT CARD BEEN BLOCKED AFTER ENTERING THE CORRECT PEN THREE TIMES",
+        "wer": 0.1429,
+        "latency_sec": 0.541
+      },
+      {
+        "id": "sample_24",
+        "category": "Technical Setup",
+        "accent": "Australian",
+        "duration": 5.69,
+        "reference": "How do I configure two factor authentication on my mobile banking application?",
+        "hypothesis": "HOW DO I CONFIGURE TWO FACTOR AUTHENTICATION ON MY MOBILE BANKING APPLICATION",
+        "wer": 0.0,
+        "latency_sec": 0.646
+      },
+      {
+        "id": "sample_25",
+        "category": "Billing / Refund Question",
+        "accent": "Canadian",
+        "duration": 5.52,
+        "reference": "When will the refund of one hundred and forty five dollars be credited back to my account?",
+        "hypothesis": "WHEN WILL THE RE FUND OF ONE HUNDRED AND FORTY FIVE DOLLARS BE CREDITED BACK TO MY ACCOUNT",
+        "wer": 0.1176,
+        "latency_sec": 0.707
+      },
+      {
+        "id": "sample_26",
+        "category": "Smart Home / Office Command",
+        "accent": "US",
+        "duration": 4.06,
+        "reference": "Turn off all lights in the conference room and lock the glass door.",
+        "hypothesis": "TURN OFF ALL LIGHTS INTO CONFERENCE ROOM AND LOCK THE GLASS DOOR",
+        "wer": 0.1538,
+        "latency_sec": 0.363
+      },
+      {
+        "id": "sample_27",
+        "category": "Financial Action Command",
+        "accent": "Indian",
+        "duration": 6.07,
+        "reference": "Transfer five thousand rupees from my savings account to my current account immediately.",
+        "hypothesis": "TRANS FOR FIVE THOUSAND RUPEES FROM MY SAVINGS ACCOUNT TO MY CURRENT ACCOUNT IMMEDIATELY",
+        "wer": 0.1538,
+        "latency_sec": 0.828
+      },
+      {
+        "id": "sample_28",
+        "category": "Notification Command",
+        "accent": "British",
+        "duration": 6.43,
+        "reference": "Send an urgent email notification to the engineering team regarding the unexpected server outage.",
+        "hypothesis": "SEND AN URGENT FEMALE NOTIFICATION TO THE ENGINEERING TEAM REGARDING THE UNEXPECTED SERVER OUTAGE",
+        "wer": 0.0714,
+        "latency_sec": 0.85
+      },
+      {
+        "id": "sample_29",
+        "category": "Document Retrieval Command",
+        "accent": "US",
+        "duration": 4.73,
+        "reference": "Download the quarterly billing statement for the month of September twenty twenty four.",
+        "hypothesis": "DOWN LOAD THE QUARTERLY BILLING STATEMENT FOR THE MONTH OF SEPTEMBER TWENTY TWENTY FOUR",
+        "wer": 0.1538,
+        "latency_sec": 0.475
+      },
+      {
+        "id": "sample_30",
+        "category": "Audio Control Command",
+        "accent": "Irish",
+        "duration": 4.06,
+        "reference": "Mute my microphone and pause the active audio recording.",
+        "hypothesis": "MUTE MY MICROPHONE AND POURS THE ACTIVE AUDIO RECORDING",
+        "wer": 0.1111,
+        "latency_sec": 0.402
+      },
+      {
+        "id": "sample_31",
+        "category": "Alphanumeric / Flight",
+        "accent": "British",
+        "duration": 5.16,
+        "reference": "The flight number is British Airways seven eight four departing at fourteen thirty hours.",
+        "hypothesis": "THE FLIGHT NUMBER IS BRITISH AIR WAY SEVEN EIGHT FOR DEPARTING AT FOURTEEN THIRTY HOURS",
+        "wer": 0.2143,
+        "latency_sec": 0.728
+      },
+      {
+        "id": "sample_32",
+        "category": "Phone Digits",
+        "accent": "Indian",
+        "duration": 6.29,
+        "reference": "My telephone number is nine eight seven six five four three two one zero.",
+        "hypothesis": "MY TELEPHONE NUMBER IS NINE EIGHT SEVEN SIX FIVE FORTY TO ONE ZERO",
+        "wer": 0.2143,
+        "latency_sec": 0.649
+      },
+      {
+        "id": "sample_33",
+        "category": "Financial Numbers & Cents",
+        "accent": "US",
+        "duration": 5.3,
+        "reference": "The total invoice amount is twelve thousand four hundred and fifty dollars and fifty cents.",
+        "hypothesis": "THE TOTAL INVOICE AMOUNT IS TWELVE THOUSAND FOUR HUNDRED AND FIFTY DOLLARS AND FIFTY CENTS",
+        "wer": 0.0,
+        "latency_sec": 0.492
+      },
+      {
+        "id": "sample_34",
+        "category": "Tracking Code / Dates",
+        "accent": "Canadian",
+        "duration": 6.41,
+        "reference": "Tracking code X Y Z nine nine zero one four seven was dispatched on October twenty first.",
+        "hypothesis": "TRACKING COAT EX Z NINE NINE ZERO ONE FOR SEVEN WAS DESPATCHED ON OCTOBER TWENTY FIRST",
+        "wer": 0.2941,
+        "latency_sec": 0.644
+      },
+      {
+        "id": "sample_35",
+        "category": "Scientific Decimals & Percentages",
+        "accent": "Indian",
+        "duration": 6.43,
+        "reference": "The room temperature is thirty two point five degrees Celsius with seventy percent humidity.",
+        "hypothesis": "THE ROOM TEMPERATURE IS THIRTY TWO POINT FIVE DEGREES SENSEUS WITH SEVENTY PER CENT HUMIDITY",
+        "wer": 0.2143,
+        "latency_sec": 0.625
+      },
+      {
+        "id": "sample_36",
+        "category": "Technical / Database",
+        "accent": "US",
+        "duration": 5.86,
+        "reference": "The PostgreSQL database cluster experienced high memory pressure on the primary replica node.",
+        "hypothesis": "THE POST RESCUE DATE A BASE CLUSTER EXPERIENCED HIGH MEMORY PRESSURE ON THE PRIMARY REPLICA NOTE",
+        "wer": 0.4615,
+        "latency_sec": 0.644
+      },
+      {
+        "id": "sample_37",
+        "category": "Medical / Pharmaceutical",
+        "accent": "Indian",
+        "duration": 6.5,
+        "reference": "The physician prescribed amoxicillin five hundred milligrams twice daily after meals.",
+        "hypothesis": "THE PHYSICIAN PRESCRIBED A MOCKSY SEAL IN FIVE HUNDRED MILLIGRAMS TWICE DAILY AFTER MEALS",
+        "wer": 0.3636,
+        "latency_sec": 0.915
+      },
+      {
+        "id": "sample_38",
+        "category": "Machine Learning Technical",
+        "accent": "British",
+        "duration": 6.62,
+        "reference": "The convolutional neural network was fine tuned using stochastic gradient descent and cross entropy loss.",
+        "hypothesis": "THE CONVOLUTIONAL MURAL NET WORK WAS FINE TUNED USING STOCKASTIC GRADIENT DESCENT AND CROSS ENTRY LO",
+        "wer": 0.4,
+        "latency_sec": 0.714
+      },
+      {
+        "id": "sample_39",
+        "category": "Cybersecurity / Protocols",
+        "accent": "Australian",
+        "duration": 7.34,
+        "reference": "Ensure that transport layer security version one point three encryption is enforced on all endpoints.",
+        "hypothesis": "AND SURE THAT TRANSPORT LAY A SECURITY VERSION ONE POINT THREE INSCRIPTION IS ENFORCED ON ALL END POINTS",
+        "wer": 0.4667,
+        "latency_sec": 0.622
+      },
+      {
+        "id": "sample_40",
+        "category": "Clinical / Medical Symptoms",
+        "accent": "US",
+        "duration": 6.7,
+        "reference": "The patient reported acute abdominal pain and mild hypertension during the physical examination.",
+        "hypothesis": "THE PATIENT REPORTED ACUTE ABDOMINAL PAIN AND MILD HIGH PRETENSION DURING THE PHYSICAL EXAMINATION",
+        "wer": 0.1538,
+        "latency_sec": 0.684
+      },
+      {
+        "id": "sample_41",
+        "category": "Short Phrase / Courtesy",
+        "accent": "US",
+        "duration": 2.69,
+        "reference": "Okay, thank you very much.",
+        "hypothesis": "O K THANK YOU VERY MUCH",
+        "wer": 0.4,
+        "latency_sec": 0.171
+      },
+      {
+        "id": "sample_42",
+        "category": "Short Phrase / Agreement",
+        "accent": "Indian",
+        "duration": 3.17,
+        "reference": "Yes, I agree completely.",
+        "hypothesis": "YES I AGREE COMPLETELY",
+        "wer": 0.0,
+        "latency_sec": 0.246
+      },
+      {
+        "id": "sample_43",
+        "category": "Short Command",
+        "accent": "British",
+        "duration": 2.38,
+        "reference": "Stop the playback now.",
+        "hypothesis": "STOP THE PLAY BACK NOW",
+        "wer": 0.5,
+        "latency_sec": 0.232
+      },
+      {
+        "id": "sample_44",
+        "category": "Short Question",
+        "accent": "Australian",
+        "duration": 2.35,
+        "reference": "How much does it cost?",
+        "hypothesis": "HOW MUCH DOES IT COST",
+        "wer": 0.0,
+        "latency_sec": 0.149
+      },
+      {
+        "id": "sample_45",
+        "category": "Short Farewells",
+        "accent": "US",
+        "duration": 2.52,
+        "reference": "Goodbye, have a nice day.",
+        "hypothesis": "GOOD BYE HAVE A NICE DAY",
+        "wer": 0.4,
+        "latency_sec": 0.239
+      },
+      {
+        "id": "sample_46",
+        "category": "Conversational Fillers & Pauses",
+        "accent": "US",
+        "duration": 7.46,
+        "reference": "Well, let me see, I think our product kickoff meeting was originally scheduled for Thursday morning at ten o'clock.",
+        "hypothesis": "WELL LET ME SEE I THINK OUR PRODUCT KICK OFF MEETING WAS ORIGINALLY SCHEDULED FOR THURSDAY MORNING AT TEN O'CLOCK",
+        "wer": 0.1053,
+        "latency_sec": 0.568
+      },
+      {
+        "id": "sample_47",
+        "category": "Conversational Inquiry / Multi-Clause",
+        "accent": "Indian",
+        "duration": 9.89,
+        "reference": "Actually, before we proceed with the payment, could you please double check if there are any promotional discounts available for annual subscribers?",
+        "hypothesis": "ACTUALLY BEFORE WE PROCEED WITH THE PAYMENT COULD YOU PLEASE DOUBLE CHECK IF THERE ARE ANY PROMOTIONAL DISCOUNTS AVAILABLE FOR ANNUAL SUBSCRIBERS",
+        "wer": 0.0,
+        "latency_sec": 0.677
+      },
+      {
+        "id": "sample_48",
+        "category": "Compound Sentence / Request",
+        "accent": "British",
+        "duration": 6.74,
+        "reference": "I was wondering whether you could email me a copy of the contract, or if not, let me know who I should contact in legal.",
+        "hypothesis": "I WAS WONDERING WHETHER YOU COULD HEMEL ME A COPY OF THE CONTRACT OR IF NOT LET ME KNOW WHO I SHOULD CONTACT IN LEGAL",
+        "wer": 0.04,
+        "latency_sec": 0.623
+      },
+      {
+        "id": "sample_49",
+        "category": "Conversational Feedback / Long",
+        "accent": "Canadian",
+        "duration": 8.45,
+        "reference": "To be completely honest with you, the customer feedback on our new mobile interface has been overwhelmingly positive across every demographic.",
+        "hypothesis": "TO BE COMPLETELY HONEST WITH YOU THE CUSTOMER FEED BACK ON OUR NEW MOBILE INTERFACE HAS BEEN OVERWHELMINGLY POSITIVE ACROSS EVERY DEMOCRAF",
+        "wer": 0.1429,
+        "latency_sec": 0.85
+      },
+      {
+        "id": "sample_50",
+        "category": "Formal Summary / Complex Vocabulary",
+        "accent": "Indian",
+        "duration": 11.14,
+        "reference": "In conclusion, despite several initial logistical obstacles, the entire infrastructure migration was delivered on schedule and well within the allocated budget.",
+        "hypothesis": "IN CONCLUSION DESPITE SEVERAL INITIAL LOGISTICAL OBSTACLES THE ENTIRE IN FROST STRUCTURE MIGRATION WAS DELIVERED ON STEADIEL AND WELL WITHIN THE ALLOCATED BUDGET",
+        "wer": 0.1905,
+        "latency_sec": 1.659
+      }
+    ]
+  },
+  "Sherpa Offline (GigaSpeech 2023-12-12)": {
+    "model_config": {
+      "engine": "sherpa",
+      "model": "sherpa-onnx-zipformer-gigaspeech-2023-12-12",
+      "label": "Sherpa Offline (GigaSpeech 2023-12-12)"
+    },
+    "average_wer": 0.0436,
+    "exact_match_rate": 0.78,
+    "average_latency_sec": 0.227,
+    "samples": [
+      {
+        "id": "sample_01",
+        "category": "Customer Support / Greeting",
+        "accent": "US",
+        "duration": 5.64,
+        "reference": "Hello, thank you for calling customer service. How can I help you today?",
+        "hypothesis": "HELLO THANK YOU FOR CALLING CUSTOMER SERVICE HOW CAN I HELP YOU TODAY THANK YOU",
+        "wer": 0.1538,
+        "latency_sec": 1.138
+      },
+      {
+        "id": "sample_02",
+        "category": "Banking / Account",
+        "accent": "Indian",
+        "duration": 5.97,
+        "reference": "I would like to check the current balance on my account and review recent transactions.",
+        "hypothesis": "I WOULD LIKE TO CHECK THE CURRENT BALANCE ON MY ACCOUNT AND REVIEW RECENT TRANSACTIONS",
+        "wer": 0.0,
+        "latency_sec": 0.416
+      },
+      {
+        "id": "sample_03",
+        "category": "Delivery / Tracking",
+        "accent": "British",
+        "duration": 4.51,
+        "reference": "Could you please tell me when my package is scheduled to arrive at my address?",
+        "hypothesis": "COULD YOU PLEASE TELL ME WHEN MY PACKAGE IS SCHEDULED TO ARRIVE AT MY ADDRESS",
+        "wer": 0.0,
+        "latency_sec": 0.152
+      },
+      {
+        "id": "sample_04",
+        "category": "Technical Support",
+        "accent": "Australian",
+        "duration": 6.48,
+        "reference": "Yes, I am calling because my internet connection has been dropping frequently since yesterday.",
+        "hypothesis": "YES I AM CALLING BECAUSE MY INTERNET CONNECTION HAS BEEN DROPPING FREQUENTLY SINCE YESTERDAY",
+        "wer": 0.0,
+        "latency_sec": 0.193
+      },
+      {
+        "id": "sample_05",
+        "category": "Scheduling / Appointment",
+        "accent": "Canadian",
+        "duration": 5.16,
+        "reference": "Can I schedule an appointment with a technical specialist for next Tuesday afternoon?",
+        "hypothesis": "CAN I SCHEDULE AN APPOINTMENT WITH A TECHNICAL SPECIALIST FOR NEXT TUESDAY AFTERNOON",
+        "wer": 0.0,
+        "latency_sec": 0.211
+      },
+      {
+        "id": "sample_06",
+        "category": "Fast Speech (1.25x)",
+        "accent": "US",
+        "duration": 3.77,
+        "reference": "Please hold the line while I quickly transfer your call to the billing department.",
+        "hypothesis": "PLEASE HOLD THE LINE WHILE I QUICKLY TRANSFER YOUR CALL TO THE BILLING DEPARTMENT",
+        "wer": 0.0,
+        "latency_sec": 0.181
+      },
+      {
+        "id": "sample_07",
+        "category": "Fast Speech (1.20x)",
+        "accent": "Indian",
+        "duration": 6.0,
+        "reference": "I need to urgently update my primary shipping address before the order leaves the warehouse.",
+        "hypothesis": "I NEED TO URGENTLY UPDATE MY PRIMARY SHIPPING ADDRESS BEFORE THE ORDER LEAVES THE WAREHOUSE",
+        "wer": 0.0,
+        "latency_sec": 0.296
+      },
+      {
+        "id": "sample_08",
+        "category": "Slow Speech (0.85x)",
+        "accent": "British",
+        "duration": 6.02,
+        "reference": "I am speaking slowly and clearly so that every word can be transcribed accurately.",
+        "hypothesis": "I AM SPEAKING SLOWLY AND CLEARLY SO THAT EVERY WORD CAN BE TRANSCRIBED ACCURATELY",
+        "wer": 0.0,
+        "latency_sec": 0.25
+      },
+      {
+        "id": "sample_09",
+        "category": "Deliberate Pacing (0.90x)",
+        "accent": "Irish",
+        "duration": 6.17,
+        "reference": "Take your time and verify the six digit security code sent to your registered phone number.",
+        "hypothesis": "TAKE YOUR TIME AND VERIFY THE SIX DIGIT SECURITY CODE SENT TO YOUR REGISTERED PHONE NUMBER",
+        "wer": 0.0,
+        "latency_sec": 0.216
+      },
+      {
+        "id": "sample_10",
+        "category": "Verification / Moderate Fast",
+        "accent": "US",
+        "duration": 4.17,
+        "reference": "Let me confirm that your email address is spelled correctly in our records.",
+        "hypothesis": "LET ME CONFIRM THAT YOUR EMAIL ADDRESS IS SPELLED CORRECTLY IN OUR RECORDS",
+        "wer": 0.0,
+        "latency_sec": 0.396
+      },
+      {
+        "id": "sample_11",
+        "category": "Short Phrase / Affirmation",
+        "accent": "Indian",
+        "duration": 3.1,
+        "reference": "Yes, that sounds perfect.",
+        "hypothesis": "YES THAT SOUNDS PERFECT SAID",
+        "wer": 0.25,
+        "latency_sec": 0.2
+      },
+      {
+        "id": "sample_12",
+        "category": "Short Command / Cancellation",
+        "accent": "US",
+        "duration": 3.29,
+        "reference": "No, cancel the reservation immediately.",
+        "hypothesis": "NO CANCEL THE RESERVATION IMMEDIATELY NO",
+        "wer": 0.2,
+        "latency_sec": 0.117
+      },
+      {
+        "id": "sample_13",
+        "category": "Alphanumeric / Digits",
+        "accent": "British",
+        "duration": 4.1,
+        "reference": "My confirmation number is four eight two nine one five.",
+        "hypothesis": "MY CONFIRMATION NUMBER IS FOUR EIGHT TWO NINE ONE FIVE",
+        "wer": 0.0,
+        "latency_sec": 0.132
+      },
+      {
+        "id": "sample_14",
+        "category": "Short Question",
+        "accent": "Australian",
+        "duration": 3.17,
+        "reference": "What are your business hours on weekends?",
+        "hypothesis": "WHAT ARE YOUR BUSINESS HOURS ON WEEKENDS",
+        "wer": 0.0,
+        "latency_sec": 0.186
+      },
+      {
+        "id": "sample_15",
+        "category": "Short Request",
+        "accent": "Indian",
+        "duration": 2.62,
+        "reference": "Repeat that again please.",
+        "hypothesis": "REPEAT THAT AGAIN PLEASE",
+        "wer": 0.0,
+        "latency_sec": 0.244
+      },
+      {
+        "id": "sample_16",
+        "category": "Long Complex Multi-Clause",
+        "accent": "US",
+        "duration": 9.62,
+        "reference": "Although the flight was delayed by two hours due to severe weather, the airline provided meal vouchers and rebooked all connecting passengers without additional fees.",
+        "hypothesis": "ALTHOUGH THE FLIGHT WAS DELAYED BY TWO HOURS DUE TO SEVERE WEATHER THE AIRLINE PROVIDED MEAL VOUCHERS AND REBOOKED ALL CONNECTING PASSENGERS WITHOUT ADDITIONAL FEES",
+        "wer": 0.0,
+        "latency_sec": 0.336
+      },
+      {
+        "id": "sample_17",
+        "category": "Instructions / Conditional Clause",
+        "accent": "Indian",
+        "duration": 9.0,
+        "reference": "If you wish to initiate a formal warranty claim, please make sure you upload the original receipt and photograph the damaged component clearly.",
+        "hypothesis": "IF YOU WISH TO INITIATE A FORMAL WARRANTY CLAIM PLEASE MAKE SURE YOU UPLOAD THE ORIGINAL RECEIPT AND PHOTOGRAPH THE DAMAGED COMPONENT CLEARLY",
+        "wer": 0.0,
+        "latency_sec": 0.274
+      },
+      {
+        "id": "sample_18",
+        "category": "Business / Financial",
+        "accent": "British",
+        "duration": 9.24,
+        "reference": "The quarterly financial report highlighted substantial growth in international markets, driven primarily by strong adoption of cloud subscription services.",
+        "hypothesis": "THE QUARTERLY FINANCIAL REPORT HIGHLIGHTED SUBSTANTIAL GROWTH IN INTERNATIONAL MARKETS DRIVEN PRIMARILY BY STRONG ADOPTION OF CLOUD SUBSCRIPTION SERVICES",
+        "wer": 0.0,
+        "latency_sec": 0.373
+      },
+      {
+        "id": "sample_19",
+        "category": "Product Comparison",
+        "accent": "Canadian",
+        "duration": 7.1,
+        "reference": "Could you provide more information about the differences between standard annual subscriptions and the premium enterprise tier?",
+        "hypothesis": "COULD YOU PROVIDE MORE INFORMATION ABOUT THE DIFFERENCES BETWEEN STANDARD ANNUAL SUBSCRIPTIONS AND THE PREMIUM ENTERPRISE TIER",
+        "wer": 0.0,
+        "latency_sec": 0.344
+      },
+      {
+        "id": "sample_20",
+        "category": "Technical Problem / Compound",
+        "accent": "Indian",
+        "duration": 9.34,
+        "reference": "I have been trying to reset my password for the past thirty minutes, but the verification link seems to have expired before I could open it.",
+        "hypothesis": "I HAVE BEEN TRYING TO RESET MY PASSWORD FOR THE PAST THIRTY MINUTES BUT THE VERIFICATION LINK SEEMS TO HAVE EXPIRED BEFORE I COULD OPEN IT",
+        "wer": 0.0,
+        "latency_sec": 0.325
+      },
+      {
+        "id": "sample_21",
+        "category": "Location Question",
+        "accent": "Indian",
+        "duration": 4.42,
+        "reference": "Where is the nearest branch office located in Bangalore?",
+        "hypothesis": "WHERE IS THE NEAREST BRANCH OFFICE LOCATED IN BANGALORE",
+        "wer": 0.0,
+        "latency_sec": 0.173
+      },
+      {
+        "id": "sample_22",
+        "category": "Inquiry / Transfer",
+        "accent": "British",
+        "duration": 4.46,
+        "reference": "Who should I speak with to get approval for an international wire transfer?",
+        "hypothesis": "WHO SHOULD I SPEAK WITH TO GET APPROVAL FOR AN INTERNATIONAL WIRE TRANSFER",
+        "wer": 0.0,
+        "latency_sec": 0.209
+      },
+      {
+        "id": "sample_23",
+        "category": "Troubleshooting Question",
+        "accent": "US",
+        "duration": 4.92,
+        "reference": "Why has my debit card been blocked after entering the correct PIN three times?",
+        "hypothesis": "WHY HAS MY DEBIT CARD BEEN BLOCKED AFTER ENTERING THE CORRECT PIN THREE TIMES",
+        "wer": 0.0,
+        "latency_sec": 0.203
+      },
+      {
+        "id": "sample_24",
+        "category": "Technical Setup",
+        "accent": "Australian",
+        "duration": 5.69,
+        "reference": "How do I configure two factor authentication on my mobile banking application?",
+        "hypothesis": "HOW DO I CONFIGURE TWO-FACTOR AUTHENTICATION ON MY MOBILE BANKING APPLICATION",
+        "wer": 0.1667,
+        "latency_sec": 0.225
+      },
+      {
+        "id": "sample_25",
+        "category": "Billing / Refund Question",
+        "accent": "Canadian",
+        "duration": 5.52,
+        "reference": "When will the refund of one hundred and forty five dollars be credited back to my account?",
+        "hypothesis": "WHEN WILL THE REFUND OF ONE HUNDRED AND FORTY FIVE DOLLARS BE CREDITED BACK TO MY ACCOUNT",
+        "wer": 0.0,
+        "latency_sec": 0.193
+      },
+      {
+        "id": "sample_26",
+        "category": "Smart Home / Office Command",
+        "accent": "US",
+        "duration": 4.06,
+        "reference": "Turn off all lights in the conference room and lock the glass door.",
+        "hypothesis": "TURN OFF ALL LIGHTS IN THE CONFERENCE ROOM AND LOCK THE GLASS DOOR",
+        "wer": 0.0,
+        "latency_sec": 0.136
+      },
+      {
+        "id": "sample_27",
+        "category": "Financial Action Command",
+        "accent": "Indian",
+        "duration": 6.07,
+        "reference": "Transfer five thousand rupees from my savings account to my current account immediately.",
+        "hypothesis": "TRANSFER FIVE THOUSAND RUPEES FROM MY SAVINGS ACCOUNT TO MY CURRENT ACCOUNT IMMEDIATELY",
+        "wer": 0.0,
+        "latency_sec": 0.17
+      },
+      {
+        "id": "sample_28",
+        "category": "Notification Command",
+        "accent": "British",
+        "duration": 6.43,
+        "reference": "Send an urgent email notification to the engineering team regarding the unexpected server outage.",
+        "hypothesis": "SEND AN URGENT EMAIL NOTIFICATION TO THE ENGINEERING TEAM REGARDING THE UNEXPECTED SERVER OUTAGE",
+        "wer": 0.0,
+        "latency_sec": 0.264
+      },
+      {
+        "id": "sample_29",
+        "category": "Document Retrieval Command",
+        "accent": "US",
+        "duration": 4.73,
+        "reference": "Download the quarterly billing statement for the month of September twenty twenty four.",
+        "hypothesis": "DOWNLOAD THE QUARTERLY BILLING STATEMENT FOR THE MONTH OF SEPTEMBER TWENTY TWENTY FOUR",
+        "wer": 0.0,
+        "latency_sec": 0.102
+      },
+      {
+        "id": "sample_30",
+        "category": "Audio Control Command",
+        "accent": "Irish",
+        "duration": 4.06,
+        "reference": "Mute my microphone and pause the active audio recording.",
+        "hypothesis": "MUTE MY MICROPHONE AND PAUSE THE ACTIVE AUDIO RECORDING",
+        "wer": 0.0,
+        "latency_sec": 0.128
+      },
+      {
+        "id": "sample_31",
+        "category": "Alphanumeric / Flight",
+        "accent": "British",
+        "duration": 5.16,
+        "reference": "The flight number is British Airways seven eight four departing at fourteen thirty hours.",
+        "hypothesis": "THE FLIGHT NUMBER IS BRITISH AIRWAY SEVEN EIGHT FOR DEPARTING AT FOURTEEN THIRTY HOURS",
+        "wer": 0.1429,
+        "latency_sec": 0.119
+      },
+      {
+        "id": "sample_32",
+        "category": "Phone Digits",
+        "accent": "Indian",
+        "duration": 6.29,
+        "reference": "My telephone number is nine eight seven six five four three two one zero.",
+        "hypothesis": "MY TELEPHONE NUMBER IS NINE EIGHT SEVEN SIX FIVE FOUR THREE TWO ONE ZERO",
+        "wer": 0.0,
+        "latency_sec": 0.183
+      },
+      {
+        "id": "sample_33",
+        "category": "Financial Numbers & Cents",
+        "accent": "US",
+        "duration": 5.3,
+        "reference": "The total invoice amount is twelve thousand four hundred and fifty dollars and fifty cents.",
+        "hypothesis": "THE TOTAL INVOICE AMOUNT IS TWELVE THOUSAND FOUR HUNDRED AND FIFTY DOLLARS AND FIFTY CENTS",
+        "wer": 0.0,
+        "latency_sec": 0.138
+      },
+      {
+        "id": "sample_34",
+        "category": "Tracking Code / Dates",
+        "accent": "Canadian",
+        "duration": 6.41,
+        "reference": "Tracking code X Y Z nine nine zero one four seven was dispatched on October twenty first.",
+        "hypothesis": "TRACKING CODE X Y Z NINE NINE ZERO ONE FOR SEVEN WAS DISPATCHED ON OCTOBER TWENTY FIRST",
+        "wer": 0.0588,
+        "latency_sec": 0.145
+      },
+      {
+        "id": "sample_35",
+        "category": "Scientific Decimals & Percentages",
+        "accent": "Indian",
+        "duration": 6.43,
+        "reference": "The room temperature is thirty two point five degrees Celsius with seventy percent humidity.",
+        "hypothesis": "THE ROOM TEMPERATURE IS THIRTY TWO POINT FIVE DEGREES CELSIUS WITH SEVENTY PERCENT HUMIDITY",
+        "wer": 0.0,
+        "latency_sec": 0.21
+      },
+      {
+        "id": "sample_36",
+        "category": "Technical / Database",
+        "accent": "US",
+        "duration": 5.86,
+        "reference": "The PostgreSQL database cluster experienced high memory pressure on the primary replica node.",
+        "hypothesis": "THE POSTGRESQL DATABASE CLUSTER EXPERIENCED HIGH MEMORY PRESSURE ON THE PRIMARY REPLICA NODE",
+        "wer": 0.0,
+        "latency_sec": 0.203
+      },
+      {
+        "id": "sample_37",
+        "category": "Medical / Pharmaceutical",
+        "accent": "Indian",
+        "duration": 6.5,
+        "reference": "The physician prescribed amoxicillin five hundred milligrams twice daily after meals.",
+        "hypothesis": "THE PHYSICIAN PRESCRIBED AMOXYCELIN FIVE HUNDRED MILLIGRAMS TWICE DAILY AFTER MEALS",
+        "wer": 0.0909,
+        "latency_sec": 0.197
+      },
+      {
+        "id": "sample_38",
+        "category": "Machine Learning Technical",
+        "accent": "British",
+        "duration": 6.62,
+        "reference": "The convolutional neural network was fine tuned using stochastic gradient descent and cross entropy loss.",
+        "hypothesis": "THE CONVOLUTIONAL NEURAL NETWORK WAS FINE-TUNED USING STOCHASTIC GRADIENT DESCENT AND CROSS-ENTROPY LOSS",
+        "wer": 0.2667,
+        "latency_sec": 0.301
+      },
+      {
+        "id": "sample_39",
+        "category": "Cybersecurity / Protocols",
+        "accent": "Australian",
+        "duration": 7.34,
+        "reference": "Ensure that transport layer security version one point three encryption is enforced on all endpoints.",
+        "hypothesis": "ENSURE THAT TRANSPORT LAYER SECURITY VERSION ONE POINT THREE ENCRYPTION IS ENFORCED ON ALL ENDPOINTS",
+        "wer": 0.0,
+        "latency_sec": 0.193
+      },
+      {
+        "id": "sample_40",
+        "category": "Clinical / Medical Symptoms",
+        "accent": "US",
+        "duration": 6.7,
+        "reference": "The patient reported acute abdominal pain and mild hypertension during the physical examination.",
+        "hypothesis": "THE PATIENT REPORTED ACUTE ABDOMINAL PAIN AND MILD HYPERTENSION DURING THE PHYSICAL EXAMINATION",
+        "wer": 0.0,
+        "latency_sec": 0.172
+      },
+      {
+        "id": "sample_41",
+        "category": "Short Phrase / Courtesy",
+        "accent": "US",
+        "duration": 2.69,
+        "reference": "Okay, thank you very much.",
+        "hypothesis": "OKAY THANK YOU VERY MUCH THANK YOU",
+        "wer": 0.4,
+        "latency_sec": 0.095
+      },
+      {
+        "id": "sample_42",
+        "category": "Short Phrase / Agreement",
+        "accent": "Indian",
+        "duration": 3.17,
+        "reference": "Yes, I agree completely.",
+        "hypothesis": "YES I AGREE COMPLETELY SAID",
+        "wer": 0.25,
+        "latency_sec": 0.085
+      },
+      {
+        "id": "sample_43",
+        "category": "Short Command",
+        "accent": "British",
+        "duration": 2.38,
+        "reference": "Stop the playback now.",
+        "hypothesis": "STOP THE PLAYBACK NOW",
+        "wer": 0.0,
+        "latency_sec": 0.078
+      },
+      {
+        "id": "sample_44",
+        "category": "Short Question",
+        "accent": "Australian",
+        "duration": 2.35,
+        "reference": "How much does it cost?",
+        "hypothesis": "HOW MUCH DOES IT COST",
+        "wer": 0.0,
+        "latency_sec": 0.096
+      },
+      {
+        "id": "sample_45",
+        "category": "Short Farewells",
+        "accent": "US",
+        "duration": 2.52,
+        "reference": "Goodbye, have a nice day.",
+        "hypothesis": "GOODBYE HAVE A NICE DAY GOOD",
+        "wer": 0.2,
+        "latency_sec": 0.094
+      },
+      {
+        "id": "sample_46",
+        "category": "Conversational Fillers & Pauses",
+        "accent": "US",
+        "duration": 7.46,
+        "reference": "Well, let me see, I think our product kickoff meeting was originally scheduled for Thursday morning at ten o'clock.",
+        "hypothesis": "WELL LET ME SEE I THINK OUR PRODUCT KICKOFF MEETING WAS ORIGINALLY SCHEDULED FOR THURSDAY MORNING AT TEN O'CLOCK",
+        "wer": 0.0,
+        "latency_sec": 0.188
+      },
+      {
+        "id": "sample_47",
+        "category": "Conversational Inquiry / Multi-Clause",
+        "accent": "Indian",
+        "duration": 9.89,
+        "reference": "Actually, before we proceed with the payment, could you please double check if there are any promotional discounts available for annual subscribers?",
+        "hypothesis": "ACTUALLY BEFORE WE PROCEED WITH THE PAYMENT COULD YOU PLEASE DOUBLE CHECK IF THERE ARE ANY PROMOTIONAL DISCOUNTS AVAILABLE FOR ANNUAL SUBSCRIBERS",
+        "wer": 0.0,
+        "latency_sec": 0.259
+      },
+      {
+        "id": "sample_48",
+        "category": "Compound Sentence / Request",
+        "accent": "British",
+        "duration": 6.74,
+        "reference": "I was wondering whether you could email me a copy of the contract, or if not, let me know who I should contact in legal.",
+        "hypothesis": "I WAS WONDERING WHETHER YOU COULD EMAIL ME A COPY OF THE CONTRACT OR IF NOT LET ME KNOW WHO I SHOULD CONTACT IN LEGAL",
+        "wer": 0.0,
+        "latency_sec": 0.333
+      },
+      {
+        "id": "sample_49",
+        "category": "Conversational Feedback / Long",
+        "accent": "Canadian",
+        "duration": 8.45,
+        "reference": "To be completely honest with you, the customer feedback on our new mobile interface has been overwhelmingly positive across every demographic.",
+        "hypothesis": "TO BE COMPLETELY HONEST WITH YOU THE CUSTOMER FEEDBACK ON OUR NEW MOBILE INTERFACE HAS BEEN OVERWHELMINGLY POSITIVE ACROSS EVERY DEMOGRAPHIC",
+        "wer": 0.0,
+        "latency_sec": 0.212
+      },
+      {
+        "id": "sample_50",
+        "category": "Formal Summary / Complex Vocabulary",
+        "accent": "Indian",
+        "duration": 11.14,
+        "reference": "In conclusion, despite several initial logistical obstacles, the entire infrastructure migration was delivered on schedule and well within the allocated budget.",
+        "hypothesis": "IN CONCLUSION DESPITE SEVERAL INITIAL LOGISTICAL OBSTACLES THE ENTIRE INFRASTRUCTURE MIGRATION WAS DELIVERED ON SCHEDULE AND WELL WITHIN THE ALLOCATED BUDGET",
+        "wer": 0.0,
+        "latency_sec": 0.283
+      }
+    ]
+  }
+}

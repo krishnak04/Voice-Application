@@ -359,7 +359,25 @@ class SherpaStreamingEngine:
         return False
 
     def get_final_transcript(self, session_id: str) -> str:
-        return self.get_partial_transcript(session_id)
+        """
+        Finalize speech turn: feeds 0.2s silence tail to flush remaining lookahead
+        acoustic frames in streaming Zipformer transducer, signals input_finished,
+        and decodes all remaining tokens.
+        """
+        stream = self.active_streams.get(session_id)
+        if stream and self.recognizer and self.is_streaming:
+            try:
+                # 0.2s silence tail ensures Zipformer receptive field lookahead window is flushed
+                silence_tail = np.zeros(int(self.sample_rate * 0.2), dtype=np.float32)
+                stream.accept_waveform(self.sample_rate, silence_tail)
+                stream.input_finished()
+                while self.recognizer.is_ready(stream):
+                    self.recognizer.decode_stream(stream)
+            except Exception as e:
+                logger.warning(f"Error flushing Sherpa stream for {session_id}: {e}")
+            res = self.recognizer.get_result(stream)
+            return res.strip() if res else ""
+        return ""
 
     def close_stream(self, session_id: str):
         """Clean up stream when session terminates."""
@@ -375,6 +393,19 @@ class SherpaStreamingEngine:
         if not self.is_available():
             raise RuntimeError(f"Sherpa-ONNX not available: {self.load_error}")
 
+        if len(samples) == 0:
+            return ""
+
+        # Normalize audio: remove DC bias and calibrate gain
+        mean_v = np.mean(samples)
+        samples = samples - mean_v
+        peak_v = np.max(np.abs(samples))
+        if peak_v > 1e-4 and peak_v < 0.6:
+            gain = min(0.9 / peak_v, 0.12 / max(float(np.sqrt(np.mean(samples**2))), 1e-4), 8.0)
+            samples = np.clip(samples * gain, -1.0, 1.0)
+        elif peak_v > 0.98:
+            samples = samples * (0.95 / peak_v)
+
         if self.is_streaming:
             # Online stream processed in chunks
             stream = self.recognizer.create_stream()
@@ -384,6 +415,12 @@ class SherpaStreamingEngine:
                 stream.accept_waveform(sample_rate, chunk)
                 while self.recognizer.is_ready(stream):
                     self.recognizer.decode_stream(stream)
+
+            # Flush lookahead context window
+            silence_tail = np.zeros(int(sample_rate * 0.2), dtype=np.float32)
+            stream.accept_waveform(sample_rate, silence_tail)
+            while self.recognizer.is_ready(stream):
+                self.recognizer.decode_stream(stream)
 
             stream.input_finished()
             while self.recognizer.is_ready(stream):
@@ -409,24 +446,67 @@ class SherpaStreamingEngine:
         if isinstance(audio_source, (str, Path)) and not os.path.exists(audio_source):
             raise FileNotFoundError(f"Audio file not found: {audio_source}")
 
-        if isinstance(audio_source, (bytes, bytearray)):
-            import io
-            audio_source = io.BytesIO(audio_source)
-
         start_time = time.perf_counter()
-        container = av.open(audio_source)
-        audio_stream = next(s for s in container.streams if s.type == 'audio')
-        resampler = av.AudioResampler(format='fltp', layout='mono', rate=16000)
-        samples = []
-        for frame in container.decode(audio_stream):
-            for rf in resampler.resample(frame):
-                samples.append(rf.to_ndarray()[0])
-        container.close()
+        samples_np = None
+        orig_rate = 16000
+        orig_channels = 1
 
-        if samples:
-            samples_np = np.concatenate(samples)
-        else:
-            samples_np = np.zeros(0, dtype=np.float32)
+        if isinstance(audio_source, np.ndarray):
+            samples_np = audio_source.astype(np.float32)
+        elif isinstance(audio_source, (bytes, bytearray)):
+            import io
+            is_container = (
+                audio_source.startswith(b"RIFF")
+                or audio_source.startswith(b"\x1a\x45\xdf\xa3")
+                or audio_source.startswith(b"ID3")
+                or audio_source.startswith(b"\xff\xfb")
+                or audio_source.startswith(b"OggS")
+                or audio_source.startswith(b"fLaC")
+            )
+            if not is_container and (len(audio_source) % 2 == 0):
+                samples_np = np.frombuffer(audio_source, dtype=np.int16).astype(np.float32) / 32768.0
+            else:
+                audio_source = io.BytesIO(audio_source)
+        elif hasattr(audio_source, "getvalue"):
+            raw = audio_source.getvalue()
+            is_container = (
+                raw.startswith(b"RIFF")
+                or raw.startswith(b"\x1a\x45\xdf\xa3")
+                or raw.startswith(b"ID3")
+                or raw.startswith(b"\xff\xfb")
+                or raw.startswith(b"OggS")
+                or raw.startswith(b"fLaC")
+            )
+            if not is_container and (len(raw) % 2 == 0):
+                samples_np = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
+
+        if samples_np is None:
+            container = av.open(audio_source)
+            audio_stream = next(s for s in container.streams if s.type == 'audio')
+            resampler = av.AudioResampler(format='fltp', layout='mono', rate=16000)
+            samples = []
+            for frame in container.decode(audio_stream):
+                for rf in resampler.resample(frame):
+                    samples.append(rf.to_ndarray()[0])
+            for rf in resampler.resample(None):
+                samples.append(rf.to_ndarray()[0])
+            orig_rate = getattr(audio_stream, 'rate', 16000)
+            orig_channels = getattr(audio_stream, 'channels', 1)
+            container.close()
+
+            if samples:
+                samples_np = np.concatenate(samples)
+            else:
+                samples_np = np.zeros(0, dtype=np.float32)
+
+        duration = len(samples_np) / 16000.0
+        peak_val = float(np.max(np.abs(samples_np))) if len(samples_np) > 0 else 0.0
+        peak_dbfs = round(20 * float(np.log10(max(peak_val, 1e-5))), 1)
+        rms_val = round(float(np.sqrt(np.mean(samples_np**2))), 4) if len(samples_np) > 0 else 0.0
+        logger.info(
+            f"[Sherpa STT Audio Telemetry] duration={duration:.2f}s, in_rate={orig_rate}Hz, "
+            f"in_channels={orig_channels}, peak={peak_dbfs} dBFS, rms={rms_val}, model={self.active_model_id}"
+        )
 
         t_asr_start = time.perf_counter()
         transcript = self.transcribe_samples(samples_np, sample_rate=16000)

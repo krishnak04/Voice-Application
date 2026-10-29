@@ -22,8 +22,14 @@ export default function App() {
   const [isSherpaModalOpen, setIsSherpaModalOpen] = useState(false);
   const [result, setResult] = useState(null);
   const [language, setLanguage] = useState(() => localStorage.getItem('whisper_language') || 'auto');
-  const [model, setModel] = useState(() => localStorage.getItem('whisper_model') || 'sherpa-onnx-streaming-zipformer-en-2023-06-26');
-  const [engine, setEngine] = useState(() => localStorage.getItem('stt_engine') || 'sherpa');
+  const [engine, setEngine] = useState(() => {
+    const saved = localStorage.getItem('stt_engine');
+    return (saved && saved !== 'sherpa') ? saved : 'whisper';
+  });
+  const [model, setModel] = useState(() => {
+    const saved = localStorage.getItem('whisper_model');
+    return (saved && saved !== 'sherpa-streaming') ? saved : 'base.en';
+  });
 
   const handleEngineChange = (eng) => {
     setEngine(eng);
