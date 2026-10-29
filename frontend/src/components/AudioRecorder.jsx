@@ -54,13 +54,12 @@ export const WHISPER_MODELS = [
 ];
 
 export const SHERPA_MODELS = [
-  { id: 'sherpa-onnx-streaming-zipformer-en-2023-06-26', label: '⚡ Streaming Standard (~65.6M)', type: 'streaming', category: 'Standard' },
-  { id: 'sherpa-onnx-streaming-zipformer-en-20M-2023-02-17', label: '⚡ Streaming Small Lightweight (~20M)', type: 'streaming', category: 'Small' },
-  { id: 'sherpa-onnx-streaming-zipformer-en-2023-06-21', label: '⚡ Streaming LibriSpeech (~65.6M)', type: 'streaming', category: 'Standard' },
-  { id: 'sherpa-onnx-streaming-zipformer-en-2023-02-21', label: '⚡ Streaming LibriSpeech (~65.6M)', type: 'streaming', category: 'Standard' },
-  { id: 'sherpa-onnx-zipformer-small-en-2023-06-26', label: '📦 Offline Small (~30M Fast Batch)', type: 'offline', category: 'Small' },
-  { id: 'sherpa-onnx-zipformer-large-en-2023-06-26', label: '📦 Offline Large (~148M High Accuracy)', type: 'offline', category: 'Large' },
-  { id: 'sherpa-onnx-zipformer-gigaspeech-2023-12-12', label: '📦 Offline GigaSpeech (~65.6M Robust)', type: 'offline', category: 'Standard' },
+  { id: 'sherpa-onnx-streaming-zipformer-en-2023-06-26', label: '⚡ Streaming Standard (~65.6M)', type: 'streaming', category: 'Standard', status: 'Ready' },
+  { id: 'sherpa-onnx-streaming-zipformer-en-20M-2023-02-17', label: '⚡ Streaming Small Lightweight (~20M)', type: 'streaming', category: 'Small', status: 'Ready' },
+  { id: 'sherpa-onnx-streaming-zipformer-en-2023-06-21', label: '⚡ Streaming LibriSpeech (~65.6M)', type: 'streaming', category: 'Standard', status: 'Ready' },
+  { id: 'sherpa-onnx-zipformer-small-en-2023-06-26', label: '📦 Offline Small (~30M)', type: 'offline', category: 'Small', status: 'Ready' },
+  { id: 'sherpa-onnx-zipformer-large-en-2023-06-26', label: '📦 Offline Large (~148M)', type: 'offline', category: 'Large', status: 'Ready' },
+  { id: 'sherpa-onnx-zipformer-gigaspeech-2023-12-12', label: '📦 Offline GigaSpeech (~65.6M)', type: 'offline', category: 'Standard', status: 'Ready' },
 ];
 
 export const MODELS = WHISPER_MODELS;
@@ -216,7 +215,7 @@ export default function AudioRecorder({
           >
             {(engine === 'sherpa' ? SHERPA_MODELS : WHISPER_MODELS).map((m) => (
               <option key={m.id} value={m.id}>
-                {m.label}
+                {m.label} • {m.status || 'Ready'}
               </option>
             ))}
           </select>

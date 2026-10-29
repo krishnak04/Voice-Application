@@ -521,6 +521,10 @@ export default function VoiceCallSimulator({
   const currentTurnIdRef = useRef(0);
   const scriptProcessorRef = useRef(null);
   const bargeInTimerRef = useRef(null);
+  const tEndpointClientRef = useRef(null);
+  const firstAudibleMeasuredRef = useRef(null);
+  const lastFinalUserTextRef = useRef('');
+  const lastFinalMetricsRef = useRef(null);
 
   // Sync with prop changes if parent updates
   useEffect(() => {
@@ -863,6 +867,10 @@ export default function VoiceCallSimulator({
     const mime = chunk.format === 'mp3' ? 'audio/mpeg' : 'audio/wav';
     const audio = new Audio(`data:${mime};base64,${chunk.base64}`);
     currentAudioRef.current = audio;
+
+    if (!firstAudibleMeasuredRef.current && tEndpointClientRef.current) {
+      firstAudibleMeasuredRef.current = Math.round(performance.now() - tEndpointClientRef.current);
+    }
 
     audio.onended = () => {
       currentAudioRef.current = null;
@@ -1403,6 +1411,15 @@ export default function VoiceCallSimulator({
             } else if (data.type === 'final_transcript') {
               setLivePartial('');
               currentTurnIdRef.current = data.turn_id;
+              tEndpointClientRef.current = performance.now();
+              firstAudibleMeasuredRef.current = null;
+              lastFinalUserTextRef.current = data.text || '';
+              lastFinalMetricsRef.current = {
+                timeToFinal: data.endpoint_latency_ms,
+                audioDuration: data.audio_duration_sec,
+                rtf: data.rtf
+              };
+
               if (data.text && data.text.trim()) {
                 setChatHistory((prev) => [
                   ...prev,
@@ -1443,18 +1460,43 @@ export default function VoiceCallSimulator({
                   { role: 'assistant', content: data.full_reply.trim() }
                 ]);
               }
-              if (data.metrics?.total_turn_latency_ms) {
-                setFdMetrics((m) => ({ ...m, totalTurnLatency: data.metrics.total_turn_latency_ms }));
+              const metrics = data.metrics || {};
+              const finalMetrics = lastFinalMetricsRef.current || {};
+              if (metrics.total_turn_latency_ms) {
+                setFdMetrics((m) => ({ ...m, totalTurnLatency: metrics.total_turn_latency_ms }));
               }
               if (onCallResult) {
+                const sttSec = metrics.endpoint_latency_ms ? +(metrics.endpoint_latency_ms / 1000).toFixed(3) : (finalMetrics.timeToFinal ? +(finalMetrics.timeToFinal / 1000).toFixed(3) : null);
+                const audioDur = metrics.audio_duration_sec || finalMetrics.audioDuration || null;
+                const rtf = metrics.rtf || finalMetrics.rtf || (audioDur && sttSec ? +(sttSec / audioDur).toFixed(3) : null);
+                const speedFactor = rtf && rtf > 0 ? +(1 / rtf).toFixed(1) : null;
+                const groqFirstTokenMs = metrics.time_to_first_token_ms || null;
+                const groqSec = metrics.groq_completion_ms ? +(metrics.groq_completion_ms / 1000).toFixed(3) : (groqFirstTokenMs ? +(groqFirstTokenMs / 1000).toFixed(3) : null);
+                const ttsFirstChunkMs = metrics.tts_first_chunk_ms || metrics.time_to_first_audio_ms || null;
+                const totalTurnMs = metrics.total_turn_latency_ms || null;
+                const ttsSec = metrics.tts_total_ms ? +(metrics.tts_total_ms / 1000).toFixed(3) : (ttsFirstChunkMs ? +(ttsFirstChunkMs / 1000).toFixed(3) : null);
+                const totalServerSec = totalTurnMs ? +(totalTurnMs / 1000).toFixed(3) : (sttSec && groqSec ? +(sttSec + groqSec).toFixed(3) : null);
+                const firstAudibleMs = firstAudibleMeasuredRef.current || metrics.time_to_first_audio_ms || ttsFirstChunkMs || null;
+                const firstPartialMs = metrics.first_partial_latency_ms || fdMetrics.timeToFirstPartial || null;
+                const clientRttSec = firstAudibleMs ? +(firstAudibleMs / 1000).toFixed(3) : (metrics.voice_to_voice_rtt_ms ? +(metrics.voice_to_voice_rtt_ms / 1000).toFixed(3) : totalServerSec);
+
                 onCallResult({
-                  transcript: '',
+                  transcript: lastFinalUserTextRef.current || '',
                   reply: data.full_reply || '',
                   latency: {
-                    stt_latency: (fdMetrics.timeToFinal || 0) / 1000,
-                    groq_latency: (data.metrics?.time_to_first_token_ms || 0) / 1000,
-                    tts_latency: ((data.metrics?.total_turn_latency_ms || 0) - (data.metrics?.time_to_first_audio_ms || 0)) / 1000,
-                    total_server_time: (data.metrics?.total_turn_latency_ms || 0) / 1000
+                    audio_duration: audioDur,
+                    stt_latency: sttSec,
+                    first_partial_latency_ms: firstPartialMs,
+                    endpoint_latency_ms: metrics.endpoint_latency_ms || null,
+                    groq_first_token_ms: groqFirstTokenMs,
+                    groq_latency: groqSec,
+                    tts_first_chunk_ms: ttsFirstChunkMs,
+                    tts_latency: ttsSec,
+                    first_audible_ms: firstAudibleMs,
+                    total_server_time: totalServerSec,
+                    client_rtt: clientRttSec,
+                    rtf: rtf,
+                    speed_factor: speedFactor
                   }
                 });
               }
@@ -2044,13 +2086,13 @@ export default function VoiceCallSimulator({
                 {sttEngine === 'sherpa' ? (
                   SHERPA_MODELS.map((m) => (
                     <option key={m.id} value={m.id}>
-                      {m.type === 'streaming' ? '⚡' : '📦'} {m.label}
+                      {m.type === 'streaming' ? '⚡' : '📦'} {m.label} • {m.status || 'Ready'}
                     </option>
                   ))
                 ) : (
                   WHISPER_MODELS.map((m) => (
                     <option key={m.id} value={m.id}>
-                      🎙️ {m.label}
+                      🎙️ {m.label} • {m.status || 'Ready'}
                     </option>
                   ))
                 )}
@@ -2866,13 +2908,13 @@ export default function VoiceCallSimulator({
                       {sttEngine === 'sherpa' ? (
                         SHERPA_MODELS.map((m) => (
                           <option key={m.id} value={m.id}>
-                            {m.type === 'streaming' ? '⚡' : '📦'} {m.label}
+                            {m.type === 'streaming' ? '⚡' : '📦'} {m.label} • {m.status || 'Ready'}
                           </option>
                         ))
                       ) : (
                         WHISPER_MODELS.map((m) => (
                           <option key={m.id} value={m.id}>
-                            🎙️ {m.label}
+                            🎙️ {m.label} • {m.status || 'Ready'}
                           </option>
                         ))
                       )}

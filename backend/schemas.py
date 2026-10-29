@@ -2,13 +2,19 @@ from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 
 class LatencyMetrics(BaseModel):
-    audio_duration: float = Field(..., description="Duration of audio in seconds")
-    stt_latency: float = Field(..., description="Faster-Whisper STT elapsed time in seconds")
-    rtf: float = Field(..., description="Real-time factor: stt_latency / audio_duration")
-    speed_factor: float = Field(..., description="Speed factor: audio_duration / stt_latency")
-    groq_latency: Optional[float] = Field(0.0, description="Groq LLM response elapsed time in seconds")
-    tts_latency: Optional[float] = Field(0.0, description="TTS synthesis elapsed time in seconds")
-    total_server_time: Optional[float] = Field(0.0, description="Total pipeline latency on server")
+    audio_duration: Optional[float] = Field(None, description="Duration of audio speech in seconds")
+    stt_latency: Optional[float] = Field(None, description="STT processing or endpoint elapsed time in seconds")
+    first_partial_latency_ms: Optional[float] = Field(None, description="First partial transcript latency in ms")
+    endpoint_latency_ms: Optional[float] = Field(None, description="Endpoint detection latency in ms")
+    rtf: Optional[float] = Field(None, description="Real-time factor: stt_latency / audio_duration")
+    speed_factor: Optional[float] = Field(None, description="Speed factor: audio_duration / stt_latency")
+    groq_first_token_ms: Optional[float] = Field(None, description="Groq time to first token (TTFT) in ms")
+    groq_latency: Optional[float] = Field(None, description="Groq LLM response elapsed time in seconds")
+    tts_first_chunk_ms: Optional[float] = Field(None, description="Time to first audio chunk (TTFA) in ms")
+    tts_latency: Optional[float] = Field(None, description="Actual TTS synthesis elapsed time in seconds")
+    first_audible_ms: Optional[float] = Field(None, description="Time to first audible response playback in ms")
+    total_server_time: Optional[float] = Field(None, description="Total server-side pipeline latency in seconds")
+    client_rtt: Optional[float] = Field(None, description="Total voice-to-voice round trip time in seconds")
 
 class AccentDetectionResponse(BaseModel):
     accent: str = Field(..., description="Estimated English accent / variety name")

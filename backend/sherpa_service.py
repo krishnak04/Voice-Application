@@ -76,6 +76,16 @@ class SherpaStreamingEngine:
                     except Exception:
                         pass
 
+            if is_downloaded:
+                if model_id == self.active_model_id and self.is_loaded:
+                    status = "Ready"
+                elif self.load_error and model_id == self.active_model_id:
+                    status = "Error"
+                else:
+                    status = "Installed"
+            else:
+                status = "Not Installed"
+
             item = {
                 "id": model_id,
                 "name": meta["name"],
@@ -89,6 +99,7 @@ class SherpaStreamingEngine:
                 "offline_supported": meta["offline_supported"],
                 "is_downloaded": is_downloaded,
                 "downloaded": is_downloaded,
+                "status": status,
                 "is_active": (model_id == self.active_model_id and self.is_loaded),
                 "disk_size_mb": disk_size_mb,
                 "license": meta["license"],

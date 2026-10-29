@@ -38,6 +38,8 @@ async def test_live_barge_in():
                 "groq_model": "openai/gpt-oss-20b"
             })
 
+            ai_speaking_event = asyncio.Event()
+
             async def send_sequence():
                 # Speak first sentence
                 print("[T1] Speaking initial utterance...")
@@ -46,14 +48,20 @@ async def test_live_barge_in():
                     await asyncio.sleep(0.04)
                 # Silence to trigger endpoint
                 print("[T1] Pausing for endpoint detection...")
-                for _ in range(15):
+                for _ in range(18):
                     await ws.send_bytes(silence_chunk)
                     await asyncio.sleep(0.05)
 
                 # Wait for AI to start answering, then barge in!
-                await asyncio.sleep(0.8)
+                print("[T1] Waiting for AI assistant speech...")
+                try:
+                    await asyncio.wait_for(ai_speaking_event.wait(), timeout=10.0)
+                except asyncio.TimeoutError:
+                    print("[!] Timeout waiting for AI speech event")
+
+                await asyncio.sleep(0.4)
                 print("\n>>> BARGING IN NOW: User speaks over assistant!")
-                for chunk in chunks[:25]:
+                for chunk in chunks[:35]:
                     await ws.send_bytes(chunk)
                     await asyncio.sleep(0.03)
 
@@ -71,7 +79,10 @@ async def test_live_barge_in():
                     elif mtype == "assistant_text_delta":
                         print(f"[AI]: {data['delta']}", end="", flush=True)
                     elif mtype == "audio_chunk":
-                        print(f"\n[AI Audio Chunk #{data['chunk_index']}] Playing...")
+                        print(f"\n[AI Audio Chunk #{data['chunk_index']}] ({len(data.get('audio_base64', ''))} b64 chars) Playing...")
+                        ai_speaking_event.set()
+                    elif mtype == "turn_complete":
+                        print(f"\n[Turn Complete]: {data.get('metrics', {})}")
                     elif mtype == "interrupted":
                         print(f"\n\n==========================================")
                         print(f"SUCCESS: BARGE-IN INTERRUPTION DETECTED!")

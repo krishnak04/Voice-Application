@@ -9,6 +9,7 @@ import re
 import numpy as np
 from contextlib import asynccontextmanager
 from typing import Optional, List
+from collections import deque
 from fastapi import FastAPI, UploadFile, File, Form, Query, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -705,16 +706,19 @@ async def websocket_call_endpoint(websocket: WebSocket):
     accent_detector = get_accent_detector()
     accent_session = accent_detector.get_session(session_id)
     turn_audio_bytes = bytearray()
+    pre_roll_chunks = deque(maxlen=4)  # ~500ms pre-roll to catch speech onset
+    speech_started = False
+    speech_start_time = None
+    last_speech_time = None
 
     history: List[dict] = []
     active_turn_id = 0
     current_ai_task: Optional[asyncio.Task] = None
     is_ai_speaking = False
     ai_turn_start_time: float = 0.0
-    last_speech_time: float = 0.0
     last_partial = ""
-    turn_start_time = None
     first_partial_sent = False
+    last_first_partial_latency = None
 
     # Send initial handshake
     await websocket.send_json({
@@ -738,17 +742,75 @@ async def websocket_call_endpoint(websocket: WebSocket):
         is_ai_speaking = False
         current_ai_task = None
 
-    async def execute_ai_turn(turn_id: int, user_text: str, t_endpoint: float):
+    async def execute_ai_turn(turn_id: int, user_text: str, t_endpoint: float, stt_metrics: dict = None):
         nonlocal is_ai_speaking
         is_ai_speaking = True
         t_llm_start = time.perf_counter()
         first_token_time = None
         first_audio_time = None
-        sentence_buffer = ""
+        tts_first_chunk_latency = None
+        total_tts_time = 0.0
         chunk_idx = 0
         full_reply_text = ""
 
+        # Pipelined concurrent TTS queue: allows Groq to stream unblocked
+        # while TTS synthesizes ready clauses concurrently
+        synth_queue = asyncio.Queue()
+        tts_worker_task = None
+
+        async def tts_worker():
+            nonlocal first_audio_time, tts_first_chunk_latency, total_tts_time, chunk_idx
+            try:
+                while True:
+                    item = await synth_queue.get()
+                    if item is None:
+                        synth_queue.task_done()
+                        break
+
+                    text_snippet, is_final_chunk = item
+                    logger.info(f"[{session_id}] TTS worker synthesizing: '{text_snippet}' (engine={config_state['tts_engine']}, voice={config_state['tts_voice']})")
+                    t_synth_start = time.perf_counter()
+                    synth_res = await tts.async_synthesize(
+                        text=text_snippet,
+                        voice=config_state["tts_voice"],
+                        speed=config_state["tts_speed"],
+                        pitch=config_state.get("tts_pitch"),
+                        engine=config_state["tts_engine"]
+                    )
+                    chunk_latency = synth_res.get("tts_latency", round(time.perf_counter() - t_synth_start, 3))
+                    logger.info(f"[{session_id}] TTS synthesized {len(synth_res.get('audio_bytes', b''))} bytes in {chunk_latency}s")
+                    total_tts_time += chunk_latency
+                    if tts_first_chunk_latency is None:
+                        tts_first_chunk_latency = chunk_latency
+                    if first_audio_time is None:
+                        first_audio_time = round(time.perf_counter() - t_endpoint, 3)
+
+                    audio_b64 = base64.b64encode(synth_res["audio_bytes"]).decode("utf-8")
+                    chunk_idx += 1
+                    await websocket.send_json({
+                        "type": "audio_chunk",
+                        "turn_id": turn_id,
+                        "chunk_index": chunk_idx,
+                        "audio_base64": audio_b64,
+                        "format": synth_res["format"],
+                        "text_snippet": text_snippet,
+                        "is_final": is_final_chunk,
+                        "metrics": {
+                            "time_to_first_token_ms": int((first_token_time or 0) * 1000),
+                            "time_to_first_audio_ms": int((first_audio_time or 0) * 1000),
+                            "tts_chunk_latency_ms": int(chunk_latency * 1000)
+                        }
+                    })
+                    synth_queue.task_done()
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                logger.error(f"[{session_id}] TTS worker error: {e}")
+
+        tts_worker_task = asyncio.create_task(tts_worker())
+
         try:
+            sentence_buffer = ""
             async for chunk in groq.async_stream_reply(
                 user_text=user_text,
                 model_name=config_state["groq_model"],
@@ -775,47 +837,17 @@ async def websocket_call_endpoint(websocket: WebSocket):
                     full_reply_text += delta
 
                     # Optimized clause & sentence boundary matching
-                    # Splits on sentence terminators (.?!;\n) OR clause commas/colons after 3+ words
                     parts = re.split(r'([.?!;\n]+|,\s+|:\s+)', sentence_buffer)
                     if len(parts) > 2:
                         candidate_phrase = (parts[0] + parts[1]).strip()
                         word_count = len(candidate_phrase.split())
-
-                        # Ready if it ends with terminal punctuation (.?!;) or is a speakable clause (3+ words)
                         is_terminal = any(candidate_phrase.endswith(p) for p in ('.', '?', '!', ';', '\n'))
-                        is_clause = word_count >= 3
+                        is_clause = word_count >= 4
 
                         if is_terminal or is_clause:
                             ready_sentence = candidate_phrase
                             sentence_buffer = "".join(parts[2:]).strip()
-
-                            synth_res = await tts.async_synthesize(
-                                text=ready_sentence,
-                                voice=config_state["tts_voice"],
-                                speed=config_state["tts_speed"],
-                                pitch=config_state.get("tts_pitch"),
-                                engine=config_state["tts_engine"]
-                            )
-                            audio_b64 = base64.b64encode(synth_res["audio_bytes"]).decode("utf-8")
-
-                            if first_audio_time is None:
-                                first_audio_time = round(time.perf_counter() - t_endpoint, 3)
-
-                            chunk_idx += 1
-                            await websocket.send_json({
-                                "type": "audio_chunk",
-                                "turn_id": turn_id,
-                                "chunk_index": chunk_idx,
-                                "audio_base64": audio_b64,
-                                "format": synth_res["format"],
-                                "text_snippet": ready_sentence,
-                                "is_final": False,
-                                "metrics": {
-                                    "time_to_first_token_ms": int((first_token_time or 0) * 1000),
-                                    "time_to_first_audio_ms": int((first_audio_time or 0) * 1000),
-                                    "tts_chunk_latency_ms": int(synth_res["tts_latency"] * 1000)
-                                }
-                            })
+                            await synth_queue.put((ready_sentence, False))
 
                 if is_final:
                     break
@@ -823,35 +855,12 @@ async def websocket_call_endpoint(websocket: WebSocket):
             # Synthesize any remaining sentence buffer
             remaining_text = sentence_buffer.strip()
             if remaining_text:
-                synth_res = await tts.async_synthesize(
-                    text=remaining_text,
-                    voice=config_state["tts_voice"],
-                    speed=config_state["tts_speed"],
-                    pitch=config_state.get("tts_pitch"),
-                    engine=config_state["tts_engine"]
-                )
-                audio_b64 = base64.b64encode(synth_res["audio_bytes"]).decode("utf-8")
+                await synth_queue.put((remaining_text, True))
 
-                if first_audio_time is None:
-                    first_audio_time = round(time.perf_counter() - t_endpoint, 3)
+            # Signal worker that all sentences are queued and wait for completion
+            await synth_queue.put(None)
+            await tts_worker_task
 
-                chunk_idx += 1
-                await websocket.send_json({
-                    "type": "audio_chunk",
-                    "turn_id": turn_id,
-                    "chunk_index": chunk_idx,
-                    "audio_base64": audio_b64,
-                    "format": synth_res["format"],
-                    "text_snippet": remaining_text,
-                    "is_final": True,
-                    "metrics": {
-                        "time_to_first_token_ms": int((first_token_time or 0) * 1000),
-                        "time_to_first_audio_ms": int((first_audio_time or 0) * 1000),
-                        "tts_chunk_latency_ms": int(synth_res["tts_latency"] * 1000)
-                    }
-                })
-
-            total_elapsed = round(time.perf_counter() - t_endpoint, 3)
             clean_reply = full_reply_text.strip()
             if not clean_reply and user_text.strip():
                 clean_reply = "I'm sorry, I didn't quite catch that. Could you please repeat?"
@@ -863,6 +872,13 @@ async def websocket_call_endpoint(websocket: WebSocket):
                         pitch=config_state.get("tts_pitch"),
                         engine=config_state["tts_engine"]
                     )
+                    chunk_latency = synth_res.get("tts_latency", 0.3)
+                    total_tts_time += chunk_latency
+                    if tts_first_chunk_latency is None:
+                        tts_first_chunk_latency = chunk_latency
+                    if first_audio_time is None:
+                        first_audio_time = round(time.perf_counter() - t_endpoint, 3)
+
                     audio_b64 = base64.b64encode(synth_res["audio_bytes"]).decode("utf-8")
                     chunk_idx += 1
                     await websocket.send_json({
@@ -876,7 +892,7 @@ async def websocket_call_endpoint(websocket: WebSocket):
                         "metrics": {
                             "time_to_first_token_ms": int((first_token_time or 0) * 1000),
                             "time_to_first_audio_ms": int((first_audio_time or 0) * 1000),
-                            "tts_chunk_latency_ms": int(synth_res["tts_latency"] * 1000)
+                            "tts_chunk_latency_ms": int(chunk_latency * 1000)
                         }
                     })
                 except Exception as synth_err:
@@ -886,23 +902,42 @@ async def websocket_call_endpoint(websocket: WebSocket):
                 history.append({"role": "user", "content": user_text})
                 history.append({"role": "assistant", "content": clean_reply})
 
+            t_turn_complete = time.perf_counter()
+            total_elapsed = round(t_turn_complete - t_endpoint, 3)
+            groq_completion_ms = round((t_turn_complete - t_llm_start) * 1000)
+            time_to_first_audio_ms = int(first_audio_time * 1000) if first_audio_time else None
+            tts_total_ms = round(total_tts_time * 1000)
+            voice_to_voice_rtt_ms = time_to_first_audio_ms or int(total_elapsed * 1000)
+
             await websocket.send_json({
                 "type": "turn_complete",
                 "turn_id": turn_id,
                 "full_reply": clean_reply,
                 "total_chunks": chunk_idx,
                 "metrics": {
-                    "time_to_first_token_ms": int((first_token_time or 0) * 1000),
-                    "time_to_first_audio_ms": int((first_audio_time or 0) * 1000),
-                    "total_turn_latency_ms": int(total_elapsed * 1000)
+                    "first_partial_latency_ms": stt_metrics.get("first_partial_latency_ms") if stt_metrics else None,
+                    "endpoint_latency_ms": stt_metrics.get("endpoint_latency_ms") if stt_metrics else None,
+                    "audio_duration_sec": stt_metrics.get("audio_duration_sec") if stt_metrics else None,
+                    "rtf": stt_metrics.get("rtf") if stt_metrics else None,
+                    "time_to_first_token_ms": int(first_token_time * 1000) if first_token_time else None,
+                    "groq_completion_ms": groq_completion_ms,
+                    "time_to_first_audio_ms": time_to_first_audio_ms,
+                    "tts_first_chunk_ms": int(tts_first_chunk_latency * 1000) if tts_first_chunk_latency else None,
+                    "tts_total_ms": tts_total_ms,
+                    "total_turn_latency_ms": int(total_elapsed * 1000),
+                    "voice_to_voice_rtt_ms": voice_to_voice_rtt_ms
                 }
             })
 
         except asyncio.CancelledError:
             logger.info(f"[{session_id}] AI turn {turn_id} cancelled.")
+            if tts_worker_task and not tts_worker_task.done():
+                tts_worker_task.cancel()
             raise
         except Exception as e:
             logger.error(f"[{session_id}] AI turn error: {e}")
+            if tts_worker_task and not tts_worker_task.done():
+                tts_worker_task.cancel()
             await websocket.send_json({
                 "type": "error",
                 "turn_id": turn_id,
@@ -917,30 +952,47 @@ async def websocket_call_endpoint(websocket: WebSocket):
 
             if "bytes" in message and message["bytes"]:
                 raw_bytes = message["bytes"]
-                turn_audio_bytes.extend(raw_bytes)
-                # Convert PCM16 LE bytes to float32 samples [-1.0, 1.0]
                 audio_np = np.frombuffer(raw_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+                rms = float(np.sqrt(np.mean(audio_np**2))) if len(audio_np) > 0 else 0.0
+                now_t = time.perf_counter()
 
-                if turn_start_time is None:
-                    turn_start_time = time.perf_counter()
+                # Speech activity tracking: only buffer and start turn timer when user actually speaks
+                if not speech_started:
+                    pre_roll_chunks.append(raw_bytes)
+                    if rms > 0.008:
+                        speech_started = True
+                        speech_start_time = now_t
+                        last_speech_time = now_t
+                        for pb in pre_roll_chunks:
+                            turn_audio_bytes.extend(pb)
+                        pre_roll_chunks.clear()
+                else:
+                    turn_audio_bytes.extend(raw_bytes)
+                    if rms > 0.008:
+                        last_speech_time = now_t
 
                 # Feed audio chunk to Sherpa streaming recognizer
                 sherpa.feed_audio(session_id, audio_np)
 
                 # Check partial transcript
                 partial = sherpa.get_partial_transcript(session_id)
-                now_t = time.perf_counter()
                 if partial:
+                    if not speech_started:
+                        speech_started = True
+                        speech_start_time = now_t
+                        for pb in pre_roll_chunks:
+                            turn_audio_bytes.extend(pb)
+                        pre_roll_chunks.clear()
                     last_speech_time = now_t
 
                 if partial and partial != last_partial:
                     last_partial = partial
-                    first_partial_latency = (
-                        int((now_t - turn_start_time) * 1000)
-                        if not first_partial_sent
-                        else None
-                    )
-                    first_partial_sent = True
+                    if not first_partial_sent:
+                        first_partial_latency = int((now_t - (speech_start_time or now_t)) * 1000)
+                        last_first_partial_latency = first_partial_latency
+                        first_partial_sent = True
+                    else:
+                        first_partial_latency = None
 
                     await websocket.send_json({
                         "type": "partial_transcript",
@@ -950,12 +1002,11 @@ async def websocket_call_endpoint(websocket: WebSocket):
                     })
 
                     # Barge-in: if AI is speaking and user speaks substantial fresh utterance
-                    # Respect a 1.2s grace period from turn start to avoid self-cancellation on trailing frames
                     if is_ai_speaking or (current_ai_task and not current_ai_task.done()):
                         time_since_ai_start = now_t - ai_turn_start_time
-                        if time_since_ai_start > 1.2:
+                        if time_since_ai_start > 0.3:
                             words = partial.strip().split()
-                            if len(words) >= 2 and len(partial.strip()) >= 8:
+                            if len(words) >= 2 or len(partial.strip()) >= 5:
                                 interrupt_start = time.perf_counter()
                                 await cancel_active_ai_response("user_spoken_partial")
                                 interrupt_latency_ms = round((time.perf_counter() - interrupt_start) * 1000, 2)
@@ -967,13 +1018,14 @@ async def websocket_call_endpoint(websocket: WebSocket):
                                     "partial_text": partial
                                 })
 
-                # Check endpoint detection: only trigger if speech actually occurred (last_partial is non-empty)
+                # Endpoint detection: tuned conversational trailing silence (0.75s)
                 has_speech = bool(last_partial.strip())
                 is_vad_endpoint = sherpa.is_endpoint(session_id) and has_speech
+                trailing_silence_threshold = getattr(config, "SHERPA_RULE2_MIN_TRAILING_SILENCE", 0.8)
                 has_trailing_silence = (
                     has_speech
-                    and last_speech_time > 0
-                    and (now_t - last_speech_time >= 1.2)
+                    and last_speech_time is not None
+                    and (now_t - last_speech_time >= trailing_silence_threshold)
                     and not is_ai_speaking
                 )
 
@@ -985,35 +1037,53 @@ async def websocket_call_endpoint(websocket: WebSocket):
                     sherpa.reset_stream(session_id)
                     last_partial = ""
                     first_partial_sent = False
-                    last_speech_time = 0.0
 
                     if final_text:
                         t_endpoint = time.perf_counter()
-                        endpoint_latency_ms = round((t_endpoint - turn_start_time) * 1000, 1) if turn_start_time else 0
-                        turn_start_time = None
+                        utterance_audio = bytes(turn_audio_bytes)
+                        audio_duration_sec = round(len(utterance_audio) / 32000.0, 3)
+                        # Real endpointing delay is from speech completion to endpoint declaration
+                        endpoint_latency_ms = round((t_endpoint - (last_speech_time or speech_start_time or t_endpoint)) * 1000, 1)
+                        stt_rtf = round((endpoint_latency_ms / 1000.0) / max(audio_duration_sec, 0.001), 3) if audio_duration_sec > 0 else None
+
+                        # Reset turn trackers for next utterance
+                        speech_started = False
+                        speech_start_time = None
+                        last_speech_time = None
+                        turn_audio_bytes.clear()
+                        pre_roll_chunks.clear()
 
                         active_turn_id += 1
                         turn_id = active_turn_id
-                        logger.info(f"[{session_id}] Sherpa finalized turn {turn_id}: '{final_text}' (vad_endpoint={is_vad_endpoint}, trailing_silence={has_trailing_silence})")
+                        logger.info(f"[{session_id}] Sherpa finalized turn {turn_id}: '{final_text}' (audio={audio_duration_sec}s, endpoint={endpoint_latency_ms}ms, vad={is_vad_endpoint}, silence={has_trailing_silence})")
 
-                        # Harvest audio for accent estimation and reset turn audio buffer
-                        utterance_audio = bytes(turn_audio_bytes)
-                        turn_audio_bytes.clear()
+                        stt_metrics = {
+                            "first_partial_latency_ms": last_first_partial_latency,
+                            "endpoint_latency_ms": endpoint_latency_ms,
+                            "audio_duration_sec": audio_duration_sec,
+                            "rtf": stt_rtf
+                        }
+
+                        # Reset partial trackers for next turn
+                        last_first_partial_latency = None
+                        first_partial_sent = False
 
                         await websocket.send_json({
                             "type": "final_transcript",
                             "text": final_text,
                             "turn_id": turn_id,
-                            "endpoint_latency_ms": endpoint_latency_ms
+                            "endpoint_latency_ms": endpoint_latency_ms,
+                            "audio_duration_sec": audio_duration_sec,
+                            "rtf": stt_rtf
                         })
 
                         # Cancel any previous active task
                         await cancel_active_ai_response("new_turn_start")
 
-                        # Spawn assistant response task immediately (0 latency penalty)
+                        # Spawn assistant response task immediately
                         ai_turn_start_time = time.perf_counter()
                         current_ai_task = asyncio.create_task(
-                            execute_ai_turn(turn_id, final_text, t_endpoint)
+                            execute_ai_turn(turn_id, final_text, t_endpoint, stt_metrics)
                         )
 
                         # Concurrently run automatic accent estimation in the background

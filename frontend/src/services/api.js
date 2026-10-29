@@ -303,7 +303,7 @@ export async function sendVoiceCallTurn(audioBlob, history = [], options = {}) {
 
   const data = await response.json();
   const clientEnd = performance.now();
-  data.latency.client_rtt = Math.round(clientEnd - clientStart) / 1000;
+  data.latency.client_rtt = +((clientEnd - clientStart) / 1000).toFixed(3);
 
   return data;
 }
@@ -337,7 +337,7 @@ export async function sendAudioForBenchmark(audioBlob, options = {}) {
   }
 
   const clientEnd = performance.now();
-  const clientRtt = Math.round(clientEnd - clientStart) / 1000;
+  const clientRtt = +((clientEnd - clientStart) / 1000).toFixed(3);
   const groqLatency = chatData ? chatData.groq_latency : 0.0;
   const totalServerTime = +(sttData.stt_latency + groqLatency).toFixed(3);
 
@@ -354,7 +354,7 @@ export async function sendAudioForBenchmark(audioBlob, options = {}) {
       rtf: sttData.rtf,
       speed_factor: sttData.speed_factor,
       groq_latency: groqLatency,
-      tts_latency: 0.0,
+      tts_latency: null,
       total_server_time: totalServerTime,
       client_rtt: clientRtt,
     },

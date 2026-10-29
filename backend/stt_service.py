@@ -200,12 +200,15 @@ class STTEngine:
         start = time.perf_counter()
         logger.info(f"Loading Whisper model '{name}' on {self.device} ({self.compute_type})...")
         try:
-            model = WhisperModel(
-                name,
-                device=self.device,
-                compute_type=self.compute_type
-            )
-            if self.device == "cuda":
+            kwargs = {
+                "device": self.device,
+                "compute_type": self.compute_type
+            }
+            if self.device == "cpu":
+                kwargs["cpu_threads"] = getattr(config, "WHISPER_CPU_THREADS", 6)
+
+            model = WhisperModel(name, **kwargs)
+            if self.device.startswith("cuda"):
                 # Warm-up verification
                 dummy = np.zeros(1600, dtype=np.float32)
                 _ = list(model.transcribe(dummy, language="en")[0])
@@ -227,6 +230,7 @@ class STTEngine:
         for model_id, meta in WHISPER_MODELS_CATALOG.items():
             is_loaded = model_id in self.models
             is_active = (model_id == self.default_model_name)
+            status = "Ready" if is_loaded else "Installed"
             result.append({
                 "id": model_id,
                 "name": meta["name"],
@@ -239,6 +243,7 @@ class STTEngine:
                 "is_downloaded": True,
                 "downloaded": True,
                 "is_loaded": is_loaded,
+                "status": status,
                 "is_active": is_active,
                 "device": self.device,
                 "compute_type": self.compute_type
@@ -312,10 +317,12 @@ class STTEngine:
 
         # Resolve requested model
         req_model = model_name or self.default_model_name
-        if req_model == "sherpa-streaming":
+        if req_model == "sherpa-streaming" or (req_model and req_model.startswith("sherpa-")):
             try:
                 from sherpa_service import get_sherpa_engine
                 sherpa = get_sherpa_engine()
+                if req_model.startswith("sherpa-") and req_model != sherpa.active_model_id:
+                    sherpa.switch_model(req_model)
                 if sherpa.is_available():
                     return sherpa.transcribe_audio_source(audio_source)
             except Exception as e:
