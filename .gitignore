@@ -28,8 +28,3 @@ backend/__pycache__/
 Thumbs.db
 .vscode/
 .idea/
-
-# Large downloaded Sherpa-ONNX model binaries (>100MB exceed GitHub push limits)
-sherpa_models/sherpa-onnx-streaming-zipformer-en-2023-06-21/
-sherpa_models/sherpa-onnx-zipformer-gigaspeech-2023-12-12/
-
