@@ -24,14 +24,12 @@ from sherpa_service import get_sherpa_engine
 def calculate_wer(reference: str, hypothesis: str) -> float:
     """Calculate Word Error Rate (WER) using Levenshtein distance on words."""
     import re
-    # Normalize: lowercase, remove punctuation, strip excess whitespace
     ref_words = re.sub(r'[^\w\s]', '', reference.lower()).split()
     hyp_words = re.sub(r'[^\w\s]', '', hypothesis.lower()).split()
-    
+
     if not ref_words:
         return 0.0 if not hyp_words else 1.0
 
-    # Dynamic programming matrix for Levenshtein distance
     r_len, h_len = len(ref_words), len(hyp_words)
     dp = [[0] * (h_len + 1) for _ in range(r_len + 1)]
 
@@ -52,6 +50,32 @@ def calculate_wer(reference: str, hypothesis: str) -> float:
 
     distance = dp[r_len][h_len]
     return min(1.0, distance / r_len)
+
+def calculate_cer(reference: str, hypothesis: str) -> float:
+    """Calculate Character Error Rate (CER) using Levenshtein distance on characters."""
+    import re
+    ref_chars = list(re.sub(r'[^\w\s]', '', reference.lower()))
+    hyp_chars = list(re.sub(r'[^\w\s]', '', hypothesis.lower()))
+
+    if not ref_chars:
+        return 0.0 if not hyp_chars else 1.0
+
+    r_len, h_len = len(ref_chars), len(hyp_chars)
+    dp = [[0] * (h_len + 1) for _ in range(r_len + 1)]
+
+    for i in range(r_len + 1):
+        dp[i][0] = i
+    for j in range(h_len + 1):
+        dp[0][j] = j
+
+    for i in range(1, r_len + 1):
+        for j in range(1, h_len + 1):
+            if ref_chars[i - 1] == hyp_chars[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1]
+            else:
+                dp[i][j] = min(dp[i - 1][j - 1], dp[i][j - 1], dp[i - 1][j]) + 1
+
+    return min(1.0, dp[r_len][h_len] / r_len)
 
 # 20 diverse, realistic test utterances covering conversational phone queries,
 # customer service, short commands, long multi-clause sentences, and varied vocabularies.
@@ -566,6 +590,7 @@ def run_accuracy_benchmark(manifest):
         print(f"=======================================================")
         
         wers = []
+        cers = []
         latencies = []
         sample_results = []
 
@@ -589,7 +614,9 @@ def run_accuracy_benchmark(manifest):
 
             elapsed = time.perf_counter() - t0
             wer = calculate_wer(ref_text, hyp_text)
+            cer = calculate_cer(ref_text, hyp_text)
             wers.append(wer)
+            cers.append(cer)
             latencies.append(elapsed)
 
             sample_results.append({
@@ -600,26 +627,29 @@ def run_accuracy_benchmark(manifest):
                 "reference": ref_text,
                 "hypothesis": hyp_text,
                 "wer": round(wer, 4),
+                "cer": round(cer, 4),
                 "latency_sec": round(elapsed, 3)
             })
 
             # Print brief sample status
-            print(f"  [{sample['id']}] WER: {wer*100:5.1f}% | Ref: {ref_text[:35]}... -> Hyp: {hyp_text[:35]}...")
+            print(f"  [{sample['id']}] WER: {wer*100:5.1f}% | CER: {cer*100:5.1f}% | Ref: {ref_text[:30]}... -> Hyp: {hyp_text[:30]}...")
 
         avg_wer = float(np.mean(wers))
+        avg_cer = float(np.mean(cers))
         avg_latency = float(np.mean(latencies))
         exact_matches = sum(1 for w in wers if w == 0.0)
 
         results[label] = {
             "model_config": m_cfg,
             "average_wer": round(avg_wer, 4),
+            "average_cer": round(avg_cer, 4),
             "exact_match_rate": round(exact_matches / len(wers), 4),
             "average_latency_sec": round(avg_latency, 3),
             "samples": sample_results
         }
 
         print(f"\n>>> SUMMARY for {label}:")
-        print(f"    Average WER: {avg_wer * 100:.2f}%")
+        print(f"    Average WER: {avg_wer * 100:.2f}% | Average CER: {avg_cer * 100:.2f}%")
         print(f"    Exact Matches: {exact_matches}/{len(wers)} ({exact_matches/len(wers)*100:.1f}%)")
         print(f"    Average Latency: {avg_latency:.3f}s")
 

@@ -396,15 +396,16 @@ class SherpaStreamingEngine:
         if len(samples) == 0:
             return ""
 
-        # Normalize audio: remove DC bias and calibrate gain
+        # Normalize audio: remove DC bias and calibrate gain with conservative headroom
         mean_v = np.mean(samples)
         samples = samples - mean_v
-        peak_v = np.max(np.abs(samples))
-        if peak_v > 1e-4 and peak_v < 0.6:
-            gain = min(0.9 / peak_v, 0.12 / max(float(np.sqrt(np.mean(samples**2))), 1e-4), 8.0)
-            samples = np.clip(samples * gain, -1.0, 1.0)
-        elif peak_v > 0.98:
+        peak_v = float(np.max(np.abs(samples))) if len(samples) > 0 else 0.0
+        if peak_v > 0.98:
             samples = samples * (0.95 / peak_v)
+        elif peak_v < 0.04 and peak_v > 1e-4:
+            # Conservative boost only for faint signals, strictly capped to 2.0x
+            rms_val = float(np.sqrt(np.mean(samples**2)))
+            samples = np.clip(samples * min(2.0, 0.15 / max(rms_val, 1e-4)), -1.0, 1.0)
 
         if self.is_streaming:
             # Online stream processed in chunks

@@ -1028,8 +1028,9 @@ async def websocket_call_endpoint(websocket: WebSocket):
                     utterance_audio = bytes(turn_audio_bytes)
 
                     final_text = ""
-                    # 1. High-accuracy Faster-Whisper turn finalization
-                    if active_engine == "whisper" or (active_model and not str(active_model).startswith("sherpa")):
+                    # 1. Faster-Whisper turn finalization
+                    is_whisper = (active_engine == "whisper") or (active_model and not str(active_model).startswith("sherpa"))
+                    if is_whisper:
                         stt = get_stt_engine()
                         whisper_res = stt.transcribe_audio_bytes(
                             audio_bytes=utterance_audio,
@@ -1038,19 +1039,26 @@ async def websocket_call_endpoint(websocket: WebSocket):
                             model_name=active_model
                         )
                         final_text = whisper_res.get("transcript", "").strip()
-                        if not final_text and last_partial:
+                        if not final_text and last_partial and len(last_partial.strip().split()) >= 2:
                             final_text = last_partial.strip()
-                    elif not has_sherpa_stream:
-                        # Offline Sherpa model (e.g. GigaSpeech - 3% WER, 0.15s)
-                        sherpa_res = sherpa.transcribe_audio_source(utterance_audio)
-                        final_text = sherpa_res.get("transcript", "").strip()
                     else:
-                        # Streaming Zipformer with lookahead silence flush
-                        final_text = sherpa.get_final_transcript(session_id).strip()
-                        if not final_text and last_partial:
+                        # 2. Sherpa-ONNX model finalization (streaming or offline)
+                        sherpa = get_sherpa_engine()
+                        if active_model and str(active_model).startswith("sherpa-") and active_model != sherpa.active_model_id:
+                            sherpa.switch_model(active_model)
+
+                        if sherpa.is_streaming:
+                            # Streaming Zipformer with lookahead silence flush
+                            final_text = sherpa.get_final_transcript(session_id).strip()
+                        else:
+                            # Offline Sherpa model (GigaSpeech, Large, Small)
+                            sherpa_res = sherpa.transcribe_audio_source(utterance_audio)
+                            final_text = sherpa_res.get("transcript", "").strip()
+
+                        if not final_text and last_partial and len(last_partial.strip().split()) >= 2:
                             final_text = last_partial.strip()
 
-                    if has_sherpa_stream:
+                    if sherpa.is_available() and sherpa.is_streaming:
                         sherpa.reset_stream(session_id)
                     last_partial = ""
                     first_partial_sent = False
@@ -1163,7 +1171,22 @@ async def websocket_call_endpoint(websocket: WebSocket):
                     if "tts_speed" in data: config_state["tts_speed"] = float(data["tts_speed"])
                     if "auto_adapt_voice" in data: config_state["auto_adapt_voice"] = bool(data["auto_adapt_voice"])
                     if "stt_engine" in data: config_state["stt_engine"] = data["stt_engine"]
-                    if "stt_model" in data: config_state["stt_model"] = data["stt_model"]
+                    if "stt_model" in data:
+                        new_m = data["stt_model"]
+                        config_state["stt_model"] = new_m
+                        if new_m and str(new_m).startswith("sherpa-"):
+                            try:
+                                sherpa = get_sherpa_engine()
+                                if new_m != sherpa.active_model_id:
+                                    sherpa.switch_model(new_m)
+                            except Exception as sm_err:
+                                logger.warning(f"Failed to switch Sherpa model to {new_m}: {sm_err}")
+                        elif new_m:
+                            try:
+                                stt = get_stt_engine()
+                                stt.select_model(new_m)
+                            except Exception as wm_err:
+                                logger.warning(f"Failed to switch Whisper model to {new_m}: {wm_err}")
                     if "stt_language" in data: config_state["stt_language"] = data["stt_language"]
                     logger.info(f"[{session_id}] Updated config: {config_state}")
 

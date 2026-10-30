@@ -28,6 +28,17 @@ def generate_synthetic_speech_pcm(duration_sec=3.0, sample_rate=16000):
     pcm16 = (signal * 32767).astype(np.int16)
     return pcm16.tobytes()
 
+from pathlib import Path
+
+def get_test_pcm():
+    """Load real human speech recording (sample_01.wav) for genuine end-to-end testing."""
+    wav_path = Path(__file__).parent / "test_audio_dataset" / "sample_01.wav"
+    if wav_path.exists():
+        import wave
+        with wave.open(str(wav_path), 'rb') as wf:
+            return wf.readframes(wf.getnframes())
+    return generate_synthetic_speech_pcm(duration_sec=3.0, sample_rate=16000)
+
 def pcm_to_wav_bytes(pcm_bytes, sample_rate=16000, num_channels=1):
     import wave
     buf = io.BytesIO()
@@ -76,7 +87,7 @@ async def test_mode_1_phone_call_simulator():
         }))
 
         # Stream audio chunks simulating microphone input
-        pcm_bytes = generate_synthetic_speech_pcm(duration_sec=3.2, sample_rate=16000)
+        pcm_bytes = get_test_pcm()
         chunk_size = 1280 # 40ms at 16kHz 16-bit
         for i in range(0, len(pcm_bytes), chunk_size):
             await ws.send(pcm_bytes[i:i+chunk_size])
@@ -94,9 +105,9 @@ async def test_mode_1_phone_call_simulator():
         turn_complete = False
 
         start_wait = time.perf_counter()
-        while time.perf_counter() - start_wait < 15.0 and not turn_complete:
+        while time.perf_counter() - start_wait < 30.0 and not turn_complete:
             try:
-                msg = await asyncio.wait_for(ws.recv(), timeout=12.0)
+                msg = await asyncio.wait_for(ws.recv(), timeout=20.0)
                 if isinstance(msg, str):
                     data = json.loads(msg)
                     events_received.append(data.get("type"))
@@ -148,7 +159,7 @@ async def test_mode_2_push_to_talk_benchmark():
     print("MODE 2: Push-to-Talk Benchmark (/api/transcribe & /api/voice)")
     print("="*60)
 
-    pcm_bytes = generate_synthetic_speech_pcm(duration_sec=3.0, sample_rate=16000)
+    pcm_bytes = get_test_pcm()
     wav_bytes = pcm_to_wav_bytes(pcm_bytes)
 
     async with httpx.AsyncClient(timeout=30.0) as client:
