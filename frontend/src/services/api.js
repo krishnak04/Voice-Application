@@ -240,12 +240,45 @@ export async function getSherpaBenchmarks() {
 /**
  * Resolve full-duplex WebSocket URL from current server URL
  */
-export function getWebSocketUrl(path = '/ws/call') {
-  const baseUrl = getServerUrl();
-  const wsProto = baseUrl.startsWith('https:') ? 'wss:' : 'ws:';
-  const host = baseUrl.replace(/^https?:\/\//, '');
-  const cleanPath = path.startsWith('/') ? path : '/' + path;
-  return `${wsProto}//${host}${cleanPath}`;
+export function getWebSocketUrl(path = '/ws/call', preferSameOrigin = false) {
+  const cleanPath = '/' + path.replace(/^\/+/, '');
+
+  if (typeof window !== 'undefined' && window.location) {
+    const isHttps = window.location.protocol === 'https:';
+    const wsProto = isHttps ? 'wss:' : 'ws:';
+
+    // In HTTPS environments, browsers strictly block mixed-content ws:// connections
+    // and require wss:// to the same origin or reverse proxy.
+    if (isHttps || preferSameOrigin) {
+      return `${wsProto}//${window.location.host}${cleanPath}`;
+    }
+
+    const saved = localStorage.getItem('voice_benchmark_server_url');
+    if (saved && saved.trim()) {
+      const cleanSaved = saved.trim().replace(/\/+$/, '');
+      const savedHost = cleanSaved.replace(/^https?:\/\//, '');
+      const savedProto = cleanSaved.startsWith('https:') ? 'wss:' : 'ws:';
+      return `${savedProto}//${savedHost}${cleanPath}`;
+    }
+
+    const hostname = window.location.hostname || 'localhost';
+    return `${wsProto}//${hostname}:8024${cleanPath}`;
+  }
+
+  return `ws://localhost:8024${cleanPath}`;
+}
+
+/**
+ * Return secondary fallback WebSocket URL (proxied through Vite/reverse proxy on port 8023)
+ */
+export function getFallbackWebSocketUrl(path = '/ws/call') {
+  const cleanPath = '/' + path.replace(/^\/+/, '');
+  if (typeof window !== 'undefined' && window.location) {
+    const isHttps = window.location.protocol === 'https:';
+    const wsProto = isHttps ? 'wss:' : 'ws:';
+    return `${wsProto}//${window.location.host}${cleanPath}`;
+  }
+  return `ws://localhost:8023${cleanPath}`;
 }
 
 

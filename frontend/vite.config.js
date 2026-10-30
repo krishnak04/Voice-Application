@@ -12,10 +12,26 @@ export default defineConfig({
         target: 'http://127.0.0.1:8024',
         changeOrigin: true,
       },
+      '/ws': {
+        target: 'ws://127.0.0.1:8024',
+        ws: true,
+        changeOrigin: true,
+      },
     },
   },
   preview: {
     host: '0.0.0.0',
     port: 8023,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8024',
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: 'ws://127.0.0.1:8024',
+        ws: true,
+        changeOrigin: true,
+      },
+    },
   },
 });

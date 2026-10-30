@@ -37,6 +37,7 @@ import {
   synthesizeSpeech,
   transcribeAudio,
   getWebSocketUrl,
+  getFallbackWebSocketUrl,
   getHumanVoices
 } from '../services/api';
 import {
@@ -1380,8 +1381,11 @@ export default function VoiceCallSimulator({
 
       if (true) {
         // --- REAL-TIME FULL-DUPLEX WEBSOCKET PIPELINE ---
-        const wsUrl = getWebSocketUrl('/ws/call');
-        const ws = new WebSocket(wsUrl);
+        const primaryWsUrl = getWebSocketUrl('/ws/call');
+        const fallbackWsUrl = getFallbackWebSocketUrl('/ws/call');
+
+        let activeWsUrl = primaryWsUrl;
+        const ws = new WebSocket(primaryWsUrl);
         wsRef.current = ws;
 
         ws.onopen = () => {
@@ -1598,22 +1602,52 @@ export default function VoiceCallSimulator({
         };
 
         ws.onerror = (err) => {
-          console.error('WebSocket call error:', err);
+          console.error(`[VoiceCall] WebSocket call error on ${activeWsUrl}:`, err);
+          if (!callActiveRef.current && activeWsUrl !== fallbackWsUrl) {
+            console.warn(`[VoiceCall] Primary WebSocket ${activeWsUrl} failed. Falling back to proxied ${fallbackWsUrl}...`);
+            const prevOnOpen = ws.onopen;
+            const prevOnMessage = ws.onmessage;
+            const prevOnClose = ws.onclose;
+            activeWsUrl = fallbackWsUrl;
+            try {
+              ws.onopen = null;
+              ws.onmessage = null;
+              ws.onerror = null;
+              ws.onclose = null;
+              ws.close();
+            } catch (_) {}
+            const fallbackWs = new WebSocket(fallbackWsUrl);
+            wsRef.current = fallbackWs;
+            fallbackWs.onopen = prevOnOpen;
+            fallbackWs.onmessage = prevOnMessage;
+            fallbackWs.onerror = (fErr) => {
+              console.error(`[VoiceCall] Fallback WebSocket also failed on ${fallbackWsUrl}:`, fErr);
+              setChatHistory((prev) => [
+                ...prev,
+                { role: 'system_notification', content: 'WebSocket connection error. Check server status.' }
+              ]);
+            };
+            fallbackWs.onclose = prevOnClose;
+            return;
+          }
+
           setChatHistory((prev) => [
             ...prev,
             { role: 'system_notification', content: 'WebSocket connection error. Check server status.' }
           ]);
         };
 
-        ws.onclose = () => {
+        ws.onclose = (event) => {
+          console.log(`[VoiceCall] WebSocket closed (code=${event.code}, reason='${event.reason}')`);
           if (callActiveRef.current) {
             handleEndCall();
           }
         };
 
-        // Continuous microphone processor (2048 samples)
+        // Continuous microphone processor. 1024 samples keeps transport/decoder
+        // buffering near 21 ms at 48 kHz without changing the audio model.
         // Stays permanently active even during assistant speech (true full-duplex)
-        const processor = audioCtx.createScriptProcessor(2048, 1, 1);
+        const processor = audioCtx.createScriptProcessor(1024, 1, 1);
         scriptProcessorRef.current = processor;
 
         processor.onaudioprocess = (e) => {

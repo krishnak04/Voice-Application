@@ -51,6 +51,21 @@ else:
 WHISPER_CPU_THREADS = int(os.getenv("WHISPER_CPU_THREADS", str(min(8, max(2, (os.cpu_count() or 4) // 2)))))
 WHISPER_BEAM_SIZE = int(os.getenv("WHISPER_BEAM_SIZE", "3"))
 WHISPER_BEST_OF = int(os.getenv("WHISPER_BEST_OF", "3"))
+CALL_FINAL_WHISPER_MODEL = os.getenv("CALL_FINAL_WHISPER_MODEL", "base.en")
+CALL_TRAILING_SILENCE_SECONDS = float(os.getenv("CALL_TRAILING_SILENCE_SECONDS", "1.2"))
+CALL_VAD_MIN_RMS = float(os.getenv("CALL_VAD_MIN_RMS", "0.003"))
+CALL_VAD_MIN_PEAK = float(os.getenv("CALL_VAD_MIN_PEAK", "0.008"))
+CALL_VAD_NOISE_MULTIPLIER = float(os.getenv("CALL_VAD_NOISE_MULTIPLIER", "1.8"))
+CALL_VAD_START_FRAMES = int(os.getenv("CALL_VAD_START_FRAMES", "2"))
+CALL_VAD_MIN_SPEECH_MS = float(os.getenv("CALL_VAD_MIN_SPEECH_MS", "120"))
+CALL_VAD_MIN_SPEECH_BAND_RATIO = float(os.getenv("CALL_VAD_MIN_SPEECH_BAND_RATIO", "0.15"))
+CALL_VAD_MAX_SPECTRAL_FLATNESS = float(os.getenv("CALL_VAD_MAX_SPECTRAL_FLATNESS", "0.95"))
+_hallucination_words = os.getenv("STT_HALLUCINATION_SINGLE_WORDS", "ACT,DEAD")
+STT_HALLUCINATION_SINGLE_WORDS = frozenset(
+    word.strip().casefold()
+    for word in _hallucination_words.split(",")
+    if word.strip()
+)
 
 # Text-to-Speech (TTS) Configuration
 TTS_ENGINE = os.getenv("TTS_ENGINE", "auto")          # 'auto', 'kokoro', 'piper', 'edge_tts'
@@ -78,5 +93,3 @@ CORS_ORIGINS = [
     "http://61.2.142.91:8023",
     "*"
 ]
-
-
