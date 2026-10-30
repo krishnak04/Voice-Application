@@ -671,7 +671,7 @@ async def websocket_call_endpoint(websocket: WebSocket):
     groq = get_groq_engine()
     tts = get_tts_engine()
 
-    has_sherpa_stream = sherpa.is_available() and sherpa.is_streaming
+    has_sherpa_stream = sherpa.is_available() and sherpa.is_streaming_available()
     stream = None
     if has_sherpa_stream:
         stream = sherpa.create_stream(session_id)
@@ -1028,37 +1028,39 @@ async def websocket_call_endpoint(websocket: WebSocket):
                     utterance_audio = bytes(turn_audio_bytes)
 
                     final_text = ""
-                    # 1. Faster-Whisper turn finalization
-                    is_whisper = (active_engine == "whisper") or (active_model and not str(active_model).startswith("sherpa"))
-                    if is_whisper:
-                        stt = get_stt_engine()
+                    stt = get_stt_engine()
+                    sherpa = get_sherpa_engine()
+
+                    # Check if user explicitly requested an offline Sherpa model (e.g. GigaSpeech)
+                    use_offline_sherpa = (active_engine == "sherpa" or (active_model and str(active_model).startswith("sherpa-"))) and active_model != "sherpa-streaming"
+
+                    if use_offline_sherpa:
+                        if active_model and active_model != sherpa.active_model_id:
+                            sherpa.switch_model(active_model)
+                        if not sherpa.is_streaming:
+                            sherpa_res = sherpa.transcribe_audio_source(utterance_audio)
+                            final_text = sherpa_res.get("transcript", "").strip()
+
+                    # Authoritative Faster-Whisper transcription (default base.en or selected Whisper model)
+                    if not final_text:
+                        whisper_model = active_model if (active_model and not str(active_model).startswith("sherpa")) else "base.en"
                         whisper_res = stt.transcribe_audio_bytes(
                             audio_bytes=utterance_audio,
                             file_ext=".wav",
                             language=target_lang if target_lang not in ("auto", "none", None) else None,
-                            model_name=active_model
+                            model_name=whisper_model
                         )
                         final_text = whisper_res.get("transcript", "").strip()
-                        if not final_text and last_partial and len(last_partial.strip().split()) >= 2:
-                            final_text = last_partial.strip()
-                    else:
-                        # 2. Sherpa-ONNX model finalization (streaming or offline)
-                        sherpa = get_sherpa_engine()
-                        if active_model and str(active_model).startswith("sherpa-") and active_model != sherpa.active_model_id:
-                            sherpa.switch_model(active_model)
 
-                        if sherpa.is_streaming:
-                            # Streaming Zipformer with lookahead silence flush
-                            final_text = sherpa.get_final_transcript(session_id).strip()
-                        else:
-                            # Offline Sherpa model (GigaSpeech, Large, Small)
-                            sherpa_res = sherpa.transcribe_audio_source(utterance_audio)
-                            final_text = sherpa_res.get("transcript", "").strip()
-
-                        if not final_text and last_partial and len(last_partial.strip().split()) >= 2:
+                    # Resilient Fallback to Sherpa streaming if Whisper was empty
+                    if not final_text and sherpa.is_streaming_available():
+                        sherpa_final = sherpa.get_final_transcript(session_id).strip()
+                        if sherpa_final and len(sherpa_final.split()) >= 2:
+                            final_text = sherpa_final
+                        elif last_partial and len(last_partial.strip().split()) >= 2:
                             final_text = last_partial.strip()
 
-                    if sherpa.is_available() and sherpa.is_streaming:
+                    if sherpa.is_available() and sherpa.is_streaming_available():
                         sherpa.reset_stream(session_id)
                     last_partial = ""
                     first_partial_sent = False

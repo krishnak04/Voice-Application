@@ -40,6 +40,8 @@ class SherpaStreamingEngine:
         self.is_loaded = False
         self.load_error = None
         self.recognizer = None
+        self.streaming_recognizer = None
+        self.offline_recognizers: Dict[str, Any] = {}
 
         # Active streaming sessions (for session isolation & safe switching)
         self.active_streams: Dict[str, Any] = {}
@@ -143,7 +145,7 @@ class SherpaStreamingEngine:
             start_t = time.perf_counter()
 
             if meta["type"] == "streaming":
-                self.recognizer = sherpa_onnx.OnlineRecognizer.from_transducer(
+                online_rec = sherpa_onnx.OnlineRecognizer.from_transducer(
                     tokens=str(files["tokens"]),
                     encoder=str(files["encoder"]),
                     decoder=str(files["decoder"]),
@@ -158,9 +160,11 @@ class SherpaStreamingEngine:
                     decoding_method="greedy_search",
                     provider=self.provider
                 )
+                self.recognizer = online_rec
+                self.streaming_recognizer = online_rec
                 self.is_streaming = True
             else:
-                self.recognizer = sherpa_onnx.OfflineRecognizer.from_transducer(
+                offline_rec = sherpa_onnx.OfflineRecognizer.from_transducer(
                     tokens=str(files["tokens"]),
                     encoder=str(files["encoder"]),
                     decoder=str(files["decoder"]),
@@ -168,6 +172,8 @@ class SherpaStreamingEngine:
                     num_threads=self.num_threads,
                     decoding_method="greedy_search"
                 )
+                self.recognizer = offline_rec
+                self.offline_recognizers[model_id] = offline_rec
                 self.is_streaming = False
 
             elapsed = time.perf_counter() - start_t
@@ -277,7 +283,44 @@ class SherpaStreamingEngine:
             return {"success": False, "message": f"Download failed: {str(e)}"}
 
     def is_available(self) -> bool:
-        return self.is_loaded and self.recognizer is not None
+        return self.is_loaded and (self.recognizer is not None or self.streaming_recognizer is not None)
+
+    def get_streaming_recognizer(self):
+        """Return dedicated online recognizer for uninterrupted real-time streaming."""
+        if self.streaming_recognizer is not None:
+            return self.streaming_recognizer
+        if self.is_streaming and self.recognizer is not None:
+            return self.recognizer
+        # Lazily initialize default standard streaming model if needed
+        default_model = "sherpa-onnx-streaming-zipformer-en-2023-06-26"
+        model_dir = self.find_model_directory(default_model)
+        if model_dir:
+            try:
+                import sherpa_onnx
+                files = find_model_files(model_dir, self.use_int8)
+                if files["is_valid"]:
+                    self.streaming_recognizer = sherpa_onnx.OnlineRecognizer.from_transducer(
+                        tokens=str(files["tokens"]),
+                        encoder=str(files["encoder"]),
+                        decoder=str(files["decoder"]),
+                        joiner=str(files["joiner"]),
+                        num_threads=self.num_threads,
+                        sample_rate=16000,
+                        feature_dim=80,
+                        enable_endpoint_detection=True,
+                        rule1_min_trailing_silence=self.rule1_silence,
+                        rule2_min_trailing_silence=self.rule2_silence,
+                        rule3_min_utterance_length=self.rule3_length,
+                        decoding_method="greedy_search",
+                        provider=self.provider
+                    )
+                    logger.info("Initialized dedicated standard streaming recognizer.")
+            except Exception as e:
+                logger.warning(f"Could not load dedicated streaming recognizer: {e}")
+        return self.streaming_recognizer
+
+    def is_streaming_available(self) -> bool:
+        return self.get_streaming_recognizer() is not None
 
     def get_info(self) -> dict:
         return {
@@ -301,12 +344,11 @@ class SherpaStreamingEngine:
     # -------------------------------------------------------------
     def create_stream(self, session_id: str):
         """Create a dedicated OnlineStream for a specific WebSocket connection."""
-        if not self.is_available():
-            raise RuntimeError(f"Sherpa-ONNX recognizer is not available: {self.load_error}")
-        if not self.is_streaming:
-            raise RuntimeError(f"Active model '{self.model_name}' is an Offline model. Full-duplex live streaming requires a streaming model.")
+        rec = self.get_streaming_recognizer()
+        if not rec:
+            raise RuntimeError(f"Sherpa-ONNX streaming recognizer is not available: {self.load_error}")
 
-        stream = self.recognizer.create_stream()
+        stream = rec.create_stream()
         self.active_streams[session_id] = stream
         logger.debug(f"Created Sherpa streaming stream for session: {session_id}")
         return stream
@@ -316,7 +358,8 @@ class SherpaStreamingEngine:
 
     def feed_audio(self, session_id: str, audio_samples: np.ndarray, sample_rate: int = 16000) -> dict:
         """Accept an incremental audio chunk for an active streaming session."""
-        if not self.is_available() or not self.is_streaming:
+        rec = self.get_streaming_recognizer()
+        if not rec:
             return {"text": "", "is_endpoint": False, "is_ready": False}
 
         stream = self.active_streams.get(session_id)
@@ -325,11 +368,11 @@ class SherpaStreamingEngine:
 
         stream.accept_waveform(sample_rate, audio_samples)
 
-        while self.recognizer.is_ready(stream):
-            self.recognizer.decode_stream(stream)
+        while rec.is_ready(stream):
+            rec.decode_stream(stream)
 
-        is_endpoint = self.recognizer.is_endpoint(stream)
-        current_text = self.recognizer.get_result(stream)
+        is_endpoint = rec.is_endpoint(stream)
+        current_text = rec.get_result(stream)
 
         return {
             "text": current_text.strip() if current_text else "",
@@ -340,22 +383,25 @@ class SherpaStreamingEngine:
     def reset_stream(self, session_id: str):
         """Reset internal stream state after an endpoint turn."""
         stream = self.active_streams.get(session_id)
-        if stream and self.recognizer and self.is_streaming:
-            self.recognizer.reset(stream)
+        rec = self.get_streaming_recognizer()
+        if stream and rec:
+            rec.reset(stream)
 
     def get_partial_transcript(self, session_id: str) -> str:
         """Retrieve current partial transcript."""
         stream = self.active_streams.get(session_id)
-        if stream and self.recognizer and self.is_streaming:
-            res = self.recognizer.get_result(stream)
+        rec = self.get_streaming_recognizer()
+        if stream and rec:
+            res = rec.get_result(stream)
             return res.strip() if res else ""
         return ""
 
     def is_endpoint(self, session_id: str) -> bool:
         """Check if endpoint trailing silence threshold is reached."""
         stream = self.active_streams.get(session_id)
-        if stream and self.recognizer and self.is_streaming:
-            return self.recognizer.is_endpoint(stream)
+        rec = self.get_streaming_recognizer()
+        if stream and rec:
+            return rec.is_endpoint(stream)
         return False
 
     def get_final_transcript(self, session_id: str) -> str:
@@ -365,19 +411,20 @@ class SherpaStreamingEngine:
         and decodes all remaining tokens.
         """
         stream = self.active_streams.get(session_id)
-        if stream and self.recognizer and self.is_streaming:
+        rec = self.get_streaming_recognizer()
+        if stream and rec:
             try:
-                # 0.2s silence tail ensures Zipformer receptive field lookahead window is flushed
                 silence_tail = np.zeros(int(self.sample_rate * 0.2), dtype=np.float32)
                 stream.accept_waveform(self.sample_rate, silence_tail)
                 stream.input_finished()
-                while self.recognizer.is_ready(stream):
-                    self.recognizer.decode_stream(stream)
+                while rec.is_ready(stream):
+                    rec.decode_stream(stream)
             except Exception as e:
                 logger.warning(f"Error flushing Sherpa stream for {session_id}: {e}")
-            res = self.recognizer.get_result(stream)
+            res = rec.get_result(stream)
             return res.strip() if res else ""
         return ""
+
 
     def close_stream(self, session_id: str):
         """Clean up stream when session terminates."""

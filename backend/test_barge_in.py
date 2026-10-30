@@ -46,9 +46,9 @@ async def test_live_barge_in():
                 for chunk in chunks[:18]:
                     await ws.send_bytes(chunk)
                     await asyncio.sleep(0.04)
-                # Silence to trigger endpoint
+                # Silence to trigger endpoint (threshold is 1.2s)
                 print("[T1] Pausing for endpoint detection...")
-                for _ in range(18):
+                for _ in range(28):
                     await ws.send_bytes(silence_chunk)
                     await asyncio.sleep(0.05)
 
