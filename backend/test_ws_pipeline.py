@@ -82,6 +82,10 @@ async def run_single_turn_benchmark(session: aiohttp.ClientSession, ws_url: str,
                     metrics["speech_start_latency_ms"] = data.get("speech_start_latency_ms")
                     metrics["endpoint_wait_ms"] = data.get("endpoint_wait_ms")
                     metrics["finalization_latency_ms"] = data.get("finalization_latency_ms")
+                    metrics["audio_capture_to_final_transcript_ms"] = data.get(
+                        "audio_capture_to_final_ms",
+                        metrics["audio_capture_to_final_transcript_ms"]
+                    )
 
                 elif mtype == "assistant_text_delta":
                     if t_first_token is None:
@@ -101,6 +105,27 @@ async def run_single_turn_benchmark(session: aiohttp.ClientSession, ws_url: str,
                         )
 
                 elif mtype == "turn_complete":
+                    server_metrics = data.get("metrics") or {}
+                    metrics["audio_capture_to_first_partial_ms"] = server_metrics.get(
+                        "first_partial_latency_ms",
+                        metrics["audio_capture_to_first_partial_ms"]
+                    )
+                    metrics["speech_start_latency_ms"] = server_metrics.get(
+                        "speech_start_latency_ms",
+                        metrics["speech_start_latency_ms"]
+                    )
+                    metrics["endpoint_wait_ms"] = server_metrics.get(
+                        "endpoint_wait_ms",
+                        metrics["endpoint_wait_ms"]
+                    )
+                    metrics["finalization_latency_ms"] = server_metrics.get(
+                        "finalization_latency_ms",
+                        metrics["finalization_latency_ms"]
+                    )
+                    metrics["end_of_speech_to_final_transcript_ms"] = server_metrics.get(
+                        "endpoint_latency_ms",
+                        metrics["end_of_speech_to_final_transcript_ms"]
+                    )
                     t_turn_complete = time.perf_counter()
                     if t_final_transcript:
                         metrics["total_turn_duration_ms"] = round((t_turn_complete - t_final_transcript) * 1000, 1)

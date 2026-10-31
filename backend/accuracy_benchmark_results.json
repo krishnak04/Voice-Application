@@ -6,8 +6,9 @@
       "label": "Faster-Whisper (base, beam=3, vad=True, normalized)"
     },
     "average_wer": 0.1167,
+    "average_cer": 0.0906,
     "exact_match_rate": 0.66,
-    "average_latency_sec": 1.229,
+    "average_latency_sec": 1.239,
     "samples": [
       {
         "id": "sample_01",
@@ -17,7 +18,8 @@
         "reference": "Hello, thank you for calling customer service. How can I help you today?",
         "hypothesis": "Hello, thank you for calling customer service. How can I help you today?",
         "wer": 0.0,
-        "latency_sec": 3.236
+        "cer": 0.0,
+        "latency_sec": 2.639
       },
       {
         "id": "sample_02",
@@ -27,7 +29,8 @@
         "reference": "I would like to check the current balance on my account and review recent transactions.",
         "hypothesis": "I would like to check the current balance on my account and review recent transactions.",
         "wer": 0.0,
-        "latency_sec": 1.401
+        "cer": 0.0,
+        "latency_sec": 1.161
       },
       {
         "id": "sample_03",
@@ -37,7 +40,8 @@
         "reference": "Could you please tell me when my package is scheduled to arrive at my address?",
         "hypothesis": "Could you please tell me when my package is scheduled to arrive at my address?",
         "wer": 0.0,
-        "latency_sec": 1.275
+        "cer": 0.0,
+        "latency_sec": 1.045
       },
       {
         "id": "sample_04",
@@ -47,7 +51,8 @@
         "reference": "Yes, I am calling because my internet connection has been dropping frequently since yesterday.",
         "hypothesis": "Yes, I am calling because my internet connection has been dropping frequently since yesterday.",
         "wer": 0.0,
-        "latency_sec": 1.092
+        "cer": 0.0,
+        "latency_sec": 1.024
       },
       {
         "id": "sample_05",
@@ -57,7 +62,8 @@
         "reference": "Can I schedule an appointment with a technical specialist for next Tuesday afternoon?",
         "hypothesis": "Can I schedule an appointment with a technical specialist for next Tuesday afternoon?",
         "wer": 0.0,
-        "latency_sec": 1.016
+        "cer": 0.0,
+        "latency_sec": 1.151
       },
       {
         "id": "sample_06",
@@ -67,7 +73,8 @@
         "reference": "Please hold the line while I quickly transfer your call to the billing department.",
         "hypothesis": "Please hold the line while I quickly transfer your call to the billing department.",
         "wer": 0.0,
-        "latency_sec": 1.216
+        "cer": 0.0,
+        "latency_sec": 1.111
       },
       {
         "id": "sample_07",
@@ -77,7 +84,8 @@
         "reference": "I need to urgently update my primary shipping address before the order leaves the warehouse.",
         "hypothesis": "I need to urgently update my primary shipping address before the order leaves the warehouse.",
         "wer": 0.0,
-        "latency_sec": 1.613
+        "cer": 0.0,
+        "latency_sec": 1.381
       },
       {
         "id": "sample_08",
@@ -87,7 +95,8 @@
         "reference": "I am speaking slowly and clearly so that every word can be transcribed accurately.",
         "hypothesis": "I am speaking slowly and clearly so that every word can be transcribed accurately.",
         "wer": 0.0,
-        "latency_sec": 1.242
+        "cer": 0.0,
+        "latency_sec": 1.413
       },
       {
         "id": "sample_09",
@@ -97,7 +106,8 @@
         "reference": "Take your time and verify the six digit security code sent to your registered phone number.",
         "hypothesis": "Take your time and verify the 6-digit security code sent to your registered phone number.",
         "wer": 0.125,
-        "latency_sec": 1.035
+        "cer": 0.0444,
+        "latency_sec": 1.297
       },
       {
         "id": "sample_10",
@@ -107,7 +117,8 @@
         "reference": "Let me confirm that your email address is spelled correctly in our records.",
         "hypothesis": "Let me confirm that your email address is spelled correctly in our records.",
         "wer": 0.0,
-        "latency_sec": 1.065
+        "cer": 0.0,
+        "latency_sec": 1.371
       },
       {
         "id": "sample_11",
@@ -117,7 +128,8 @@
         "reference": "Yes, that sounds perfect.",
         "hypothesis": "Yes, that sounds perfect.",
         "wer": 0.0,
-        "latency_sec": 1.071
+        "cer": 0.0,
+        "latency_sec": 1.494
       },
       {
         "id": "sample_12",
@@ -127,7 +139,8 @@
         "reference": "No, cancel the reservation immediately.",
         "hypothesis": "No, cancel the reservation immediately.",
         "wer": 0.0,
-        "latency_sec": 1.087
+        "cer": 0.0,
+        "latency_sec": 1.439
       },
       {
         "id": "sample_13",
@@ -137,7 +150,8 @@
         "reference": "My confirmation number is four eight two nine one five.",
         "hypothesis": "My confirmation number is 482915.",
         "wer": 0.6,
-        "latency_sec": 1.178
+        "cer": 0.5185,
+        "latency_sec": 1.318
       },
       {
         "id": "sample_14",
@@ -147,7 +161,8 @@
         "reference": "What are your business hours on weekends?",
         "hypothesis": "What are your business hours on weekends?",
         "wer": 0.0,
-        "latency_sec": 1.25
+        "cer": 0.0,
+        "latency_sec": 1.301
       },
       {
         "id": "sample_15",
@@ -157,7 +172,8 @@
         "reference": "Repeat that again please.",
         "hypothesis": "Repeat that again please.",
         "wer": 0.0,
-        "latency_sec": 1.117
+        "cer": 0.0,
+        "latency_sec": 1.422
       },
       {
         "id": "sample_16",
@@ -167,7 +183,8 @@
         "reference": "Although the flight was delayed by two hours due to severe weather, the airline provided meal vouchers and rebooked all connecting passengers without additional fees.",
         "hypothesis": "Although the flight was delayed by two hours due to severe weather, the airline provided meal vouchers and rebooked all connecting passengers without additional fees.",
         "wer": 0.0,
-        "latency_sec": 1.209
+        "cer": 0.0,
+        "latency_sec": 1.616
       },
       {
         "id": "sample_17",
@@ -177,7 +194,8 @@
         "reference": "If you wish to initiate a formal warranty claim, please make sure you upload the original receipt and photograph the damaged component clearly.",
         "hypothesis": "If you wish to initiate a formal warranty claim, please make sure you upload the original receipt and photograph the damaged component clearly.",
         "wer": 0.0,
-        "latency_sec": 1.159
+        "cer": 0.0,
+        "latency_sec": 1.368
       },
       {
         "id": "sample_18",
@@ -187,7 +205,8 @@
         "reference": "The quarterly financial report highlighted substantial growth in international markets, driven primarily by strong adoption of cloud subscription services.",
         "hypothesis": "The quarterly financial report highlighted substantial growth in international markets, driven primarily by strong adoption of cloud subscription services.",
         "wer": 0.0,
-        "latency_sec": 1.184
+        "cer": 0.0,
+        "latency_sec": 1.482
       },
       {
         "id": "sample_19",
@@ -197,7 +216,8 @@
         "reference": "Could you provide more information about the differences between standard annual subscriptions and the premium enterprise tier?",
         "hypothesis": "Could you provide more information about the differences between standard annual subscriptions and the premium enterprise tier?",
         "wer": 0.0,
-        "latency_sec": 1.098
+        "cer": 0.0,
+        "latency_sec": 1.433
       },
       {
         "id": "sample_20",
@@ -207,7 +227,8 @@
         "reference": "I have been trying to reset my password for the past thirty minutes, but the verification link seems to have expired before I could open it.",
         "hypothesis": "I have been trying to reset my password for the past 30 minutes, but the verification link seems to have expired before I could open it.",
         "wer": 0.0385,
-        "latency_sec": 1.604
+        "cer": 0.0435,
+        "latency_sec": 1.715
       },
       {
         "id": "sample_21",
@@ -217,7 +238,8 @@
         "reference": "Where is the nearest branch office located in Bangalore?",
         "hypothesis": "Where is the nearest branch office located in Bangalore?.",
         "wer": 0.0,
-        "latency_sec": 1.216
+        "cer": 0.0,
+        "latency_sec": 1.351
       },
       {
         "id": "sample_22",
@@ -227,7 +249,8 @@
         "reference": "Who should I speak with to get approval for an international wire transfer?",
         "hypothesis": "Who should I speak with to get approval for an international wire transfer?",
         "wer": 0.0,
-        "latency_sec": 1.303
+        "cer": 0.0,
+        "latency_sec": 1.34
       },
       {
         "id": "sample_23",
@@ -237,7 +260,8 @@
         "reference": "Why has my debit card been blocked after entering the correct PIN three times?",
         "hypothesis": "Why has my debit card been blocked after entering the correct pin three times?",
         "wer": 0.0,
-        "latency_sec": 1.064
+        "cer": 0.0,
+        "latency_sec": 1.21
       },
       {
         "id": "sample_24",
@@ -247,7 +271,8 @@
         "reference": "How do I configure two factor authentication on my mobile banking application?",
         "hypothesis": "How do I configure two-factor authentication on my mobile banking application?",
         "wer": 0.1667,
-        "latency_sec": 1.075
+        "cer": 0.013,
+        "latency_sec": 1.124
       },
       {
         "id": "sample_25",
@@ -257,7 +282,8 @@
         "reference": "When will the refund of one hundred and forty five dollars be credited back to my account?",
         "hypothesis": "When will the refund of $145 be credited back to my account?",
         "wer": 0.3529,
-        "latency_sec": 1.22
+        "cer": 0.382,
+        "latency_sec": 1.166
       },
       {
         "id": "sample_26",
@@ -267,7 +293,8 @@
         "reference": "Turn off all lights in the conference room and lock the glass door.",
         "hypothesis": "Turn off all lights in the conference room and lock the glass door.",
         "wer": 0.0,
-        "latency_sec": 1.306
+        "cer": 0.0,
+        "latency_sec": 1.196
       },
       {
         "id": "sample_27",
@@ -277,7 +304,8 @@
         "reference": "Transfer five thousand rupees from my savings account to my current account immediately.",
         "hypothesis": "Transfer 5,000 rupees from my savings account to my current account immediately.",
         "wer": 0.1538,
-        "latency_sec": 1.121
+        "cer": 0.1494,
+        "latency_sec": 1.247
       },
       {
         "id": "sample_28",
@@ -287,7 +315,8 @@
         "reference": "Send an urgent email notification to the engineering team regarding the unexpected server outage.",
         "hypothesis": "Send an urgent email notification to the engineering team regarding the unexpected server outage.",
         "wer": 0.0,
-        "latency_sec": 1.093
+        "cer": 0.0,
+        "latency_sec": 1.281
       },
       {
         "id": "sample_29",
@@ -297,7 +326,8 @@
         "reference": "Download the quarterly billing statement for the month of September twenty twenty four.",
         "hypothesis": "Download the quarterly billing statement for the month of September 2024.",
         "wer": 0.2308,
-        "latency_sec": 1.076
+        "cer": 0.2093,
+        "latency_sec": 1.187
       },
       {
         "id": "sample_30",
@@ -307,7 +337,8 @@
         "reference": "Mute my microphone and pause the active audio recording.",
         "hypothesis": "mute my microphone and pause the active audio recording.",
         "wer": 0.0,
-        "latency_sec": 1.225
+        "cer": 0.0,
+        "latency_sec": 1.134
       },
       {
         "id": "sample_31",
@@ -317,7 +348,8 @@
         "reference": "The flight number is British Airways seven eight four departing at fourteen thirty hours.",
         "hypothesis": "The flight number is British Airway 7-8 for departing at 14.30 hours.",
         "wer": 0.4286,
-        "latency_sec": 1.174
+        "cer": 0.3182,
+        "latency_sec": 1.163
       },
       {
         "id": "sample_32",
@@ -327,7 +359,8 @@
         "reference": "My telephone number is nine eight seven six five four three two one zero.",
         "hypothesis": "My telephone number is 9876-543-10.",
         "wer": 0.7143,
-        "latency_sec": 1.163
+        "cer": 0.6806,
+        "latency_sec": 1.09
       },
       {
         "id": "sample_33",
@@ -337,7 +370,8 @@
         "reference": "The total invoice amount is twelve thousand four hundred and fifty dollars and fifty cents.",
         "hypothesis": "The total invoice amount is $12,450.50.",
         "wer": 0.6667,
-        "latency_sec": 1.378
+        "cer": 0.6889,
+        "latency_sec": 1.056
       },
       {
         "id": "sample_34",
@@ -347,7 +381,8 @@
         "reference": "Tracking code X Y Z nine nine zero one four seven was dispatched on October twenty first.",
         "hypothesis": "Tracking code XYZ9901 for 7 was dispatched on October 21st.",
         "wer": 0.6471,
-        "latency_sec": 1.132
+        "cer": 0.4205,
+        "latency_sec": 1.035
       },
       {
         "id": "sample_35",
@@ -357,7 +392,8 @@
         "reference": "The room temperature is thirty two point five degrees Celsius with seventy percent humidity.",
         "hypothesis": "The room temperature is 32.5 degrees Celsius with 70% humidity.",
         "wer": 0.4286,
-        "latency_sec": 1.082
+        "cer": 0.3956,
+        "latency_sec": 1.02
       },
       {
         "id": "sample_36",
@@ -367,7 +403,8 @@
         "reference": "The PostgreSQL database cluster experienced high memory pressure on the primary replica node.",
         "hypothesis": "The PostgreSQL Database Cluster experienced high memory pressure on the primary replica node.",
         "wer": 0.0,
-        "latency_sec": 1.123
+        "cer": 0.0,
+        "latency_sec": 1.058
       },
       {
         "id": "sample_37",
@@ -377,7 +414,8 @@
         "reference": "The physician prescribed amoxicillin five hundred milligrams twice daily after meals.",
         "hypothesis": "The physician prescribed AMOXI seal in 500mg twice daily after meals.",
         "wer": 0.3636,
-        "latency_sec": 1.066
+        "cer": 0.2976,
+        "latency_sec": 1.046
       },
       {
         "id": "sample_38",
@@ -387,7 +425,8 @@
         "reference": "The convolutional neural network was fine tuned using stochastic gradient descent and cross entropy loss.",
         "hypothesis": "The convolutional neural network was fine-tuned using stochastic gradient descent and cross-entropy loss.",
         "wer": 0.2667,
-        "latency_sec": 1.267
+        "cer": 0.0192,
+        "latency_sec": 1.107
       },
       {
         "id": "sample_39",
@@ -397,7 +436,8 @@
         "reference": "Ensure that transport layer security version one point three encryption is enforced on all endpoints.",
         "hypothesis": "Ensure that Transport Layer Security version 1.3 encryption is enforced on all endpoints.",
         "wer": 0.2,
-        "latency_sec": 1.324
+        "cer": 0.15,
+        "latency_sec": 1.091
       },
       {
         "id": "sample_40",
@@ -407,7 +447,8 @@
         "reference": "The patient reported acute abdominal pain and mild hypertension during the physical examination.",
         "hypothesis": "The patient reported acute abdominal pain and mild hypertension during the physical examination.",
         "wer": 0.0,
-        "latency_sec": 1.249
+        "cer": 0.0,
+        "latency_sec": 1.088
       },
       {
         "id": "sample_41",
@@ -417,7 +458,8 @@
         "reference": "Okay, thank you very much.",
         "hypothesis": "Okay, thank you very much.",
         "wer": 0.0,
-        "latency_sec": 1.166
+        "cer": 0.0,
+        "latency_sec": 1.017
       },
       {
         "id": "sample_42",
@@ -427,7 +469,8 @@
         "reference": "Yes, I agree completely.",
         "hypothesis": "Yes, I agree completely.",
         "wer": 0.0,
-        "latency_sec": 1.051
+        "cer": 0.0,
+        "latency_sec": 1.017
       },
       {
         "id": "sample_43",
@@ -437,7 +480,8 @@
         "reference": "Stop the playback now.",
         "hypothesis": "Stop the playback now.",
         "wer": 0.0,
-        "latency_sec": 1.026
+        "cer": 0.0,
+        "latency_sec": 1.105
       },
       {
         "id": "sample_44",
@@ -447,7 +491,8 @@
         "reference": "How much does it cost?",
         "hypothesis": "How much does it cost?",
         "wer": 0.0,
-        "latency_sec": 1.114
+        "cer": 0.0,
+        "latency_sec": 1.035
       },
       {
         "id": "sample_45",
@@ -457,7 +502,8 @@
         "reference": "Goodbye, have a nice day.",
         "hypothesis": "But bye, have a nice day.",
         "wer": 0.4,
-        "latency_sec": 1.282
+        "cer": 0.1739,
+        "latency_sec": 1.016
       },
       {
         "id": "sample_46",
@@ -467,7 +513,8 @@
         "reference": "Well, let me see, I think our product kickoff meeting was originally scheduled for Thursday morning at ten o'clock.",
         "hypothesis": "Well, let me see, I think our product kickoff meeting was originally scheduled for Thursday morning at 10 o'clock.",
         "wer": 0.0526,
-        "latency_sec": 1.187
+        "cer": 0.027,
+        "latency_sec": 1.103
       },
       {
         "id": "sample_47",
@@ -477,7 +524,8 @@
         "reference": "Actually, before we proceed with the payment, could you please double check if there are any promotional discounts available for annual subscribers?",
         "hypothesis": "Actually, before we proceed with the payment, could you please double check if there are any promotional discounts available for annual subscribers?",
         "wer": 0.0,
-        "latency_sec": 1.188
+        "cer": 0.0,
+        "latency_sec": 1.112
       },
       {
         "id": "sample_48",
@@ -487,7 +535,8 @@
         "reference": "I was wondering whether you could email me a copy of the contract, or if not, let me know who I should contact in legal.",
         "hypothesis": "I was wondering whether you could email me a copy of the contract, or if not, let me know who I should contact in legal.",
         "wer": 0.0,
-        "latency_sec": 1.192
+        "cer": 0.0,
+        "latency_sec": 1.123
       },
       {
         "id": "sample_49",
@@ -497,7 +546,8 @@
         "reference": "To be completely honest with you, the customer feedback on our new mobile interface has been overwhelmingly positive across every demographic.",
         "hypothesis": "To be completely honest with you, the customer feedback on our new mobile interface has been overwhelmingly positive across every demographic.",
         "wer": 0.0,
-        "latency_sec": 1.172
+        "cer": 0.0,
+        "latency_sec": 1.119
       },
       {
         "id": "sample_50",
@@ -507,7 +557,8 @@
         "reference": "In conclusion, despite several initial logistical obstacles, the entire infrastructure migration was delivered on schedule and well within the allocated budget.",
         "hypothesis": "In conclusion, despite several initial logistical obstacles, the entire infrastructure migration was delivered on schedule and well within the allocated budget.",
         "wer": 0.0,
-        "latency_sec": 1.279
+        "cer": 0.0,
+        "latency_sec": 1.142
       }
     ]
   },
@@ -518,8 +569,9 @@
       "label": "Faster-Whisper (base.en, beam=3, vad=True, normalized)"
     },
     "average_wer": 0.1056,
+    "average_cer": 0.0942,
     "exact_match_rate": 0.66,
-    "average_latency_sec": 0.684,
+    "average_latency_sec": 0.759,
     "samples": [
       {
         "id": "sample_01",
@@ -529,7 +581,8 @@
         "reference": "Hello, thank you for calling customer service. How can I help you today?",
         "hypothesis": "Hello, thank you for calling Customer Service. How can I help you today? //",
         "wer": 0.0,
-        "latency_sec": 0.815
+        "cer": 0.0145,
+        "latency_sec": 0.747
       },
       {
         "id": "sample_02",
@@ -539,7 +592,8 @@
         "reference": "I would like to check the current balance on my account and review recent transactions.",
         "hypothesis": "I would like to check the current balance on my account and review recent transactions.",
         "wer": 0.0,
-        "latency_sec": 0.673
+        "cer": 0.0,
+        "latency_sec": 0.657
       },
       {
         "id": "sample_03",
@@ -549,7 +603,8 @@
         "reference": "Could you please tell me when my package is scheduled to arrive at my address?",
         "hypothesis": "Could you please tell me when my package is scheduled to arrive at my address?",
         "wer": 0.0,
-        "latency_sec": 0.649
+        "cer": 0.0,
+        "latency_sec": 0.71
       },
       {
         "id": "sample_04",
@@ -559,7 +614,8 @@
         "reference": "Yes, I am calling because my internet connection has been dropping frequently since yesterday.",
         "hypothesis": "Yes, I am calling because my internet connection has been dropping frequently since yesterday.",
         "wer": 0.0,
-        "latency_sec": 0.665
+        "cer": 0.0,
+        "latency_sec": 0.842
       },
       {
         "id": "sample_05",
@@ -569,7 +625,8 @@
         "reference": "Can I schedule an appointment with a technical specialist for next Tuesday afternoon?",
         "hypothesis": "Can I schedule an appointment with a technical specialist for next Tuesday afternoon?",
         "wer": 0.0,
-        "latency_sec": 0.621
+        "cer": 0.0,
+        "latency_sec": 0.714
       },
       {
         "id": "sample_06",
@@ -579,7 +636,8 @@
         "reference": "Please hold the line while I quickly transfer your call to the billing department.",
         "hypothesis": "Please hold the line while I quickly transfer your call to the billing department.",
         "wer": 0.0,
-        "latency_sec": 0.662
+        "cer": 0.0,
+        "latency_sec": 0.692
       },
       {
         "id": "sample_07",
@@ -589,7 +647,8 @@
         "reference": "I need to urgently update my primary shipping address before the order leaves the warehouse.",
         "hypothesis": "I need to urgently update my primary shipping address before the order leaves the warehouse.",
         "wer": 0.0,
-        "latency_sec": 0.657
+        "cer": 0.0,
+        "latency_sec": 0.747
       },
       {
         "id": "sample_08",
@@ -599,7 +658,8 @@
         "reference": "I am speaking slowly and clearly so that every word can be transcribed accurately.",
         "hypothesis": "I am speaking slowly and clearly so that every word can be transcribed accurately.",
         "wer": 0.0,
-        "latency_sec": 0.695
+        "cer": 0.0,
+        "latency_sec": 0.95
       },
       {
         "id": "sample_09",
@@ -609,7 +669,8 @@
         "reference": "Take your time and verify the six digit security code sent to your registered phone number.",
         "hypothesis": "Take your time and verify the 6-digit security code sent to your registered phone number.",
         "wer": 0.125,
-        "latency_sec": 0.671
+        "cer": 0.0444,
+        "latency_sec": 0.82
       },
       {
         "id": "sample_10",
@@ -619,7 +680,8 @@
         "reference": "Let me confirm that your email address is spelled correctly in our records.",
         "hypothesis": "Let me confirm that your email address is spelled correctly in our records.",
         "wer": 0.0,
-        "latency_sec": 0.599
+        "cer": 0.0,
+        "latency_sec": 0.758
       },
       {
         "id": "sample_11",
@@ -629,7 +691,8 @@
         "reference": "Yes, that sounds perfect.",
         "hypothesis": "Yes, that sounds perfect",
         "wer": 0.0,
-        "latency_sec": 0.595
+        "cer": 0.0,
+        "latency_sec": 0.69
       },
       {
         "id": "sample_12",
@@ -639,7 +702,8 @@
         "reference": "No, cancel the reservation immediately.",
         "hypothesis": "No, cancel the reservation immediately.",
         "wer": 0.0,
-        "latency_sec": 0.57
+        "cer": 0.0,
+        "latency_sec": 0.745
       },
       {
         "id": "sample_13",
@@ -649,7 +713,8 @@
         "reference": "My confirmation number is four eight two nine one five.",
         "hypothesis": "My confirmation number is 482915.",
         "wer": 0.6,
-        "latency_sec": 0.606
+        "cer": 0.5185,
+        "latency_sec": 0.743
       },
       {
         "id": "sample_14",
@@ -659,7 +724,8 @@
         "reference": "What are your business hours on weekends?",
         "hypothesis": "What are your business hours on weekends?",
         "wer": 0.0,
-        "latency_sec": 0.706
+        "cer": 0.0,
+        "latency_sec": 0.692
       },
       {
         "id": "sample_15",
@@ -669,7 +735,8 @@
         "reference": "Repeat that again please.",
         "hypothesis": "Repeat that again, please",
         "wer": 0.0,
-        "latency_sec": 0.6
+        "cer": 0.0,
+        "latency_sec": 0.737
       },
       {
         "id": "sample_16",
@@ -679,7 +746,8 @@
         "reference": "Although the flight was delayed by two hours due to severe weather, the airline provided meal vouchers and rebooked all connecting passengers without additional fees.",
         "hypothesis": "Although the flight was delayed by two hours due to severe weather, the airline provided meal vouchers and re-booked all connecting passengers without additional fees.",
         "wer": 0.0,
-        "latency_sec": 0.721
+        "cer": 0.0,
+        "latency_sec": 0.824
       },
       {
         "id": "sample_17",
@@ -689,7 +757,8 @@
         "reference": "If you wish to initiate a formal warranty claim, please make sure you upload the original receipt and photograph the damaged component clearly.",
         "hypothesis": "If you wish to initiate a formal warranty claim, please make sure you upload the original receipt and photograph the damaged component clearly.",
         "wer": 0.0,
-        "latency_sec": 0.756
+        "cer": 0.0,
+        "latency_sec": 0.746
       },
       {
         "id": "sample_18",
@@ -699,7 +768,8 @@
         "reference": "The quarterly financial report highlighted substantial growth in international markets, driven primarily by strong adoption of cloud subscription services.",
         "hypothesis": "The quarterly financial report highlighted substantial growth in international markets, driven primarily by strong adoption of cloud subscription services.",
         "wer": 0.0,
-        "latency_sec": 0.71
+        "cer": 0.0,
+        "latency_sec": 0.671
       },
       {
         "id": "sample_19",
@@ -709,7 +779,8 @@
         "reference": "Could you provide more information about the differences between standard annual subscriptions and the premium enterprise tier?",
         "hypothesis": "Could you provide more information about the differences between standard annual subscriptions and the premium enterprise tier?",
         "wer": 0.0,
-        "latency_sec": 0.699
+        "cer": 0.0,
+        "latency_sec": 0.675
       },
       {
         "id": "sample_20",
@@ -719,7 +790,8 @@
         "reference": "I have been trying to reset my password for the past thirty minutes, but the verification link seems to have expired before I could open it.",
         "hypothesis": "I have been trying to reset my password for the past 30 minutes, but the verification link seems to have expired before I could open it.",
         "wer": 0.0385,
-        "latency_sec": 0.824
+        "cer": 0.0435,
+        "latency_sec": 0.77
       },
       {
         "id": "sample_21",
@@ -729,7 +801,8 @@
         "reference": "Where is the nearest branch office located in Bangalore?",
         "hypothesis": "Where is the nearest branch office located in Bangalore?",
         "wer": 0.0,
-        "latency_sec": 0.739
+        "cer": 0.0,
+        "latency_sec": 0.636
       },
       {
         "id": "sample_22",
@@ -739,7 +812,8 @@
         "reference": "Who should I speak with to get approval for an international wire transfer?",
         "hypothesis": "Who should I speak with to get approval for an international wire transfer?",
         "wer": 0.0,
-        "latency_sec": 0.67
+        "cer": 0.0,
+        "latency_sec": 0.692
       },
       {
         "id": "sample_23",
@@ -749,7 +823,8 @@
         "reference": "Why has my debit card been blocked after entering the correct PIN three times?",
         "hypothesis": "Why has my debit card been blocked after entering the correct pin three times?",
         "wer": 0.0,
-        "latency_sec": 0.72
+        "cer": 0.0,
+        "latency_sec": 0.736
       },
       {
         "id": "sample_24",
@@ -759,7 +834,8 @@
         "reference": "How do I configure two factor authentication on my mobile banking application?",
         "hypothesis": "How do I configure two-factor authentication on my mobile banking application?",
         "wer": 0.1667,
-        "latency_sec": 0.798
+        "cer": 0.013,
+        "latency_sec": 0.69
       },
       {
         "id": "sample_25",
@@ -769,7 +845,8 @@
         "reference": "When will the refund of one hundred and forty five dollars be credited back to my account?",
         "hypothesis": "When will the refund of $145 be credited back to my account?",
         "wer": 0.3529,
-        "latency_sec": 0.672
+        "cer": 0.382,
+        "latency_sec": 0.675
       },
       {
         "id": "sample_26",
@@ -779,7 +856,8 @@
         "reference": "Turn off all lights in the conference room and lock the glass door.",
         "hypothesis": "Turn off all lights in the conference room and lock the glass door. // //",
         "wer": 0.0,
-        "latency_sec": 0.704
+        "cer": 0.0303,
+        "latency_sec": 0.687
       },
       {
         "id": "sample_27",
@@ -789,7 +867,8 @@
         "reference": "Transfer five thousand rupees from my savings account to my current account immediately.",
         "hypothesis": "Transfer 5,000 rupees from my savings account to my current account immediately.",
         "wer": 0.1538,
-        "latency_sec": 0.652
+        "cer": 0.1494,
+        "latency_sec": 0.763
       },
       {
         "id": "sample_28",
@@ -799,7 +878,8 @@
         "reference": "Send an urgent email notification to the engineering team regarding the unexpected server outage.",
         "hypothesis": "Send an urgent email notification to the engineering team regarding the unexpected server outage.",
         "wer": 0.0,
-        "latency_sec": 0.634
+        "cer": 0.0,
+        "latency_sec": 0.738
       },
       {
         "id": "sample_29",
@@ -809,7 +889,8 @@
         "reference": "Download the quarterly billing statement for the month of September twenty twenty four.",
         "hypothesis": "Download the quarterly billing statement for the month of September 2024.",
         "wer": 0.2308,
-        "latency_sec": 0.634
+        "cer": 0.2093,
+        "latency_sec": 0.74
       },
       {
         "id": "sample_30",
@@ -819,7 +900,8 @@
         "reference": "Mute my microphone and pause the active audio recording.",
         "hypothesis": "Mute my microphone and pause the active audio recording.",
         "wer": 0.0,
-        "latency_sec": 0.669
+        "cer": 0.0,
+        "latency_sec": 0.908
       },
       {
         "id": "sample_31",
@@ -829,7 +911,8 @@
         "reference": "The flight number is British Airways seven eight four departing at fourteen thirty hours.",
         "hypothesis": "The flight number is British Airways 7.8 for departing at 14.30 hours.",
         "wer": 0.3571,
-        "latency_sec": 0.697
+        "cer": 0.3068,
+        "latency_sec": 0.848
       },
       {
         "id": "sample_32",
@@ -839,7 +922,8 @@
         "reference": "My telephone number is nine eight seven six five four three two one zero.",
         "hypothesis": "My telephone number is 9876543210",
         "wer": 0.7143,
-        "latency_sec": 0.625
+        "cer": 0.6806,
+        "latency_sec": 0.999
       },
       {
         "id": "sample_33",
@@ -849,7 +933,8 @@
         "reference": "The total invoice amount is twelve thousand four hundred and fifty dollars and fifty cents.",
         "hypothesis": "The total invoice amount is $12,450.50.",
         "wer": 0.6667,
-        "latency_sec": 0.609
+        "cer": 0.6889,
+        "latency_sec": 0.789
       },
       {
         "id": "sample_34",
@@ -859,7 +944,8 @@
         "reference": "Tracking code X Y Z nine nine zero one four seven was dispatched on October twenty first.",
         "hypothesis": "Tracking code XYZ990147 was dispatched on October 21.",
         "wer": 0.6471,
-        "latency_sec": 0.653
+        "cer": 0.5,
+        "latency_sec": 0.824
       },
       {
         "id": "sample_35",
@@ -869,7 +955,8 @@
         "reference": "The room temperature is thirty two point five degrees Celsius with seventy percent humidity.",
         "hypothesis": "The room temperature is 32.5 degrees Celsius with 70% humidity.",
         "wer": 0.4286,
-        "latency_sec": 0.678
+        "cer": 0.3956,
+        "latency_sec": 0.894
       },
       {
         "id": "sample_36",
@@ -879,7 +966,8 @@
         "reference": "The PostgreSQL database cluster experienced high memory pressure on the primary replica node.",
         "hypothesis": "The PostgreSQL database cluster experienced high memory pressure on the primary replica node. // // // // // // // // // // // // // // // // // // // // // // // //",
         "wer": 0.0,
-        "latency_sec": 1.092
+        "cer": 0.2609,
+        "latency_sec": 1.132
       },
       {
         "id": "sample_37",
@@ -889,7 +977,8 @@
         "reference": "The physician prescribed amoxicillin five hundred milligrams twice daily after meals.",
         "hypothesis": "The physician prescribed amoxy-celin 500 mg twice daily after meals.",
         "wer": 0.3636,
-        "latency_sec": 0.667
+        "cer": 0.2738,
+        "latency_sec": 0.767
       },
       {
         "id": "sample_38",
@@ -899,7 +988,8 @@
         "reference": "The convolutional neural network was fine tuned using stochastic gradient descent and cross entropy loss.",
         "hypothesis": "The convolutional neural network was fine-tuned using stochastic gradient descent and cross entropy loss.",
         "wer": 0.1333,
-        "latency_sec": 0.854
+        "cer": 0.0096,
+        "latency_sec": 0.948
       },
       {
         "id": "sample_39",
@@ -909,6 +999,7 @@
         "reference": "Ensure that transport layer security version one point three encryption is enforced on all endpoints.",
         "hypothesis": "Ensure that transport layer security version 1.3 encryption is enforced on all endpoints.",
         "wer": 0.2,
+        "cer": 0.15,
         "latency_sec": 0.708
       },
       {
@@ -919,7 +1010,8 @@
         "reference": "The patient reported acute abdominal pain and mild hypertension during the physical examination.",
         "hypothesis": "The patient reported acute abdominal pain and mild hypertension during the physical examination.",
         "wer": 0.0,
-        "latency_sec": 0.646
+        "cer": 0.0,
+        "latency_sec": 0.698
       },
       {
         "id": "sample_41",
@@ -929,7 +1021,8 @@
         "reference": "Okay, thank you very much.",
         "hypothesis": "Okay, thank you very much.",
         "wer": 0.0,
-        "latency_sec": 0.643
+        "cer": 0.0,
+        "latency_sec": 0.595
       },
       {
         "id": "sample_42",
@@ -939,7 +1032,8 @@
         "reference": "Yes, I agree completely.",
         "hypothesis": "Yes, I agree completely",
         "wer": 0.0,
-        "latency_sec": 0.602
+        "cer": 0.0,
+        "latency_sec": 0.595
       },
       {
         "id": "sample_43",
@@ -949,7 +1043,8 @@
         "reference": "Stop the playback now.",
         "hypothesis": "Stop the playback now.",
         "wer": 0.0,
-        "latency_sec": 0.561
+        "cer": 0.0,
+        "latency_sec": 0.589
       },
       {
         "id": "sample_44",
@@ -959,7 +1054,8 @@
         "reference": "How much does it cost?",
         "hypothesis": "How much does it cost?",
         "wer": 0.0,
-        "latency_sec": 0.547
+        "cer": 0.0,
+        "latency_sec": 0.611
       },
       {
         "id": "sample_45",
@@ -969,7 +1065,8 @@
         "reference": "Goodbye, have a nice day.",
         "hypothesis": "Goodbye, have a nice day.",
         "wer": 0.0,
-        "latency_sec": 0.663
+        "cer": 0.0,
+        "latency_sec": 0.704
       },
       {
         "id": "sample_46",
@@ -979,7 +1076,8 @@
         "reference": "Well, let me see, I think our product kickoff meeting was originally scheduled for Thursday morning at ten o'clock.",
         "hypothesis": "Well, let me see, I think our product kickoff meeting was originally scheduled for Thursday morning at 10 o'clock.",
         "wer": 0.0526,
-        "latency_sec": 0.782
+        "cer": 0.027,
+        "latency_sec": 0.877
       },
       {
         "id": "sample_47",
@@ -989,7 +1087,8 @@
         "reference": "Actually, before we proceed with the payment, could you please double check if there are any promotional discounts available for annual subscribers?",
         "hypothesis": "Actually, before we proceed with the payment, could you please double check if there are any promotional discounts available for annual subscribers?",
         "wer": 0.0,
-        "latency_sec": 0.755
+        "cer": 0.0,
+        "latency_sec": 0.877
       },
       {
         "id": "sample_48",
@@ -999,7 +1098,8 @@
         "reference": "I was wondering whether you could email me a copy of the contract, or if not, let me know who I should contact in legal.",
         "hypothesis": "I was wondering whether you could email me a copy of the contract, or if not, let me know who I should contact in legal.",
         "wer": 0.0,
-        "latency_sec": 0.721
+        "cer": 0.0,
+        "latency_sec": 0.824
       },
       {
         "id": "sample_49",
@@ -1009,7 +1109,8 @@
         "reference": "To be completely honest with you, the customer feedback on our new mobile interface has been overwhelmingly positive across every demographic.",
         "hypothesis": "To be completely honest with you, the customer feedback on our new mobile interface has been overwhelmingly positive across every demographic.",
         "wer": 0.0,
-        "latency_sec": 0.636
+        "cer": 0.0,
+        "latency_sec": 0.749
       },
       {
         "id": "sample_50",
@@ -1019,7 +1120,8 @@
         "reference": "In conclusion, despite several initial logistical obstacles, the entire infrastructure migration was delivered on schedule and well within the allocated budget.",
         "hypothesis": "In conclusion, despite several initial logistic obstacles, the entire infrastructure migration was delivered on schedule and well within the allocated budget.",
         "wer": 0.0476,
-        "latency_sec": 0.695
+        "cer": 0.0127,
+        "latency_sec": 0.729
       }
     ]
   },
@@ -1030,8 +1132,9 @@
       "label": "Faster-Whisper (small.en, beam=3, vad=True, normalized)"
     },
     "average_wer": 0.1069,
+    "average_cer": 0.0875,
     "exact_match_rate": 0.66,
-    "average_latency_sec": 1.921,
+    "average_latency_sec": 1.981,
     "samples": [
       {
         "id": "sample_01",
@@ -1041,7 +1144,8 @@
         "reference": "Hello, thank you for calling customer service. How can I help you today?",
         "hypothesis": "Hello, thank you for calling customer service. How can I help you today?",
         "wer": 0.0,
-        "latency_sec": 3.907
+        "cer": 0.0,
+        "latency_sec": 4.08
       },
       {
         "id": "sample_02",
@@ -1051,7 +1155,8 @@
         "reference": "I would like to check the current balance on my account and review recent transactions.",
         "hypothesis": "I would like to check the current balance on my account and review recent transactions.",
         "wer": 0.0,
-        "latency_sec": 1.785
+        "cer": 0.0,
+        "latency_sec": 1.969
       },
       {
         "id": "sample_03",
@@ -1061,7 +1166,8 @@
         "reference": "Could you please tell me when my package is scheduled to arrive at my address?",
         "hypothesis": "Could you please tell me when my package is scheduled to arrive at my address?",
         "wer": 0.0,
-        "latency_sec": 1.777
+        "cer": 0.0,
+        "latency_sec": 2.073
       },
       {
         "id": "sample_04",
@@ -1071,7 +1177,8 @@
         "reference": "Yes, I am calling because my internet connection has been dropping frequently since yesterday.",
         "hypothesis": "Yes, I am calling because my Internet connection has been dropping frequently since yesterday.",
         "wer": 0.0,
-        "latency_sec": 1.796
+        "cer": 0.0,
+        "latency_sec": 1.919
       },
       {
         "id": "sample_05",
@@ -1081,7 +1188,8 @@
         "reference": "Can I schedule an appointment with a technical specialist for next Tuesday afternoon?",
         "hypothesis": "Can I schedule an appointment with a technical specialist for next Tuesday afternoon?",
         "wer": 0.0,
-        "latency_sec": 1.789
+        "cer": 0.0,
+        "latency_sec": 2.343
       },
       {
         "id": "sample_06",
@@ -1091,7 +1199,8 @@
         "reference": "Please hold the line while I quickly transfer your call to the billing department.",
         "hypothesis": "Please hold the line while I quickly transfer your call to the billing department.",
         "wer": 0.0,
-        "latency_sec": 1.76
+        "cer": 0.0,
+        "latency_sec": 2.307
       },
       {
         "id": "sample_07",
@@ -1101,7 +1210,8 @@
         "reference": "I need to urgently update my primary shipping address before the order leaves the warehouse.",
         "hypothesis": "I need to urgently update my primary shipping address before the order leaves the warehouse.",
         "wer": 0.0,
-        "latency_sec": 1.869
+        "cer": 0.0,
+        "latency_sec": 1.904
       },
       {
         "id": "sample_08",
@@ -1111,7 +1221,8 @@
         "reference": "I am speaking slowly and clearly so that every word can be transcribed accurately.",
         "hypothesis": "I am speaking slowly and clearly so that every word can be transcribed accurately.",
         "wer": 0.0,
-        "latency_sec": 1.892
+        "cer": 0.0,
+        "latency_sec": 1.813
       },
       {
         "id": "sample_09",
@@ -1121,7 +1232,8 @@
         "reference": "Take your time and verify the six digit security code sent to your registered phone number.",
         "hypothesis": "Take your time and verify the six-digit security code sent to your registered phone number.",
         "wer": 0.125,
-        "latency_sec": 1.955
+        "cer": 0.0111,
+        "latency_sec": 1.9
       },
       {
         "id": "sample_10",
@@ -1131,7 +1243,8 @@
         "reference": "Let me confirm that your email address is spelled correctly in our records.",
         "hypothesis": "Let me confirm that your email address is spelled correctly in our records.",
         "wer": 0.0,
-        "latency_sec": 1.91
+        "cer": 0.0,
+        "latency_sec": 2.115
       },
       {
         "id": "sample_11",
@@ -1141,7 +1254,8 @@
         "reference": "Yes, that sounds perfect.",
         "hypothesis": "Yes, that sounds perfect.",
         "wer": 0.0,
-        "latency_sec": 1.665
+        "cer": 0.0,
+        "latency_sec": 2.312
       },
       {
         "id": "sample_12",
@@ -1151,7 +1265,8 @@
         "reference": "No, cancel the reservation immediately.",
         "hypothesis": "No, cancel the reservation immediately.",
         "wer": 0.0,
-        "latency_sec": 1.714
+        "cer": 0.0,
+        "latency_sec": 2.269
       },
       {
         "id": "sample_13",
@@ -1161,7 +1276,8 @@
         "reference": "My confirmation number is four eight two nine one five.",
         "hypothesis": "My confirmation number is 482915.",
         "wer": 0.6,
-        "latency_sec": 1.671
+        "cer": 0.5185,
+        "latency_sec": 2.229
       },
       {
         "id": "sample_14",
@@ -1171,7 +1287,8 @@
         "reference": "What are your business hours on weekends?",
         "hypothesis": "What are your business hours on weekends?",
         "wer": 0.0,
-        "latency_sec": 1.817
+        "cer": 0.0,
+        "latency_sec": 2.053
       },
       {
         "id": "sample_15",
@@ -1181,7 +1298,8 @@
         "reference": "Repeat that again please.",
         "hypothesis": "Repeat that again, please.",
         "wer": 0.0,
-        "latency_sec": 1.777
+        "cer": 0.0,
+        "latency_sec": 1.784
       },
       {
         "id": "sample_16",
@@ -1191,7 +1309,8 @@
         "reference": "Although the flight was delayed by two hours due to severe weather, the airline provided meal vouchers and rebooked all connecting passengers without additional fees.",
         "hypothesis": "Although the flight was delayed by two hours due to severe weather, the airline provided meal vouchers and rebooked all connecting passengers without additional fees.",
         "wer": 0.0,
-        "latency_sec": 2.122
+        "cer": 0.0,
+        "latency_sec": 2.199
       },
       {
         "id": "sample_17",
@@ -1201,7 +1320,8 @@
         "reference": "If you wish to initiate a formal warranty claim, please make sure you upload the original receipt and photograph the damaged component clearly.",
         "hypothesis": "If you wish to initiate a formal warranty claim, please make sure you upload the original receipt and photograph the damaged component clearly.",
         "wer": 0.0,
-        "latency_sec": 2.189
+        "cer": 0.0,
+        "latency_sec": 2.132
       },
       {
         "id": "sample_18",
@@ -1211,7 +1331,8 @@
         "reference": "The quarterly financial report highlighted substantial growth in international markets, driven primarily by strong adoption of cloud subscription services.",
         "hypothesis": "The quarterly financial report highlighted substantial growth in international markets, driven primarily by strong adoption of cloud subscription services.",
         "wer": 0.0,
-        "latency_sec": 2.003
+        "cer": 0.0,
+        "latency_sec": 1.986
       },
       {
         "id": "sample_19",
@@ -1221,7 +1342,8 @@
         "reference": "Could you provide more information about the differences between standard annual subscriptions and the premium enterprise tier?",
         "hypothesis": "Could you provide more information about the differences between standard annual subscriptions and the premium enterprise tier?",
         "wer": 0.0,
-        "latency_sec": 2.012
+        "cer": 0.0,
+        "latency_sec": 1.844
       },
       {
         "id": "sample_20",
@@ -1231,7 +1353,8 @@
         "reference": "I have been trying to reset my password for the past thirty minutes, but the verification link seems to have expired before I could open it.",
         "hypothesis": "I have been trying to reset my password for the past 30 minutes, but the verification link seems to have expired before I could open it.",
         "wer": 0.0385,
-        "latency_sec": 2.254
+        "cer": 0.0435,
+        "latency_sec": 1.937
       },
       {
         "id": "sample_21",
@@ -1241,7 +1364,8 @@
         "reference": "Where is the nearest branch office located in Bangalore?",
         "hypothesis": "Where is the nearest branch office located in Bangalore?",
         "wer": 0.0,
-        "latency_sec": 1.812
+        "cer": 0.0,
+        "latency_sec": 1.895
       },
       {
         "id": "sample_22",
@@ -1251,7 +1375,8 @@
         "reference": "Who should I speak with to get approval for an international wire transfer?",
         "hypothesis": "Who should I speak with to get approval for an international wire transfer?",
         "wer": 0.0,
-        "latency_sec": 1.951
+        "cer": 0.0,
+        "latency_sec": 1.954
       },
       {
         "id": "sample_23",
@@ -1261,7 +1386,8 @@
         "reference": "Why has my debit card been blocked after entering the correct PIN three times?",
         "hypothesis": "Why has my debit card been blocked after entering the correct PIN 3 times?",
         "wer": 0.0714,
-        "latency_sec": 1.771
+        "cer": 0.0649,
+        "latency_sec": 1.927
       },
       {
         "id": "sample_24",
@@ -1271,7 +1397,8 @@
         "reference": "How do I configure two factor authentication on my mobile banking application?",
         "hypothesis": "How do I configure two-factor authentication on my mobile banking application?",
         "wer": 0.1667,
-        "latency_sec": 1.925
+        "cer": 0.013,
+        "latency_sec": 1.786
       },
       {
         "id": "sample_25",
@@ -1281,7 +1408,8 @@
         "reference": "When will the refund of one hundred and forty five dollars be credited back to my account?",
         "hypothesis": "When will the refund of $145 be credited back to my account?",
         "wer": 0.3529,
-        "latency_sec": 1.763
+        "cer": 0.382,
+        "latency_sec": 1.878
       },
       {
         "id": "sample_26",
@@ -1291,7 +1419,8 @@
         "reference": "Turn off all lights in the conference room and lock the glass door.",
         "hypothesis": "Turn off all lights in the conference room and lock the glass door.",
         "wer": 0.0,
-        "latency_sec": 1.961
+        "cer": 0.0,
+        "latency_sec": 2.047
       },
       {
         "id": "sample_27",
@@ -1301,7 +1430,8 @@
         "reference": "Transfer five thousand rupees from my savings account to my current account immediately.",
         "hypothesis": "Transfer 5000 rupees from my savings account to my current account immediately.",
         "wer": 0.1538,
-        "latency_sec": 1.73
+        "cer": 0.1494,
+        "latency_sec": 1.867
       },
       {
         "id": "sample_28",
@@ -1311,7 +1441,8 @@
         "reference": "Send an urgent email notification to the engineering team regarding the unexpected server outage.",
         "hypothesis": "Send an urgent email notification to the engineering team regarding the unexpected server outage.",
         "wer": 0.0,
-        "latency_sec": 1.846
+        "cer": 0.0,
+        "latency_sec": 1.882
       },
       {
         "id": "sample_29",
@@ -1321,7 +1452,8 @@
         "reference": "Download the quarterly billing statement for the month of September twenty twenty four.",
         "hypothesis": "Download the quarterly billing statement for the month of September 2024.",
         "wer": 0.2308,
-        "latency_sec": 1.863
+        "cer": 0.2093,
+        "latency_sec": 1.772
       },
       {
         "id": "sample_30",
@@ -1331,7 +1463,8 @@
         "reference": "Mute my microphone and pause the active audio recording.",
         "hypothesis": "Mute my microphone and pause the active audio recording.",
         "wer": 0.0,
-        "latency_sec": 1.838
+        "cer": 0.0,
+        "latency_sec": 1.78
       },
       {
         "id": "sample_31",
@@ -1341,7 +1474,8 @@
         "reference": "The flight number is British Airways seven eight four departing at fourteen thirty hours.",
         "hypothesis": "The flight number is British Airways 78 for departing at 1430 hours.",
         "wer": 0.3571,
-        "latency_sec": 1.995
+        "cer": 0.3068,
+        "latency_sec": 1.868
       },
       {
         "id": "sample_32",
@@ -1351,7 +1485,8 @@
         "reference": "My telephone number is nine eight seven six five four three two one zero.",
         "hypothesis": "My telephone number is 9876543210.",
         "wer": 0.7143,
-        "latency_sec": 1.962
+        "cer": 0.6806,
+        "latency_sec": 1.75
       },
       {
         "id": "sample_33",
@@ -1361,7 +1496,8 @@
         "reference": "The total invoice amount is twelve thousand four hundred and fifty dollars and fifty cents.",
         "hypothesis": "The total invoice amount is $12,450.50.",
         "wer": 0.6667,
-        "latency_sec": 1.864
+        "cer": 0.6889,
+        "latency_sec": 1.773
       },
       {
         "id": "sample_34",
@@ -1371,7 +1507,8 @@
         "reference": "Tracking code X Y Z nine nine zero one four seven was dispatched on October twenty first.",
         "hypothesis": "Tracking code XYZ990147 was dispatched on October 21.",
         "wer": 0.6471,
-        "latency_sec": 1.846
+        "cer": 0.5,
+        "latency_sec": 1.866
       },
       {
         "id": "sample_35",
@@ -1381,7 +1518,8 @@
         "reference": "The room temperature is thirty two point five degrees Celsius with seventy percent humidity.",
         "hypothesis": "The room temperature is 32.5 degrees Celsius with 70% humidity.",
         "wer": 0.4286,
-        "latency_sec": 1.777
+        "cer": 0.3956,
+        "latency_sec": 1.805
       },
       {
         "id": "sample_36",
@@ -1391,7 +1529,8 @@
         "reference": "The PostgreSQL database cluster experienced high memory pressure on the primary replica node.",
         "hypothesis": "The PostgreSQL database cluster experienced high memory pressure on the primary replica node.",
         "wer": 0.0,
-        "latency_sec": 1.841
+        "cer": 0.0,
+        "latency_sec": 1.713
       },
       {
         "id": "sample_37",
@@ -1401,7 +1540,8 @@
         "reference": "The physician prescribed amoxicillin five hundred milligrams twice daily after meals.",
         "hypothesis": "The physician prescribed amoxy sealant 500 milligrams twice daily after meals.",
         "wer": 0.2727,
-        "latency_sec": 1.817
+        "cer": 0.2143,
+        "latency_sec": 1.772
       },
       {
         "id": "sample_38",
@@ -1411,7 +1551,8 @@
         "reference": "The convolutional neural network was fine tuned using stochastic gradient descent and cross entropy loss.",
         "hypothesis": "The convolutional neural network was fine-tuned using stochastic gradient descent and cross-entropy loss.",
         "wer": 0.2667,
-        "latency_sec": 2.06
+        "cer": 0.0192,
+        "latency_sec": 1.981
       },
       {
         "id": "sample_39",
@@ -1421,7 +1562,8 @@
         "reference": "Ensure that transport layer security version one point three encryption is enforced on all endpoints.",
         "hypothesis": "Ensure that transport layer security version 1.3 encryption is enforced on all endpoints.",
         "wer": 0.2,
-        "latency_sec": 1.925
+        "cer": 0.15,
+        "latency_sec": 1.806
       },
       {
         "id": "sample_40",
@@ -1431,7 +1573,8 @@
         "reference": "The patient reported acute abdominal pain and mild hypertension during the physical examination.",
         "hypothesis": "The patient reported acute abdominal pain and mild hypertension during the physical examination.",
         "wer": 0.0,
-        "latency_sec": 1.871
+        "cer": 0.0,
+        "latency_sec": 1.763
       },
       {
         "id": "sample_41",
@@ -1441,7 +1584,8 @@
         "reference": "Okay, thank you very much.",
         "hypothesis": "Okay, thank you very much.",
         "wer": 0.0,
-        "latency_sec": 1.689
+        "cer": 0.0,
+        "latency_sec": 1.629
       },
       {
         "id": "sample_42",
@@ -1451,7 +1595,8 @@
         "reference": "Yes, I agree completely.",
         "hypothesis": "Yes, I agree completely.",
         "wer": 0.0,
-        "latency_sec": 1.728
+        "cer": 0.0,
+        "latency_sec": 1.623
       },
       {
         "id": "sample_43",
@@ -1461,7 +1606,8 @@
         "reference": "Stop the playback now.",
         "hypothesis": "Stop the playback now.",
         "wer": 0.0,
-        "latency_sec": 1.803
+        "cer": 0.0,
+        "latency_sec": 1.634
       },
       {
         "id": "sample_44",
@@ -1471,7 +1617,8 @@
         "reference": "How much does it cost?",
         "hypothesis": "How much does it cost?",
         "wer": 0.0,
-        "latency_sec": 1.903
+        "cer": 0.0,
+        "latency_sec": 1.664
       },
       {
         "id": "sample_45",
@@ -1481,7 +1628,8 @@
         "reference": "Goodbye, have a nice day.",
         "hypothesis": "Goodbye, have a nice day!",
         "wer": 0.0,
-        "latency_sec": 1.781
+        "cer": 0.0,
+        "latency_sec": 1.663
       },
       {
         "id": "sample_46",
@@ -1491,7 +1639,8 @@
         "reference": "Well, let me see, I think our product kickoff meeting was originally scheduled for Thursday morning at ten o'clock.",
         "hypothesis": "Well, let me see, I think our product kickoff meeting was originally scheduled for Thursday morning at 10 o'clock.",
         "wer": 0.0526,
-        "latency_sec": 1.932
+        "cer": 0.027,
+        "latency_sec": 1.941
       },
       {
         "id": "sample_47",
@@ -1501,7 +1650,8 @@
         "reference": "Actually, before we proceed with the payment, could you please double check if there are any promotional discounts available for annual subscribers?",
         "hypothesis": "Actually, before we proceed with the payment, could you please double check if there are any promotional discounts available for annual subscribers?",
         "wer": 0.0,
-        "latency_sec": 2.065
+        "cer": 0.0,
+        "latency_sec": 1.978
       },
       {
         "id": "sample_48",
@@ -1511,7 +1661,8 @@
         "reference": "I was wondering whether you could email me a copy of the contract, or if not, let me know who I should contact in legal.",
         "hypothesis": "I was wondering whether you could email me a copy of the contract, or if not, let me know who I should contact in legal.",
         "wer": 0.0,
-        "latency_sec": 2.04
+        "cer": 0.0,
+        "latency_sec": 2.049
       },
       {
         "id": "sample_49",
@@ -1521,7 +1672,8 @@
         "reference": "To be completely honest with you, the customer feedback on our new mobile interface has been overwhelmingly positive across every demographic.",
         "hypothesis": "To be completely honest with you, the customer feedback on our new mobile interface has been overwhelmingly positive across every demographic.",
         "wer": 0.0,
-        "latency_sec": 1.97
+        "cer": 0.0,
+        "latency_sec": 2.62
       },
       {
         "id": "sample_50",
@@ -1531,7 +1683,8 @@
         "reference": "In conclusion, despite several initial logistical obstacles, the entire infrastructure migration was delivered on schedule and well within the allocated budget.",
         "hypothesis": "In conclusion, despite several initial logistical obstacles, the entire infrastructure migration was delivered on schedule and well within the allocated budget.",
         "wer": 0.0,
-        "latency_sec": 2.084
+        "cer": 0.0,
+        "latency_sec": 2.187
       }
     ]
   },
@@ -1542,8 +1695,9 @@
       "label": "Sherpa Streaming (2023-06-26 Standard with lookahead silence flush)"
     },
     "average_wer": 0.1491,
+    "average_cer": 0.0358,
     "exact_match_rate": 0.28,
-    "average_latency_sec": 0.64,
+    "average_latency_sec": 0.722,
     "samples": [
       {
         "id": "sample_01",
@@ -1553,7 +1707,8 @@
         "reference": "Hello, thank you for calling customer service. How can I help you today?",
         "hypothesis": "HULLO THANK YOU FOR CALLING CUSTOMER'S SERVICE HOW CAN I HELP YOU TO DAY",
         "wer": 0.3077,
-        "latency_sec": 0.742
+        "cer": 0.0435,
+        "latency_sec": 1.234
       },
       {
         "id": "sample_02",
@@ -1563,7 +1718,8 @@
         "reference": "I would like to check the current balance on my account and review recent transactions.",
         "hypothesis": "I WOULD LIKE TO CHECK THE CURRANT BALANCE ON MY ACCOUNT AND REVIEW RECENT TRANSACTIONS",
         "wer": 0.0667,
-        "latency_sec": 0.688
+        "cer": 0.0116,
+        "latency_sec": 0.695
       },
       {
         "id": "sample_03",
@@ -1573,7 +1729,8 @@
         "reference": "Could you please tell me when my package is scheduled to arrive at my address?",
         "hypothesis": "COULD YOU PLEASE TELL ME WHEN MY PACKAGE IS SHEDLED TO ARRIVE AT MY ADDRESS",
         "wer": 0.0667,
-        "latency_sec": 0.275
+        "cer": 0.026,
+        "latency_sec": 0.887
       },
       {
         "id": "sample_04",
@@ -1583,7 +1740,8 @@
         "reference": "Yes, I am calling because my internet connection has been dropping frequently since yesterday.",
         "hypothesis": "YES I AM CALLING BECAUSE MY INTIMATE CONNECTION HAS BEEN DROPPING FREQUENTLY SINCE YESTERDAY",
         "wer": 0.0714,
-        "latency_sec": 0.683
+        "cer": 0.0543,
+        "latency_sec": 0.798
       },
       {
         "id": "sample_05",
@@ -1593,7 +1751,8 @@
         "reference": "Can I schedule an appointment with a technical specialist for next Tuesday afternoon?",
         "hypothesis": "CAN I SCHEDULE AN APPOINTMENT WITH A TECHNICAL SPECIALIST FOR NEXT TUESDAY AFTERNOON",
         "wer": 0.0,
-        "latency_sec": 0.47
+        "cer": 0.0,
+        "latency_sec": 0.464
       },
       {
         "id": "sample_06",
@@ -1603,7 +1762,8 @@
         "reference": "Please hold the line while I quickly transfer your call to the billing department.",
         "hypothesis": "PLEASE HOLD THE LINE WHILE I QUICKLY TRANSFER YOUR CALL TO THE BUILDING DEPARTMENT",
         "wer": 0.0714,
-        "latency_sec": 0.32
+        "cer": 0.0247,
+        "latency_sec": 0.446
       },
       {
         "id": "sample_07",
@@ -1613,7 +1773,8 @@
         "reference": "I need to urgently update my primary shipping address before the order leaves the warehouse.",
         "hypothesis": "I NEED GO URGENTLY UP DATE MY PRIMARY SHIPPING ADDRESS BEFORE THE ORDERED LEAVES THE WAREHOUS",
         "wer": 0.3333,
-        "latency_sec": 0.508
+        "cer": 0.0549,
+        "latency_sec": 0.739
       },
       {
         "id": "sample_08",
@@ -1623,7 +1784,8 @@
         "reference": "I am speaking slowly and clearly so that every word can be transcribed accurately.",
         "hypothesis": "I AM SPEAKING SLOWLY AND CLEARLY SO THAT EVERY WORD CAN BE TRANSCRIBED ACCURATELY",
         "wer": 0.0,
-        "latency_sec": 0.603
+        "cer": 0.0,
+        "latency_sec": 0.973
       },
       {
         "id": "sample_09",
@@ -1633,7 +1795,8 @@
         "reference": "Take your time and verify the six digit security code sent to your registered phone number.",
         "hypothesis": "TAKE YOUR TIME AND VERIFY THE SIX DIGIT SECURITY CODE SENT TO YOUR REGISTERED PHONE NUMBER",
         "wer": 0.0,
-        "latency_sec": 1.064
+        "cer": 0.0,
+        "latency_sec": 0.977
       },
       {
         "id": "sample_10",
@@ -1643,7 +1806,8 @@
         "reference": "Let me confirm that your email address is spelled correctly in our records.",
         "hypothesis": "LET ME CONFIRM THAT YOUR EMILE ADDRESS IS SPELLED CORRECTLY IN OUR RECORDS",
         "wer": 0.0769,
-        "latency_sec": 0.661
+        "cer": 0.027,
+        "latency_sec": 0.826
       },
       {
         "id": "sample_11",
@@ -1653,7 +1817,8 @@
         "reference": "Yes, that sounds perfect.",
         "hypothesis": "YES THAT SOUNDS PERFECT",
         "wer": 0.0,
-        "latency_sec": 0.695
+        "cer": 0.0,
+        "latency_sec": 0.73
       },
       {
         "id": "sample_12",
@@ -1663,7 +1828,8 @@
         "reference": "No, cancel the reservation immediately.",
         "hypothesis": "NO CANCEL THE RESERVATION IMMEDIATELY",
         "wer": 0.0,
-        "latency_sec": 0.687
+        "cer": 0.0,
+        "latency_sec": 0.731
       },
       {
         "id": "sample_13",
@@ -1673,7 +1839,8 @@
         "reference": "My confirmation number is four eight two nine one five.",
         "hypothesis": "MY CONFIRMATION NUMBER IS FOUR EIGHT TWO NINE ONE FIVE",
         "wer": 0.0,
-        "latency_sec": 1.079
+        "cer": 0.0,
+        "latency_sec": 0.661
       },
       {
         "id": "sample_14",
@@ -1683,7 +1850,8 @@
         "reference": "What are your business hours on weekends?",
         "hypothesis": "WHAT ARE YOUR BUSINESS HOURS ON WEEK ENDS",
         "wer": 0.2857,
-        "latency_sec": 0.795
+        "cer": 0.025,
+        "latency_sec": 0.639
       },
       {
         "id": "sample_15",
@@ -1693,7 +1861,8 @@
         "reference": "Repeat that again please.",
         "hypothesis": "REPEAT THAT AGAIN PLEASE",
         "wer": 0.0,
-        "latency_sec": 0.578
+        "cer": 0.0,
+        "latency_sec": 0.47
       },
       {
         "id": "sample_16",
@@ -1703,7 +1872,8 @@
         "reference": "Although the flight was delayed by two hours due to severe weather, the airline provided meal vouchers and rebooked all connecting passengers without additional fees.",
         "hypothesis": "ALTHOUGH THE FLIGHT WAS DELAYED BY TWO HOURS DUE TO SEVERE WEATHER THE AIR LINE PROVIDED MEAL VOUCHERS AND REBOOKED ALL CONNECTING PASSENGERS WITHOUT ADDITIONAL FEES",
         "wer": 0.08,
-        "latency_sec": 1.03
+        "cer": 0.0061,
+        "latency_sec": 1.161
       },
       {
         "id": "sample_17",
@@ -1711,9 +1881,10 @@
         "accent": "Indian",
         "duration": 9.0,
         "reference": "If you wish to initiate a formal warranty claim, please make sure you upload the original receipt and photograph the damaged component clearly.",
-        "hypothesis": "IF YOU WISH TO INITIATE A FORMAL ROARANTIC CLAIM PLEASE MAKE SHOW YOU APPLAUDE THE ORIGINAL RECEIPT AND PHOTOGRAPH THE DAMAGED COMPONENT CLEARLY",
+        "hypothesis": "IF YOU WISH TO INITIATE A FORMAL ROARANTIC CLAIM PLEASE MAKE SHOW YOU APPLAUD THE ORIGINAL RECEIPT AND PHOTOGRAPH THE DAMAGED COMPONENT CLEARLY",
         "wer": 0.1304,
-        "latency_sec": 0.794
+        "cer": 0.0851,
+        "latency_sec": 1.143
       },
       {
         "id": "sample_18",
@@ -1723,7 +1894,8 @@
         "reference": "The quarterly financial report highlighted substantial growth in international markets, driven primarily by strong adoption of cloud subscription services.",
         "hypothesis": "THE QUARTERLY FINANCIAL REPORT HIGH LIGHTED SUBSTANTIAL GROWTH IN INTERNATIONAL MARKETS DRIVEN PRIMARILY BY STRONG ADOPTION OF CLOUD SUBSCRIPTION SERVICES",
         "wer": 0.1053,
-        "latency_sec": 0.918
+        "cer": 0.0065,
+        "latency_sec": 1.11
       },
       {
         "id": "sample_19",
@@ -1733,7 +1905,8 @@
         "reference": "Could you provide more information about the differences between standard annual subscriptions and the premium enterprise tier?",
         "hypothesis": "COULD YOU PROVIDE MORE INFORMATION ABOUT THE DIFFERENCES BETWEEN STANDARD ANNUAL SUBSCRIPTIONS AND THE PREMIUM ENTERPRISE HERE",
         "wer": 0.0588,
-        "latency_sec": 0.68
+        "cer": 0.0238,
+        "latency_sec": 0.701
       },
       {
         "id": "sample_20",
@@ -1743,7 +1916,8 @@
         "reference": "I have been trying to reset my password for the past thirty minutes, but the verification link seems to have expired before I could open it.",
         "hypothesis": "I HAVE BEEN TRYING TO RESET MY PASSWORD FOR THE PAST THIRTY MINUTES BUT THE VERIFICATION LINK SEEMS TO HAVE EXPIRED BEFORE I COULD OPEN IT",
         "wer": 0.0,
-        "latency_sec": 0.788
+        "cer": 0.0,
+        "latency_sec": 0.934
       },
       {
         "id": "sample_21",
@@ -1753,7 +1927,8 @@
         "reference": "Where is the nearest branch office located in Bangalore?",
         "hypothesis": "WHERE IS THE NEAREST BRANCH OF ITS LOCATED IN BANGLO",
         "wer": 0.3333,
-        "latency_sec": 0.61
+        "cer": 0.1091,
+        "latency_sec": 0.719
       },
       {
         "id": "sample_22",
@@ -1763,7 +1938,8 @@
         "reference": "Who should I speak with to get approval for an international wire transfer?",
         "hypothesis": "WHO SHOULD I SPEAK WITH TO GET APPROVAL FOR AN INTERNATIONAL WIRE TRANSFER",
         "wer": 0.0,
-        "latency_sec": 0.398
+        "cer": 0.0,
+        "latency_sec": 0.626
       },
       {
         "id": "sample_23",
@@ -1773,7 +1949,8 @@
         "reference": "Why has my debit card been blocked after entering the correct PIN three times?",
         "hypothesis": "WHY HAS MY DEBAT CARD BEEN BLOCKED AFTER ENTERING THE CORRECT PEN THREE TIMES",
         "wer": 0.1429,
-        "latency_sec": 0.541
+        "cer": 0.026,
+        "latency_sec": 0.611
       },
       {
         "id": "sample_24",
@@ -1783,7 +1960,8 @@
         "reference": "How do I configure two factor authentication on my mobile banking application?",
         "hypothesis": "HOW DO I CONFIGURE TWO FACTOR AUTHENTICATION ON MY MOBILE BANKING APPLICATION",
         "wer": 0.0,
-        "latency_sec": 0.646
+        "cer": 0.0,
+        "latency_sec": 0.873
       },
       {
         "id": "sample_25",
@@ -1793,7 +1971,8 @@
         "reference": "When will the refund of one hundred and forty five dollars be credited back to my account?",
         "hypothesis": "WHEN WILL THE RE FUND OF ONE HUNDRED AND FORTY FIVE DOLLARS BE CREDITED BACK TO MY ACCOUNT",
         "wer": 0.1176,
-        "latency_sec": 0.707
+        "cer": 0.0112,
+        "latency_sec": 0.885
       },
       {
         "id": "sample_26",
@@ -1803,7 +1982,8 @@
         "reference": "Turn off all lights in the conference room and lock the glass door.",
         "hypothesis": "TURN OFF ALL LIGHTS INTO CONFERENCE ROOM AND LOCK THE GLASS DOOR",
         "wer": 0.1538,
-        "latency_sec": 0.363
+        "cer": 0.0455,
+        "latency_sec": 0.739
       },
       {
         "id": "sample_27",
@@ -1813,7 +1993,8 @@
         "reference": "Transfer five thousand rupees from my savings account to my current account immediately.",
         "hypothesis": "TRANS FOR FIVE THOUSAND RUPEES FROM MY SAVINGS ACCOUNT TO MY CURRENT ACCOUNT IMMEDIATELY",
         "wer": 0.1538,
-        "latency_sec": 0.828
+        "cer": 0.023,
+        "latency_sec": 1.083
       },
       {
         "id": "sample_28",
@@ -1823,7 +2004,8 @@
         "reference": "Send an urgent email notification to the engineering team regarding the unexpected server outage.",
         "hypothesis": "SEND AN URGENT FEMALE NOTIFICATION TO THE ENGINEERING TEAM REGARDING THE UNEXPECTED SERVER OUTAGE",
         "wer": 0.0714,
-        "latency_sec": 0.85
+        "cer": 0.0312,
+        "latency_sec": 0.722
       },
       {
         "id": "sample_29",
@@ -1833,7 +2015,8 @@
         "reference": "Download the quarterly billing statement for the month of September twenty twenty four.",
         "hypothesis": "DOWN LOAD THE QUARTERLY BILLING STATEMENT FOR THE MONTH OF SEPTEMBER TWENTY TWENTY FOUR",
         "wer": 0.1538,
-        "latency_sec": 0.475
+        "cer": 0.0116,
+        "latency_sec": 0.724
       },
       {
         "id": "sample_30",
@@ -1843,7 +2026,8 @@
         "reference": "Mute my microphone and pause the active audio recording.",
         "hypothesis": "MUTE MY MICROPHONE AND POURS THE ACTIVE AUDIO RECORDING",
         "wer": 0.1111,
-        "latency_sec": 0.402
+        "cer": 0.0545,
+        "latency_sec": 0.696
       },
       {
         "id": "sample_31",
@@ -1853,6 +2037,7 @@
         "reference": "The flight number is British Airways seven eight four departing at fourteen thirty hours.",
         "hypothesis": "THE FLIGHT NUMBER IS BRITISH AIR WAY SEVEN EIGHT FOR DEPARTING AT FOURTEEN THIRTY HOURS",
         "wer": 0.2143,
+        "cer": 0.0341,
         "latency_sec": 0.728
       },
       {
@@ -1863,7 +2048,8 @@
         "reference": "My telephone number is nine eight seven six five four three two one zero.",
         "hypothesis": "MY TELEPHONE NUMBER IS NINE EIGHT SEVEN SIX FIVE FORTY TO ONE ZERO",
         "wer": 0.2143,
-        "latency_sec": 0.649
+        "cer": 0.0972,
+        "latency_sec": 0.77
       },
       {
         "id": "sample_33",
@@ -1873,7 +2059,8 @@
         "reference": "The total invoice amount is twelve thousand four hundred and fifty dollars and fifty cents.",
         "hypothesis": "THE TOTAL INVOICE AMOUNT IS TWELVE THOUSAND FOUR HUNDRED AND FIFTY DOLLARS AND FIFTY CENTS",
         "wer": 0.0,
-        "latency_sec": 0.492
+        "cer": 0.0,
+        "latency_sec": 0.532
       },
       {
         "id": "sample_34",
@@ -1883,7 +2070,8 @@
         "reference": "Tracking code X Y Z nine nine zero one four seven was dispatched on October twenty first.",
         "hypothesis": "TRACKING COAT EX Z NINE NINE ZERO ONE FOR SEVEN WAS DESPATCHED ON OCTOBER TWENTY FIRST",
         "wer": 0.2941,
-        "latency_sec": 0.644
+        "cer": 0.0795,
+        "latency_sec": 0.788
       },
       {
         "id": "sample_35",
@@ -1891,9 +2079,10 @@
         "accent": "Indian",
         "duration": 6.43,
         "reference": "The room temperature is thirty two point five degrees Celsius with seventy percent humidity.",
-        "hypothesis": "THE ROOM TEMPERATURE IS THIRTY TWO POINT FIVE DEGREES SENSEUS WITH SEVENTY PER CENT HUMIDITY",
+        "hypothesis": "THE ROOM TEMPERATURE IS THIRTY TWO POINT FIVE DEGREES SENSELESS WITH SEVENTY PER CENT HUMIDITY",
         "wer": 0.2143,
-        "latency_sec": 0.625
+        "cer": 0.0769,
+        "latency_sec": 0.734
       },
       {
         "id": "sample_36",
@@ -1903,7 +2092,8 @@
         "reference": "The PostgreSQL database cluster experienced high memory pressure on the primary replica node.",
         "hypothesis": "THE POST RESCUE DATE A BASE CLUSTER EXPERIENCED HIGH MEMORY PRESSURE ON THE PRIMARY REPLICA NOTE",
         "wer": 0.4615,
-        "latency_sec": 0.644
+        "cer": 0.087,
+        "latency_sec": 0.799
       },
       {
         "id": "sample_37",
@@ -1913,7 +2103,8 @@
         "reference": "The physician prescribed amoxicillin five hundred milligrams twice daily after meals.",
         "hypothesis": "THE PHYSICIAN PRESCRIBED A MOCKSY SEAL IN FIVE HUNDRED MILLIGRAMS TWICE DAILY AFTER MEALS",
         "wer": 0.3636,
-        "latency_sec": 0.915
+        "cer": 0.119,
+        "latency_sec": 0.667
       },
       {
         "id": "sample_38",
@@ -1923,7 +2114,8 @@
         "reference": "The convolutional neural network was fine tuned using stochastic gradient descent and cross entropy loss.",
         "hypothesis": "THE CONVOLUTIONAL MURAL NET WORK WAS FINE TUNED USING STOCKASTIC GRADIENT DESCENT AND CROSS ENTRY LO",
         "wer": 0.4,
-        "latency_sec": 0.714
+        "cer": 0.0769,
+        "latency_sec": 0.579
       },
       {
         "id": "sample_39",
@@ -1933,7 +2125,8 @@
         "reference": "Ensure that transport layer security version one point three encryption is enforced on all endpoints.",
         "hypothesis": "AND SURE THAT TRANSPORT LAY A SECURITY VERSION ONE POINT THREE INSCRIPTION IS ENFORCED ON ALL END POINTS",
         "wer": 0.4667,
-        "latency_sec": 0.622
+        "cer": 0.09,
+        "latency_sec": 0.61
       },
       {
         "id": "sample_40",
@@ -1943,7 +2136,8 @@
         "reference": "The patient reported acute abdominal pain and mild hypertension during the physical examination.",
         "hypothesis": "THE PATIENT REPORTED ACUTE ABDOMINAL PAIN AND MILD HIGH PRETENSION DURING THE PHYSICAL EXAMINATION",
         "wer": 0.1538,
-        "latency_sec": 0.684
+        "cer": 0.0632,
+        "latency_sec": 0.55
       },
       {
         "id": "sample_41",
@@ -1953,7 +2147,8 @@
         "reference": "Okay, thank you very much.",
         "hypothesis": "O K THANK YOU VERY MUCH",
         "wer": 0.4,
-        "latency_sec": 0.171
+        "cer": 0.125,
+        "latency_sec": 0.327
       },
       {
         "id": "sample_42",
@@ -1963,7 +2158,8 @@
         "reference": "Yes, I agree completely.",
         "hypothesis": "YES I AGREE COMPLETELY",
         "wer": 0.0,
-        "latency_sec": 0.246
+        "cer": 0.0,
+        "latency_sec": 0.388
       },
       {
         "id": "sample_43",
@@ -1973,7 +2169,8 @@
         "reference": "Stop the playback now.",
         "hypothesis": "STOP THE PLAY BACK NOW",
         "wer": 0.5,
-        "latency_sec": 0.232
+        "cer": 0.0476,
+        "latency_sec": 0.293
       },
       {
         "id": "sample_44",
@@ -1983,7 +2180,8 @@
         "reference": "How much does it cost?",
         "hypothesis": "HOW MUCH DOES IT COST",
         "wer": 0.0,
-        "latency_sec": 0.149
+        "cer": 0.0,
+        "latency_sec": 0.23
       },
       {
         "id": "sample_45",
@@ -1993,7 +2191,8 @@
         "reference": "Goodbye, have a nice day.",
         "hypothesis": "GOOD BYE HAVE A NICE DAY",
         "wer": 0.4,
-        "latency_sec": 0.239
+        "cer": 0.0435,
+        "latency_sec": 0.373
       },
       {
         "id": "sample_46",
@@ -2003,7 +2202,8 @@
         "reference": "Well, let me see, I think our product kickoff meeting was originally scheduled for Thursday morning at ten o'clock.",
         "hypothesis": "WELL LET ME SEE I THINK OUR PRODUCT KICK OFF MEETING WAS ORIGINALLY SCHEDULED FOR THURSDAY MORNING AT TEN O'CLOCK",
         "wer": 0.1053,
-        "latency_sec": 0.568
+        "cer": 0.009,
+        "latency_sec": 0.858
       },
       {
         "id": "sample_47",
@@ -2013,7 +2213,8 @@
         "reference": "Actually, before we proceed with the payment, could you please double check if there are any promotional discounts available for annual subscribers?",
         "hypothesis": "ACTUALLY BEFORE WE PROCEED WITH THE PAYMENT COULD YOU PLEASE DOUBLE CHECK IF THERE ARE ANY PROMOTIONAL DISCOUNTS AVAILABLE FOR ANNUAL SUBSCRIBERS",
         "wer": 0.0,
-        "latency_sec": 0.677
+        "cer": 0.0,
+        "latency_sec": 0.803
       },
       {
         "id": "sample_48",
@@ -2023,7 +2224,8 @@
         "reference": "I was wondering whether you could email me a copy of the contract, or if not, let me know who I should contact in legal.",
         "hypothesis": "I WAS WONDERING WHETHER YOU COULD HEMEL ME A COPY OF THE CONTRACT OR IF NOT LET ME KNOW WHO I SHOULD CONTACT IN LEGAL",
         "wer": 0.04,
-        "latency_sec": 0.623
+        "cer": 0.0256,
+        "latency_sec": 0.47
       },
       {
         "id": "sample_49",
@@ -2033,7 +2235,8 @@
         "reference": "To be completely honest with you, the customer feedback on our new mobile interface has been overwhelmingly positive across every demographic.",
         "hypothesis": "TO BE COMPLETELY HONEST WITH YOU THE CUSTOMER FEED BACK ON OUR NEW MOBILE INTERFACE HAS BEEN OVERWHELMINGLY POSITIVE ACROSS EVERY DEMOCRAF",
         "wer": 0.1429,
-        "latency_sec": 0.85
+        "cer": 0.0429,
+        "latency_sec": 0.635
       },
       {
         "id": "sample_50",
@@ -2043,7 +2246,8 @@
         "reference": "In conclusion, despite several initial logistical obstacles, the entire infrastructure migration was delivered on schedule and well within the allocated budget.",
         "hypothesis": "IN CONCLUSION DESPITE SEVERAL INITIAL LOGISTICAL OBSTACLES THE ENTIRE IN FROST STRUCTURE MIGRATION WAS DELIVERED ON STEADIEL AND WELL WITHIN THE ALLOCATED BUDGET",
         "wer": 0.1905,
-        "latency_sec": 1.659
+        "cer": 0.0701,
+        "latency_sec": 0.985
       }
     ]
   },
@@ -2054,8 +2258,9 @@
       "label": "Sherpa Offline (GigaSpeech 2023-12-12)"
     },
     "average_wer": 0.0436,
+    "average_cer": 0.0281,
     "exact_match_rate": 0.78,
-    "average_latency_sec": 0.227,
+    "average_latency_sec": 0.342,
     "samples": [
       {
         "id": "sample_01",
@@ -2065,7 +2270,8 @@
         "reference": "Hello, thank you for calling customer service. How can I help you today?",
         "hypothesis": "HELLO THANK YOU FOR CALLING CUSTOMER SERVICE HOW CAN I HELP YOU TODAY THANK YOU",
         "wer": 0.1538,
-        "latency_sec": 1.138
+        "cer": 0.1449,
+        "latency_sec": 0.362
       },
       {
         "id": "sample_02",
@@ -2075,7 +2281,8 @@
         "reference": "I would like to check the current balance on my account and review recent transactions.",
         "hypothesis": "I WOULD LIKE TO CHECK THE CURRENT BALANCE ON MY ACCOUNT AND REVIEW RECENT TRANSACTIONS",
         "wer": 0.0,
-        "latency_sec": 0.416
+        "cer": 0.0,
+        "latency_sec": 0.362
       },
       {
         "id": "sample_03",
@@ -2085,7 +2292,8 @@
         "reference": "Could you please tell me when my package is scheduled to arrive at my address?",
         "hypothesis": "COULD YOU PLEASE TELL ME WHEN MY PACKAGE IS SCHEDULED TO ARRIVE AT MY ADDRESS",
         "wer": 0.0,
-        "latency_sec": 0.152
+        "cer": 0.0,
+        "latency_sec": 0.165
       },
       {
         "id": "sample_04",
@@ -2095,7 +2303,8 @@
         "reference": "Yes, I am calling because my internet connection has been dropping frequently since yesterday.",
         "hypothesis": "YES I AM CALLING BECAUSE MY INTERNET CONNECTION HAS BEEN DROPPING FREQUENTLY SINCE YESTERDAY",
         "wer": 0.0,
-        "latency_sec": 0.193
+        "cer": 0.0,
+        "latency_sec": 0.276
       },
       {
         "id": "sample_05",
@@ -2105,7 +2314,8 @@
         "reference": "Can I schedule an appointment with a technical specialist for next Tuesday afternoon?",
         "hypothesis": "CAN I SCHEDULE AN APPOINTMENT WITH A TECHNICAL SPECIALIST FOR NEXT TUESDAY AFTERNOON",
         "wer": 0.0,
-        "latency_sec": 0.211
+        "cer": 0.0,
+        "latency_sec": 0.483
       },
       {
         "id": "sample_06",
@@ -2115,7 +2325,8 @@
         "reference": "Please hold the line while I quickly transfer your call to the billing department.",
         "hypothesis": "PLEASE HOLD THE LINE WHILE I QUICKLY TRANSFER YOUR CALL TO THE BILLING DEPARTMENT",
         "wer": 0.0,
-        "latency_sec": 0.181
+        "cer": 0.0,
+        "latency_sec": 0.344
       },
       {
         "id": "sample_07",
@@ -2125,7 +2336,8 @@
         "reference": "I need to urgently update my primary shipping address before the order leaves the warehouse.",
         "hypothesis": "I NEED TO URGENTLY UPDATE MY PRIMARY SHIPPING ADDRESS BEFORE THE ORDER LEAVES THE WAREHOUSE",
         "wer": 0.0,
-        "latency_sec": 0.296
+        "cer": 0.0,
+        "latency_sec": 0.501
       },
       {
         "id": "sample_08",
@@ -2135,7 +2347,8 @@
         "reference": "I am speaking slowly and clearly so that every word can be transcribed accurately.",
         "hypothesis": "I AM SPEAKING SLOWLY AND CLEARLY SO THAT EVERY WORD CAN BE TRANSCRIBED ACCURATELY",
         "wer": 0.0,
-        "latency_sec": 0.25
+        "cer": 0.0,
+        "latency_sec": 0.36
       },
       {
         "id": "sample_09",
@@ -2145,7 +2358,8 @@
         "reference": "Take your time and verify the six digit security code sent to your registered phone number.",
         "hypothesis": "TAKE YOUR TIME AND VERIFY THE SIX DIGIT SECURITY CODE SENT TO YOUR REGISTERED PHONE NUMBER",
         "wer": 0.0,
-        "latency_sec": 0.216
+        "cer": 0.0,
+        "latency_sec": 0.571
       },
       {
         "id": "sample_10",
@@ -2155,7 +2369,8 @@
         "reference": "Let me confirm that your email address is spelled correctly in our records.",
         "hypothesis": "LET ME CONFIRM THAT YOUR EMAIL ADDRESS IS SPELLED CORRECTLY IN OUR RECORDS",
         "wer": 0.0,
-        "latency_sec": 0.396
+        "cer": 0.0,
+        "latency_sec": 0.351
       },
       {
         "id": "sample_11",
@@ -2165,7 +2380,8 @@
         "reference": "Yes, that sounds perfect.",
         "hypothesis": "YES THAT SOUNDS PERFECT SAID",
         "wer": 0.25,
-        "latency_sec": 0.2
+        "cer": 0.2174,
+        "latency_sec": 0.36
       },
       {
         "id": "sample_12",
@@ -2175,7 +2391,8 @@
         "reference": "No, cancel the reservation immediately.",
         "hypothesis": "NO CANCEL THE RESERVATION IMMEDIATELY NO",
         "wer": 0.2,
-        "latency_sec": 0.117
+        "cer": 0.0811,
+        "latency_sec": 0.218
       },
       {
         "id": "sample_13",
@@ -2185,7 +2402,8 @@
         "reference": "My confirmation number is four eight two nine one five.",
         "hypothesis": "MY CONFIRMATION NUMBER IS FOUR EIGHT TWO NINE ONE FIVE",
         "wer": 0.0,
-        "latency_sec": 0.132
+        "cer": 0.0,
+        "latency_sec": 0.282
       },
       {
         "id": "sample_14",
@@ -2195,7 +2413,8 @@
         "reference": "What are your business hours on weekends?",
         "hypothesis": "WHAT ARE YOUR BUSINESS HOURS ON WEEKENDS",
         "wer": 0.0,
-        "latency_sec": 0.186
+        "cer": 0.0,
+        "latency_sec": 0.32
       },
       {
         "id": "sample_15",
@@ -2205,7 +2424,8 @@
         "reference": "Repeat that again please.",
         "hypothesis": "REPEAT THAT AGAIN PLEASE",
         "wer": 0.0,
-        "latency_sec": 0.244
+        "cer": 0.0,
+        "latency_sec": 0.388
       },
       {
         "id": "sample_16",
@@ -2215,7 +2435,8 @@
         "reference": "Although the flight was delayed by two hours due to severe weather, the airline provided meal vouchers and rebooked all connecting passengers without additional fees.",
         "hypothesis": "ALTHOUGH THE FLIGHT WAS DELAYED BY TWO HOURS DUE TO SEVERE WEATHER THE AIRLINE PROVIDED MEAL VOUCHERS AND REBOOKED ALL CONNECTING PASSENGERS WITHOUT ADDITIONAL FEES",
         "wer": 0.0,
-        "latency_sec": 0.336
+        "cer": 0.0,
+        "latency_sec": 0.443
       },
       {
         "id": "sample_17",
@@ -2225,7 +2446,8 @@
         "reference": "If you wish to initiate a formal warranty claim, please make sure you upload the original receipt and photograph the damaged component clearly.",
         "hypothesis": "IF YOU WISH TO INITIATE A FORMAL WARRANTY CLAIM PLEASE MAKE SURE YOU UPLOAD THE ORIGINAL RECEIPT AND PHOTOGRAPH THE DAMAGED COMPONENT CLEARLY",
         "wer": 0.0,
-        "latency_sec": 0.274
+        "cer": 0.0,
+        "latency_sec": 0.626
       },
       {
         "id": "sample_18",
@@ -2235,7 +2457,8 @@
         "reference": "The quarterly financial report highlighted substantial growth in international markets, driven primarily by strong adoption of cloud subscription services.",
         "hypothesis": "THE QUARTERLY FINANCIAL REPORT HIGHLIGHTED SUBSTANTIAL GROWTH IN INTERNATIONAL MARKETS DRIVEN PRIMARILY BY STRONG ADOPTION OF CLOUD SUBSCRIPTION SERVICES",
         "wer": 0.0,
-        "latency_sec": 0.373
+        "cer": 0.0,
+        "latency_sec": 0.387
       },
       {
         "id": "sample_19",
@@ -2245,7 +2468,8 @@
         "reference": "Could you provide more information about the differences between standard annual subscriptions and the premium enterprise tier?",
         "hypothesis": "COULD YOU PROVIDE MORE INFORMATION ABOUT THE DIFFERENCES BETWEEN STANDARD ANNUAL SUBSCRIPTIONS AND THE PREMIUM ENTERPRISE TIER",
         "wer": 0.0,
-        "latency_sec": 0.344
+        "cer": 0.0,
+        "latency_sec": 0.486
       },
       {
         "id": "sample_20",
@@ -2255,7 +2479,8 @@
         "reference": "I have been trying to reset my password for the past thirty minutes, but the verification link seems to have expired before I could open it.",
         "hypothesis": "I HAVE BEEN TRYING TO RESET MY PASSWORD FOR THE PAST THIRTY MINUTES BUT THE VERIFICATION LINK SEEMS TO HAVE EXPIRED BEFORE I COULD OPEN IT",
         "wer": 0.0,
-        "latency_sec": 0.325
+        "cer": 0.0,
+        "latency_sec": 0.388
       },
       {
         "id": "sample_21",
@@ -2265,7 +2490,8 @@
         "reference": "Where is the nearest branch office located in Bangalore?",
         "hypothesis": "WHERE IS THE NEAREST BRANCH OFFICE LOCATED IN BANGALORE",
         "wer": 0.0,
-        "latency_sec": 0.173
+        "cer": 0.0,
+        "latency_sec": 0.365
       },
       {
         "id": "sample_22",
@@ -2275,7 +2501,8 @@
         "reference": "Who should I speak with to get approval for an international wire transfer?",
         "hypothesis": "WHO SHOULD I SPEAK WITH TO GET APPROVAL FOR AN INTERNATIONAL WIRE TRANSFER",
         "wer": 0.0,
-        "latency_sec": 0.209
+        "cer": 0.0,
+        "latency_sec": 0.409
       },
       {
         "id": "sample_23",
@@ -2285,7 +2512,8 @@
         "reference": "Why has my debit card been blocked after entering the correct PIN three times?",
         "hypothesis": "WHY HAS MY DEBIT CARD BEEN BLOCKED AFTER ENTERING THE CORRECT PIN THREE TIMES",
         "wer": 0.0,
-        "latency_sec": 0.203
+        "cer": 0.0,
+        "latency_sec": 0.402
       },
       {
         "id": "sample_24",
@@ -2295,7 +2523,8 @@
         "reference": "How do I configure two factor authentication on my mobile banking application?",
         "hypothesis": "HOW DO I CONFIGURE TWO-FACTOR AUTHENTICATION ON MY MOBILE BANKING APPLICATION",
         "wer": 0.1667,
-        "latency_sec": 0.225
+        "cer": 0.013,
+        "latency_sec": 0.346
       },
       {
         "id": "sample_25",
@@ -2305,7 +2534,8 @@
         "reference": "When will the refund of one hundred and forty five dollars be credited back to my account?",
         "hypothesis": "WHEN WILL THE REFUND OF ONE HUNDRED AND FORTY FIVE DOLLARS BE CREDITED BACK TO MY ACCOUNT",
         "wer": 0.0,
-        "latency_sec": 0.193
+        "cer": 0.0,
+        "latency_sec": 0.241
       },
       {
         "id": "sample_26",
@@ -2315,7 +2545,8 @@
         "reference": "Turn off all lights in the conference room and lock the glass door.",
         "hypothesis": "TURN OFF ALL LIGHTS IN THE CONFERENCE ROOM AND LOCK THE GLASS DOOR",
         "wer": 0.0,
-        "latency_sec": 0.136
+        "cer": 0.0,
+        "latency_sec": 0.25
       },
       {
         "id": "sample_27",
@@ -2325,7 +2556,8 @@
         "reference": "Transfer five thousand rupees from my savings account to my current account immediately.",
         "hypothesis": "TRANSFER FIVE THOUSAND RUPEES FROM MY SAVINGS ACCOUNT TO MY CURRENT ACCOUNT IMMEDIATELY",
         "wer": 0.0,
-        "latency_sec": 0.17
+        "cer": 0.0,
+        "latency_sec": 0.186
       },
       {
         "id": "sample_28",
@@ -2335,7 +2567,8 @@
         "reference": "Send an urgent email notification to the engineering team regarding the unexpected server outage.",
         "hypothesis": "SEND AN URGENT EMAIL NOTIFICATION TO THE ENGINEERING TEAM REGARDING THE UNEXPECTED SERVER OUTAGE",
         "wer": 0.0,
-        "latency_sec": 0.264
+        "cer": 0.0,
+        "latency_sec": 0.268
       },
       {
         "id": "sample_29",
@@ -2345,7 +2578,8 @@
         "reference": "Download the quarterly billing statement for the month of September twenty twenty four.",
         "hypothesis": "DOWNLOAD THE QUARTERLY BILLING STATEMENT FOR THE MONTH OF SEPTEMBER TWENTY TWENTY FOUR",
         "wer": 0.0,
-        "latency_sec": 0.102
+        "cer": 0.0,
+        "latency_sec": 0.284
       },
       {
         "id": "sample_30",
@@ -2355,7 +2589,8 @@
         "reference": "Mute my microphone and pause the active audio recording.",
         "hypothesis": "MUTE MY MICROPHONE AND PAUSE THE ACTIVE AUDIO RECORDING",
         "wer": 0.0,
-        "latency_sec": 0.128
+        "cer": 0.0,
+        "latency_sec": 0.262
       },
       {
         "id": "sample_31",
@@ -2365,7 +2600,8 @@
         "reference": "The flight number is British Airways seven eight four departing at fourteen thirty hours.",
         "hypothesis": "THE FLIGHT NUMBER IS BRITISH AIRWAY SEVEN EIGHT FOR DEPARTING AT FOURTEEN THIRTY HOURS",
         "wer": 0.1429,
-        "latency_sec": 0.119
+        "cer": 0.0227,
+        "latency_sec": 0.37
       },
       {
         "id": "sample_32",
@@ -2375,7 +2611,8 @@
         "reference": "My telephone number is nine eight seven six five four three two one zero.",
         "hypothesis": "MY TELEPHONE NUMBER IS NINE EIGHT SEVEN SIX FIVE FOUR THREE TWO ONE ZERO",
         "wer": 0.0,
-        "latency_sec": 0.183
+        "cer": 0.0,
+        "latency_sec": 0.293
       },
       {
         "id": "sample_33",
@@ -2385,7 +2622,8 @@
         "reference": "The total invoice amount is twelve thousand four hundred and fifty dollars and fifty cents.",
         "hypothesis": "THE TOTAL INVOICE AMOUNT IS TWELVE THOUSAND FOUR HUNDRED AND FIFTY DOLLARS AND FIFTY CENTS",
         "wer": 0.0,
-        "latency_sec": 0.138
+        "cer": 0.0,
+        "latency_sec": 0.418
       },
       {
         "id": "sample_34",
@@ -2395,7 +2633,8 @@
         "reference": "Tracking code X Y Z nine nine zero one four seven was dispatched on October twenty first.",
         "hypothesis": "TRACKING CODE X Y Z NINE NINE ZERO ONE FOR SEVEN WAS DISPATCHED ON OCTOBER TWENTY FIRST",
         "wer": 0.0588,
-        "latency_sec": 0.145
+        "cer": 0.0114,
+        "latency_sec": 0.307
       },
       {
         "id": "sample_35",
@@ -2405,7 +2644,8 @@
         "reference": "The room temperature is thirty two point five degrees Celsius with seventy percent humidity.",
         "hypothesis": "THE ROOM TEMPERATURE IS THIRTY TWO POINT FIVE DEGREES CELSIUS WITH SEVENTY PERCENT HUMIDITY",
         "wer": 0.0,
-        "latency_sec": 0.21
+        "cer": 0.0,
+        "latency_sec": 0.451
       },
       {
         "id": "sample_36",
@@ -2415,7 +2655,8 @@
         "reference": "The PostgreSQL database cluster experienced high memory pressure on the primary replica node.",
         "hypothesis": "THE POSTGRESQL DATABASE CLUSTER EXPERIENCED HIGH MEMORY PRESSURE ON THE PRIMARY REPLICA NODE",
         "wer": 0.0,
-        "latency_sec": 0.203
+        "cer": 0.0,
+        "latency_sec": 0.328
       },
       {
         "id": "sample_37",
@@ -2425,7 +2666,8 @@
         "reference": "The physician prescribed amoxicillin five hundred milligrams twice daily after meals.",
         "hypothesis": "THE PHYSICIAN PRESCRIBED AMOXYCELIN FIVE HUNDRED MILLIGRAMS TWICE DAILY AFTER MEALS",
         "wer": 0.0909,
-        "latency_sec": 0.197
+        "cer": 0.0357,
+        "latency_sec": 0.481
       },
       {
         "id": "sample_38",
@@ -2435,7 +2677,8 @@
         "reference": "The convolutional neural network was fine tuned using stochastic gradient descent and cross entropy loss.",
         "hypothesis": "THE CONVOLUTIONAL NEURAL NETWORK WAS FINE-TUNED USING STOCHASTIC GRADIENT DESCENT AND CROSS-ENTROPY LOSS",
         "wer": 0.2667,
-        "latency_sec": 0.301
+        "cer": 0.0192,
+        "latency_sec": 0.187
       },
       {
         "id": "sample_39",
@@ -2445,7 +2688,8 @@
         "reference": "Ensure that transport layer security version one point three encryption is enforced on all endpoints.",
         "hypothesis": "ENSURE THAT TRANSPORT LAYER SECURITY VERSION ONE POINT THREE ENCRYPTION IS ENFORCED ON ALL ENDPOINTS",
         "wer": 0.0,
-        "latency_sec": 0.193
+        "cer": 0.0,
+        "latency_sec": 0.398
       },
       {
         "id": "sample_40",
@@ -2455,7 +2699,8 @@
         "reference": "The patient reported acute abdominal pain and mild hypertension during the physical examination.",
         "hypothesis": "THE PATIENT REPORTED ACUTE ABDOMINAL PAIN AND MILD HYPERTENSION DURING THE PHYSICAL EXAMINATION",
         "wer": 0.0,
-        "latency_sec": 0.172
+        "cer": 0.0,
+        "latency_sec": 0.359
       },
       {
         "id": "sample_41",
@@ -2465,7 +2710,8 @@
         "reference": "Okay, thank you very much.",
         "hypothesis": "OKAY THANK YOU VERY MUCH THANK YOU",
         "wer": 0.4,
-        "latency_sec": 0.095
+        "cer": 0.4167,
+        "latency_sec": 0.31
       },
       {
         "id": "sample_42",
@@ -2475,7 +2721,8 @@
         "reference": "Yes, I agree completely.",
         "hypothesis": "YES I AGREE COMPLETELY SAID",
         "wer": 0.25,
-        "latency_sec": 0.085
+        "cer": 0.2273,
+        "latency_sec": 0.277
       },
       {
         "id": "sample_43",
@@ -2485,7 +2732,8 @@
         "reference": "Stop the playback now.",
         "hypothesis": "STOP THE PLAYBACK NOW",
         "wer": 0.0,
-        "latency_sec": 0.078
+        "cer": 0.0,
+        "latency_sec": 0.256
       },
       {
         "id": "sample_44",
@@ -2495,7 +2743,8 @@
         "reference": "How much does it cost?",
         "hypothesis": "HOW MUCH DOES IT COST",
         "wer": 0.0,
-        "latency_sec": 0.096
+        "cer": 0.0,
+        "latency_sec": 0.315
       },
       {
         "id": "sample_45",
@@ -2505,7 +2754,8 @@
         "reference": "Goodbye, have a nice day.",
         "hypothesis": "GOODBYE HAVE A NICE DAY GOOD",
         "wer": 0.2,
-        "latency_sec": 0.094
+        "cer": 0.2174,
+        "latency_sec": 0.207
       },
       {
         "id": "sample_46",
@@ -2515,7 +2765,8 @@
         "reference": "Well, let me see, I think our product kickoff meeting was originally scheduled for Thursday morning at ten o'clock.",
         "hypothesis": "WELL LET ME SEE I THINK OUR PRODUCT KICKOFF MEETING WAS ORIGINALLY SCHEDULED FOR THURSDAY MORNING AT TEN O'CLOCK",
         "wer": 0.0,
-        "latency_sec": 0.188
+        "cer": 0.0,
+        "latency_sec": 0.309
       },
       {
         "id": "sample_47",
@@ -2525,7 +2776,8 @@
         "reference": "Actually, before we proceed with the payment, could you please double check if there are any promotional discounts available for annual subscribers?",
         "hypothesis": "ACTUALLY BEFORE WE PROCEED WITH THE PAYMENT COULD YOU PLEASE DOUBLE CHECK IF THERE ARE ANY PROMOTIONAL DISCOUNTS AVAILABLE FOR ANNUAL SUBSCRIBERS",
         "wer": 0.0,
-        "latency_sec": 0.259
+        "cer": 0.0,
+        "latency_sec": 0.274
       },
       {
         "id": "sample_48",
@@ -2535,7 +2787,8 @@
         "reference": "I was wondering whether you could email me a copy of the contract, or if not, let me know who I should contact in legal.",
         "hypothesis": "I WAS WONDERING WHETHER YOU COULD EMAIL ME A COPY OF THE CONTRACT OR IF NOT LET ME KNOW WHO I SHOULD CONTACT IN LEGAL",
         "wer": 0.0,
-        "latency_sec": 0.333
+        "cer": 0.0,
+        "latency_sec": 0.272
       },
       {
         "id": "sample_49",
@@ -2545,7 +2798,8 @@
         "reference": "To be completely honest with you, the customer feedback on our new mobile interface has been overwhelmingly positive across every demographic.",
         "hypothesis": "TO BE COMPLETELY HONEST WITH YOU THE CUSTOMER FEEDBACK ON OUR NEW MOBILE INTERFACE HAS BEEN OVERWHELMINGLY POSITIVE ACROSS EVERY DEMOGRAPHIC",
         "wer": 0.0,
-        "latency_sec": 0.212
+        "cer": 0.0,
+        "latency_sec": 0.236
       },
       {
         "id": "sample_50",
@@ -2555,7 +2809,8 @@
         "reference": "In conclusion, despite several initial logistical obstacles, the entire infrastructure migration was delivered on schedule and well within the allocated budget.",
         "hypothesis": "IN CONCLUSION DESPITE SEVERAL INITIAL LOGISTICAL OBSTACLES THE ENTIRE INFRASTRUCTURE MIGRATION WAS DELIVERED ON SCHEDULE AND WELL WITHIN THE ALLOCATED BUDGET",
         "wer": 0.0,
-        "latency_sec": 0.283
+        "cer": 0.0,
+        "latency_sec": 0.361
       }
     ]
   }

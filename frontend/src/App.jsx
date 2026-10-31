@@ -92,7 +92,7 @@ export default function App() {
     setProcessError(null);
 
     const groqApiKey = localStorage.getItem('groq_api_key') || undefined;
-    const groqModel = localStorage.getItem('groq_model') || 'openai/gpt-oss-20b';
+    const groqModel = localStorage.getItem('groq_model') || 'qwen/qwen3.8-27b';
 
     try {
       const data = await sendAudioForBenchmark(audioBlob, {

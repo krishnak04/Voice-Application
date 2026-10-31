@@ -428,10 +428,10 @@ export const CALL_VOICES = [
 const KOKORO_VOICES = CALL_VOICES;
 
 const SILENCE_OPTIONS = [
-  { label: 'Fast (800ms - Short Queries)', value: 800 },
-  { label: 'Conversational (1200ms - Recommended)', value: 1200 },
-  { label: 'Relaxed (1600ms - Natural Pauses)', value: 1600 },
-  { label: 'Extended (2000ms - Thoughtful Speech)', value: 2000 },
+  { label: 'Responsive (450ms - Fast Queries)', value: 450 },
+  { label: 'Balanced (600ms - Recommended Default)', value: 600 },
+  { label: 'Conversational (800ms - Natural Pauses)', value: 800 },
+  { label: 'Relaxed (1000ms - Extended Pauses)', value: 1000 },
 ];
 
 export default function VoiceCallSimulator({
@@ -457,11 +457,22 @@ export default function VoiceCallSimulator({
   // STT Engine, Model & Language State
   const [sttEngine, setSttEngine] = useState(() => {
     const saved = localStorage.getItem('stt_engine');
-    return (saved && saved !== 'sherpa') ? saved : (initialEngine && initialEngine !== 'sherpa' ? initialEngine : 'whisper');
+    return (saved && saved !== 'sherpa') ? saved : (initialEngine && initialEngine !== 'sherpa' ? initialEngine : 'sherpa');
   });
   const [sttModel, setSttModel] = useState(() => {
     const saved = localStorage.getItem('whisper_model');
-    return (saved && saved !== 'sherpa-streaming') ? saved : (initialModel && initialModel !== 'sherpa-streaming' ? initialModel : 'base.en');
+    const savedEngine = localStorage.getItem('stt_engine');
+    const usingSherpa = savedEngine === 'sherpa' || (
+      !savedEngine && (!initialEngine || initialEngine === 'sherpa')
+    );
+    if (usingSherpa) {
+      return (saved && saved.startsWith('sherpa-') && saved !== 'sherpa-streaming')
+        ? saved
+        : 'sherpa-onnx-streaming-zipformer-en-2023-06-26';
+    }
+    return (saved && saved !== 'sherpa-streaming')
+      ? saved
+      : (initialModel && initialModel !== 'sherpa-streaming' ? initialModel : 'base.en');
   });
   const [sttLanguage, setSttLanguage] = useState(() => initialLanguage || localStorage.getItem('whisper_language') || 'auto');
 
@@ -532,6 +543,8 @@ export default function VoiceCallSimulator({
   const firstAudibleMeasuredRef = useRef(null);
   const lastFinalUserTextRef = useRef('');
   const lastFinalMetricsRef = useRef(null);
+  const processedEventsRef = useRef(new Set());
+  const lastSeqByTurnRef = useRef({});
 
   // Sync with prop changes if parent updates
   useEffect(() => {
@@ -554,7 +567,7 @@ export default function VoiceCallSimulator({
 
   const [silenceTimeoutMs, setSilenceTimeoutMs] = useState(() => {
     const saved = localStorage.getItem('call_silence_timeout');
-    return saved ? Math.max(800, Number(saved)) : 1200;
+    return saved ? Math.max(300, Number(saved)) : 600;
   });
   const [chatHistory, setChatHistory] = useState([]);
   const [audioLevel, setAudioLevel] = useState(0); // 0 to 100 for visualizer
@@ -662,6 +675,14 @@ export default function VoiceCallSimulator({
   const handleSilenceChange = (val) => {
     setSilenceTimeoutMs(val);
     localStorage.setItem('call_silence_timeout', String(val));
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(
+        JSON.stringify({
+          type: 'config',
+          silence_timeout_sec: val / 1000
+        })
+      );
+    }
   };
 
   const handleSttEngineChange = (newEngine) => {
@@ -670,7 +691,9 @@ export default function VoiceCallSimulator({
     if (onEngineChange) {
       onEngineChange(newEngine);
     }
-    const defaultModel = newEngine === 'sherpa' ? 'sherpa-onnx-streaming-zipformer-en-2023-06-26' : 'base.en';
+    const defaultModel = newEngine === 'sherpa'
+      ? 'sherpa-onnx-streaming-zipformer-en-2023-06-26'
+      : 'base.en';
     handleSttModelChange(defaultModel);
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
@@ -1111,7 +1134,7 @@ export default function VoiceCallSimulator({
 
       try {
         const groqApiKey = localStorage.getItem('groq_api_key') || undefined;
-        const groqModel = localStorage.getItem('groq_model') || 'openai/gpt-oss-20b';
+        const groqModel = localStorage.getItem('groq_model') || 'qwen/qwen3.8-27b';
 
         // Filter clean history for telephony context
         const cleanHistory = chatHistoryRef.current
@@ -1384,6 +1407,20 @@ export default function VoiceCallSimulator({
         const primaryWsUrl = getWebSocketUrl('/ws/call');
         const fallbackWsUrl = getFallbackWebSocketUrl('/ws/call');
 
+        // Clean up any existing connection before opening a new one
+        if (wsRef.current) {
+          try {
+            wsRef.current.onopen = null;
+            wsRef.current.onmessage = null;
+            wsRef.current.onerror = null;
+            wsRef.current.onclose = null;
+            wsRef.current.close();
+          } catch (_) {}
+          wsRef.current = null;
+        }
+        processedEventsRef.current.clear();
+        lastSeqByTurnRef.current = {};
+
         let activeWsUrl = primaryWsUrl;
         const ws = new WebSocket(primaryWsUrl);
         wsRef.current = ws;
@@ -1394,7 +1431,7 @@ export default function VoiceCallSimulator({
           startVADLoop();
 
           // Send current configuration
-          const groqModel = localStorage.getItem('groq_model') || 'openai/gpt-oss-20b';
+          const groqModel = localStorage.getItem('groq_model') || 'qwen/qwen3.8-27b';
           ws.send(
             JSON.stringify({
               type: 'config',
@@ -1407,7 +1444,8 @@ export default function VoiceCallSimulator({
               auto_adapt_voice: autoAdaptVoice,
               stt_engine: sttEngine,
               stt_model: sttModel,
-              stt_language: sttLanguage
+              stt_language: sttLanguage,
+              silence_timeout_sec: silenceTimeoutMs / 1000
             })
           );
 
@@ -1417,9 +1455,8 @@ export default function VoiceCallSimulator({
             ? 'नमस्ते! कॉल करने के लिए धन्यवाद। मैं आज आपकी क्या सहायता कर सकता हूँ?'
             : 'Hello! Thanks for calling. How can I help you today?';
 
-          setChatHistory((prev) => [
-            ...prev,
-            { role: 'assistant', content: greeting }
+          setChatHistory([
+            { id: 'asst_greeting_0', role: 'assistant', content: greeting, timestamp: Date.now() }
           ]);
 
           isAiSpeakingRef.current = true;
@@ -1454,6 +1491,19 @@ export default function VoiceCallSimulator({
             const data = JSON.parse(event.data);
 
             if (data.type === 'partial_transcript') {
+              const turnId = data.turn_id ?? currentTurnIdRef.current;
+              const userMsgId = `user_${turnId}`;
+              const seq = data.seq ?? 0;
+
+              // Stale event rejection: if final transcript was already processed, ignore late partials
+              if (processedEventsRef.current.has(`${turnId}_final`)) {
+                return;
+              }
+              if (lastSeqByTurnRef.current[turnId] && seq < lastSeqByTurnRef.current[turnId]) {
+                return;
+              }
+              lastSeqByTurnRef.current[turnId] = seq;
+
               setLivePartial(data.text);
               setCallStatus('speaking');
               if (!detectedAccent || detectedAccent.status !== 'detected') {
@@ -1461,6 +1511,36 @@ export default function VoiceCallSimulator({
               }
               if (data.first_partial_latency_ms) {
                 setFdMetrics((m) => ({ ...m, timeToFirstPartial: data.first_partial_latency_ms }));
+              }
+
+              // Update the single user utterance bubble in-place
+              if (data.text && data.text.trim()) {
+                setChatHistory((prev) => {
+                  const existingIndex = prev.findIndex((m) => m.id === userMsgId);
+                  if (existingIndex >= 0) {
+                    const updated = [...prev];
+                    updated[existingIndex] = {
+                      ...updated[existingIndex],
+                      content: data.text.trim(),
+                      isPartial: true,
+                      seq
+                    };
+                    return updated;
+                  } else {
+                    return [
+                      ...prev,
+                      {
+                        id: userMsgId,
+                        role: 'user',
+                        content: data.text.trim(),
+                        turnId,
+                        isPartial: true,
+                        seq,
+                        timestamp: Date.now()
+                      }
+                    ];
+                  }
+                });
               }
             } else if (data.type === 'accent_detected') {
               setDetectedAccent({
@@ -1483,8 +1563,18 @@ export default function VoiceCallSimulator({
               if (voiceAdaptTimerRef.current) clearTimeout(voiceAdaptTimerRef.current);
               voiceAdaptTimerRef.current = setTimeout(() => setVoiceAdaptationNotice(null), 4000);
             } else if (data.type === 'final_transcript') {
+              const turnId = data.turn_id ?? currentTurnIdRef.current;
+              const userMsgId = `user_${turnId}`;
+              const finalKey = `${turnId}_final`;
+
+              // Idempotency: ensure each finalized utterance is processed exactly once
+              if (processedEventsRef.current.has(finalKey)) {
+                return;
+              }
+              processedEventsRef.current.add(finalKey);
+
               setLivePartial('');
-              currentTurnIdRef.current = data.turn_id;
+              currentTurnIdRef.current = turnId;
               tEndpointClientRef.current = performance.now();
               firstAudibleMeasuredRef.current = null;
               lastFinalUserTextRef.current = data.text || '';
@@ -1494,11 +1584,33 @@ export default function VoiceCallSimulator({
                 rtf: data.rtf
               };
 
-              if (data.text && data.text.trim()) {
-                setChatHistory((prev) => [
-                  ...prev,
-                  { role: 'user', content: data.text.trim() }
-                ]);
+              const text = (data.text || '').trim();
+              if (text) {
+                setChatHistory((prev) => {
+                  const existingIndex = prev.findIndex((m) => m.id === userMsgId);
+                  if (existingIndex >= 0) {
+                    // Update the SAME message in-place. Never create another bubble!
+                    const updated = [...prev];
+                    updated[existingIndex] = {
+                      ...updated[existingIndex],
+                      content: text,
+                      isPartial: false
+                    };
+                    return updated;
+                  } else {
+                    return [
+                      ...prev,
+                      {
+                        id: userMsgId,
+                        role: 'user',
+                        content: text,
+                        turnId,
+                        isPartial: false,
+                        timestamp: Date.now()
+                      }
+                    ];
+                  }
+                });
               }
               setCallStatus('processing');
               setFdMetrics((m) => ({
@@ -1509,10 +1621,39 @@ export default function VoiceCallSimulator({
                 totalTurnLatency: null
               }));
             } else if (data.type === 'assistant_text_delta') {
+              const turnId = data.turn_id ?? currentTurnIdRef.current;
+              const asstMsgId = `asst_${turnId}`;
+
               setLiveAssistantText((prev) => prev + data.delta);
               if (data.time_to_first_token_ms) {
                 setFdMetrics((m) => ({ ...m, timeToFirstToken: data.time_to_first_token_ms }));
               }
+
+              // Update assistant reply incrementally in chatHistory
+              setChatHistory((prev) => {
+                const existingIndex = prev.findIndex((m) => m.id === asstMsgId);
+                if (existingIndex >= 0) {
+                  const updated = [...prev];
+                  updated[existingIndex] = {
+                    ...updated[existingIndex],
+                    content: updated[existingIndex].content + data.delta,
+                    isPartial: true
+                  };
+                  return updated;
+                } else {
+                  return [
+                    ...prev,
+                    {
+                      id: asstMsgId,
+                      role: 'assistant',
+                      content: data.delta,
+                      turnId,
+                      isPartial: true,
+                      timestamp: Date.now()
+                    }
+                  ];
+                }
+              });
             } else if (data.type === 'audio_chunk') {
               if (data.metrics?.time_to_first_audio_ms) {
                 setFdMetrics((m) => ({ ...m, timeToFirstAudio: data.metrics.time_to_first_audio_ms }));
@@ -1527,12 +1668,36 @@ export default function VoiceCallSimulator({
                 playNextAudioChunk();
               }
             } else if (data.type === 'turn_complete') {
+              const turnId = data.turn_id ?? currentTurnIdRef.current;
+              const asstMsgId = `asst_${turnId}`;
               setLiveAssistantText('');
+
               if (data.full_reply && data.full_reply.trim()) {
-                setChatHistory((prev) => [
-                  ...prev,
-                  { role: 'assistant', content: data.full_reply.trim() }
-                ]);
+                const fullReply = data.full_reply.trim();
+                setChatHistory((prev) => {
+                  const existingIndex = prev.findIndex((m) => m.id === asstMsgId);
+                  if (existingIndex >= 0) {
+                    const updated = [...prev];
+                    updated[existingIndex] = {
+                      ...updated[existingIndex],
+                      content: fullReply,
+                      isPartial: false
+                    };
+                    return updated;
+                  } else {
+                    return [
+                      ...prev,
+                      {
+                        id: asstMsgId,
+                        role: 'assistant',
+                        content: fullReply,
+                        turnId,
+                        isPartial: false,
+                        timestamp: Date.now()
+                      }
+                    ];
+                  }
+                });
               }
               const metrics = data.metrics || {};
               const finalMetrics = lastFinalMetricsRef.current || {};
@@ -1580,11 +1745,13 @@ export default function VoiceCallSimulator({
               if (data.message) {
                 setChatHistory((prev) => [
                   ...prev,
-                  { role: 'system_notification', content: `⚠️ ${data.message}` }
+                  { id: `sys_err_${Date.now()}`, role: 'system_notification', content: `⚠️ ${data.message}` }
                 ]);
               }
             } else if (data.type === 'interrupted') {
-              // Real-Time Barge-In Interruption: halt active audio, clear queue!
+              const turnId = data.turn_id ?? currentTurnIdRef.current;
+              const asstMsgId = `asst_${turnId}`;
+              // Real-Time Barge-In Interruption: halt active audio, clear queue
               const tStopStart = performance.now();
               stopActiveAudio();
               const clientStopLatency = Math.round((performance.now() - tStopStart) * 100) / 100;
@@ -1593,6 +1760,22 @@ export default function VoiceCallSimulator({
               setBargeInNotice(`⚡ User barge-in: Speech interrupted (detect: ${serverLatency}ms, stop: ${clientStopLatency}ms)`);
               setFdMetrics((m) => ({ ...m, interruptionLatency: combinedLatency }));
               setCallStatus('speaking');
+              setLiveAssistantText('');
+
+              // Finalize partial assistant message on interruption
+              setChatHistory((prev) => {
+                const existingIndex = prev.findIndex((m) => m.id === asstMsgId);
+                if (existingIndex >= 0 && prev[existingIndex].isPartial) {
+                  const updated = [...prev];
+                  updated[existingIndex] = {
+                    ...updated[existingIndex],
+                    isPartial: false
+                  };
+                  return updated;
+                }
+                return prev;
+              });
+
               if (bargeInTimerRef.current) clearTimeout(bargeInTimerRef.current);
               bargeInTimerRef.current = setTimeout(() => setBargeInNotice(null), 3500);
             }
@@ -3192,10 +3375,12 @@ export default function VoiceCallSimulator({
                     return null;
                   }
 
+                  const stableKey = msg.id || `msg_${idx}`;
+
                   if (msg.role === 'system_notification') {
                     return (
                       <div
-                        key={idx}
+                        key={stableKey}
                         style={{
                           textAlign: 'center',
                           fontSize: '0.75rem',
@@ -3212,7 +3397,7 @@ export default function VoiceCallSimulator({
                   const isUser = msg.role === 'user';
                   return (
                     <div
-                      key={idx}
+                      key={stableKey}
                       style={{
                         display: 'flex',
                         alignSelf: isUser ? 'flex-end' : 'flex-start',
@@ -3239,123 +3424,47 @@ export default function VoiceCallSimulator({
                         style={{
                           padding: '0.55rem 0.85rem',
                           borderRadius: isUser ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
-                          background: isUser ? 'var(--accent-call-bg)' : 'var(--bg-subtle)',
-                          border: isUser ? '1px solid var(--accent-call-border)' : '1px solid var(--border)',
+                          background: isUser
+                            ? (msg.isPartial ? 'rgba(2, 132, 199, 0.08)' : 'var(--accent-call-bg)')
+                            : 'var(--bg-subtle)',
+                          border: isUser
+                            ? (msg.isPartial ? '1px dashed #0284c7' : '1px solid var(--accent-call-border)')
+                            : '1px solid var(--border)',
                           color: 'var(--text-main)',
                           fontSize: '0.88rem',
                           lineHeight: '1.4'
                         }}
                       >
-                        {msg.content}
+                        {msg.isPartial && isUser && (
+                          <span
+                            style={{
+                              width: '8px',
+                              height: '8px',
+                              borderRadius: '50%',
+                              background: '#0284c7',
+                              display: 'inline-block',
+                              boxShadow: '0 0 6px #0284c7',
+                              marginRight: '6px'
+                            }}
+                          />
+                        )}
+                        <span>{msg.content}</span>
+                        {msg.isPartial && !isUser && (
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              width: '2px',
+                              height: '13px',
+                              background: '#f59e0b',
+                              marginLeft: '4px',
+                              verticalAlign: 'middle'
+                            }}
+                          />
+                        )}
                       </div>
                     </div>
                   );
                 })}
-
-                {/* Live Sherpa-ONNX User Speech Bubble */}
-                {Boolean(livePartial && livePartial.trim()) && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignSelf: 'flex-end',
-                      maxWidth: '82%',
-                      gap: '0.5rem',
-                      flexDirection: 'row-reverse'
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: '26px',
-                        height: '26px',
-                        borderRadius: '50%',
-                        background: 'rgba(56, 189, 248, 0.25)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
-                      }}
-                    >
-                      <User size={14} color="#0284c7" />
-                    </div>
-                    <div
-                      style={{
-                        padding: '0.55rem 0.85rem',
-                        borderRadius: '14px 14px 2px 14px',
-                        background: 'rgba(2, 132, 199, 0.08)',
-                        border: '1px dashed #0284c7',
-                        color: 'var(--text-main)',
-                        fontSize: '0.88rem',
-                        lineHeight: '1.4',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.45rem'
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: '8px',
-                          height: '8px',
-                          borderRadius: '50%',
-                          background: '#0284c7',
-                          display: 'inline-block',
-                          boxShadow: '0 0 6px #0284c7'
-                        }}
-                      />
-                      <span>{livePartial}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Live Assistant Streaming Bubble */}
-                {Boolean(liveAssistantText && liveAssistantText.trim()) && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignSelf: 'flex-start',
-                      maxWidth: '82%',
-                      gap: '0.5rem',
-                      flexDirection: 'row'
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: '26px',
-                        height: '26px',
-                        borderRadius: '50%',
-                        background: 'rgba(245, 158, 11, 0.2)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
-                      }}
-                    >
-                      <Bot size={14} color="#f59e0b" />
-                    </div>
-                    <div
-                      style={{
-                        padding: '0.55rem 0.85rem',
-                        borderRadius: '14px 14px 14px 2px',
-                        background: 'var(--bg-subtle)',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text-main)',
-                        fontSize: '0.88rem',
-                        lineHeight: '1.4'
-                      }}
-                    >
-                      {liveAssistantText}
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          width: '2px',
-                          height: '13px',
-                          background: '#f59e0b',
-                          marginLeft: '4px',
-                          verticalAlign: 'middle'
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
 
                 <div ref={transcriptBottomRef} />
               </div>

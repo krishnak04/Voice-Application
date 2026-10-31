@@ -7,7 +7,7 @@ export default function SettingsModal({ isOpen, onClose, onSaveSettings }) {
   const defaultUrl = getDefaultServerUrl();
   const [url, setUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
-  const [model, setModel] = useState('openai/gpt-oss-20b');
+  const [model, setModel] = useState('qwen/qwen3.8-27b');
   const [sttEngine, setSttEngine] = useState('sherpa');
   const [sttModel, setSttModel] = useState('sherpa-onnx-streaming-zipformer-en-2023-06-26');
 
@@ -20,7 +20,7 @@ export default function SettingsModal({ isOpen, onClose, onSaveSettings }) {
         setUrl('');
       }
       setApiKey(localStorage.getItem('groq_api_key') || '');
-      setModel(localStorage.getItem('groq_model') || 'openai/gpt-oss-20b');
+      setModel(localStorage.getItem('groq_model') || 'qwen/qwen3.8-27b');
       const savedEngine = localStorage.getItem('stt_engine') || 'sherpa';
       setSttEngine(savedEngine);
       const savedModel = localStorage.getItem('whisper_model');
@@ -114,21 +114,6 @@ export default function SettingsModal({ isOpen, onClose, onSaveSettings }) {
               <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Active fast:</span>
               <button
                 type="button"
-                onClick={() => setModel('openai/gpt-oss-20b')}
-                style={{
-                  background: model === 'openai/gpt-oss-20b' ? 'var(--accent-call-bg)' : 'var(--bg-subtle)',
-                  border: model === 'openai/gpt-oss-20b' ? '1px solid var(--accent-call-border)' : '1px solid var(--border)',
-                  borderRadius: '4px',
-                  color: model === 'openai/gpt-oss-20b' ? 'var(--accent-call)' : 'var(--text-muted)',
-                  fontSize: '0.7rem',
-                  padding: '0.1rem 0.4rem',
-                  cursor: 'pointer'
-                }}
-              >
-                openai/gpt-oss-20b (Recommended)
-              </button>
-              <button
-                type="button"
                 onClick={() => setModel('qwen/qwen3.8-27b')}
                 style={{
                   background: model === 'qwen/qwen3.8-27b' ? 'var(--accent-call-bg)' : 'var(--bg-subtle)',
@@ -140,7 +125,22 @@ export default function SettingsModal({ isOpen, onClose, onSaveSettings }) {
                   cursor: 'pointer'
                 }}
               >
-                qwen/qwen3.8-27b
+                qwen/qwen3.8-27b (Recommended - Ultra Fast 250ms)
+              </button>
+              <button
+                type="button"
+                onClick={() => setModel('openai/gpt-oss-20b')}
+                style={{
+                  background: model === 'openai/gpt-oss-20b' ? 'var(--accent-call-bg)' : 'var(--bg-subtle)',
+                  border: model === 'openai/gpt-oss-20b' ? '1px solid var(--accent-call-border)' : '1px solid var(--border)',
+                  borderRadius: '4px',
+                  color: model === 'openai/gpt-oss-20b' ? 'var(--accent-call)' : 'var(--text-muted)',
+                  fontSize: '0.7rem',
+                  padding: '0.1rem 0.4rem',
+                  cursor: 'pointer'
+                }}
+              >
+                openai/gpt-oss-20b
               </button>
             </div>
           </div>

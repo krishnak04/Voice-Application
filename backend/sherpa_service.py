@@ -455,9 +455,12 @@ class SherpaStreamingEngine:
             samples = np.clip(samples * min(2.0, 0.15 / max(rms_val, 1e-4)), -1.0, 1.0)
 
         if self.is_streaming:
-            # Online stream processed in chunks
+            # Online stream processed in causal frames with head priming
             stream = self.recognizer.create_stream()
-            chunk_size = 1600
+            silence_head = np.zeros(int(sample_rate * 0.12), dtype=np.float32)
+            stream.accept_waveform(sample_rate, silence_head)
+
+            chunk_size = 640
             for i in range(0, len(samples), chunk_size):
                 chunk = samples[i:i + chunk_size]
                 stream.accept_waveform(sample_rate, chunk)
@@ -465,14 +468,12 @@ class SherpaStreamingEngine:
                     self.recognizer.decode_stream(stream)
 
             # Flush lookahead context window
-            silence_tail = np.zeros(int(sample_rate * 0.2), dtype=np.float32)
+            silence_tail = np.zeros(int(sample_rate * 0.25), dtype=np.float32)
             stream.accept_waveform(sample_rate, silence_tail)
-            while self.recognizer.is_ready(stream):
-                self.recognizer.decode_stream(stream)
-
             stream.input_finished()
             while self.recognizer.is_ready(stream):
                 self.recognizer.decode_stream(stream)
+
             result = self.recognizer.get_result(stream)
             return result.strip() if result else ""
         else:
@@ -481,6 +482,70 @@ class SherpaStreamingEngine:
             stream.accept_waveform(sample_rate, samples)
             self.recognizer.decode_stream(stream)
             return stream.result.text.strip()
+
+    def _get_offline_recognizer(self, model_id: str):
+        """Load and cache an offline recognizer without changing live streaming state."""
+        cached = self.offline_recognizers.get(model_id)
+        if cached is not None:
+            return cached
+
+        import sherpa_onnx
+        meta = OFFICIAL_SHERPA_ENGLISH_MODELS.get(model_id)
+        if not meta or meta["type"] != "offline":
+            raise ValueError(f"'{model_id}' is not a verified offline Sherpa model.")
+        model_dir = self.find_model_directory(model_id)
+        if not model_dir:
+            raise FileNotFoundError(f"Offline Sherpa model '{model_id}' is not installed.")
+        files = find_model_files(model_dir, use_int8=self.use_int8)
+        if not files["is_valid"]:
+            raise RuntimeError(f"Offline Sherpa model '{model_id}' is incomplete.")
+
+        recognizer = sherpa_onnx.OfflineRecognizer.from_transducer(
+            tokens=str(files["tokens"]),
+            encoder=str(files["encoder"]),
+            decoder=str(files["decoder"]),
+            joiner=str(files["joiner"]),
+            num_threads=self.num_threads,
+            decoding_method="greedy_search"
+        )
+        self.offline_recognizers[model_id] = recognizer
+        logger.info("Cached offline Sherpa recognizer '%s' for finalization.", model_id)
+        return recognizer
+
+    def transcribe_offline_model(self, audio_source, model_id: str) -> dict:
+        """Transcribe complete audio with a cached offline model, preserving streaming state."""
+        import io
+        import av
+
+        if isinstance(audio_source, np.ndarray):
+            samples = audio_source.astype(np.float32)
+        elif isinstance(audio_source, (bytes, bytearray)) and len(audio_source) % 2 == 0 and not audio_source.startswith(
+            (b"RIFF", b"\x1a\x45\xdf\xa3", b"ID3", b"\xff\xfb", b"OggS", b"fLaC")
+        ):
+            samples = np.frombuffer(audio_source, dtype=np.int16).astype(np.float32) / 32768.0
+        else:
+            source = io.BytesIO(audio_source) if isinstance(audio_source, (bytes, bytearray)) else audio_source
+            container = av.open(source)
+            audio_stream = next(s for s in container.streams if s.type == "audio")
+            resampler = av.AudioResampler(format="fltp", layout="mono", rate=16000)
+            decoded = []
+            for frame in container.decode(audio_stream):
+                decoded.extend(rf.to_ndarray()[0] for rf in resampler.resample(frame))
+            decoded.extend(rf.to_ndarray()[0] for rf in resampler.resample(None))
+            container.close()
+            samples = np.concatenate(decoded) if decoded else np.zeros(0, dtype=np.float32)
+
+        if len(samples) == 0:
+            return {"transcript": "", "model": model_id, "latency": 0.0}
+
+        recognizer = self._get_offline_recognizer(model_id)
+        stream = recognizer.create_stream()
+        stream.accept_waveform(16000, samples)
+        started = time.perf_counter()
+        recognizer.decode_stream(stream)
+        transcript = stream.result.text.strip()
+        latency = round(time.perf_counter() - started, 3)
+        return {"transcript": transcript, "model": model_id, "latency": latency}
 
     def transcribe_audio_source(self, audio_source) -> dict:
         """

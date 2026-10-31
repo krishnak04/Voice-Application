@@ -28,3 +28,9 @@ backend/__pycache__/
 Thumbs.db
 .vscode/
 .idea/
+
+# Large model binaries
+sherpa_models/
+*.onnx
+tmp_accent_model/
+

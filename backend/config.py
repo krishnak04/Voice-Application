@@ -4,11 +4,11 @@ from dotenv import load_dotenv
 
 # Load .env if present in backend or root
 env_path = Path(__file__).parent / ".env"
-load_dotenv(dotenv_path=env_path)
+load_dotenv(dotenv_path=env_path, override=True)
 
 # Groq Configuration
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b")
 GROQ_MAX_HISTORY_MESSAGES = int(os.getenv("GROQ_MAX_HISTORY_MESSAGES", "50"))
 
 # Hardware & Device Detection
@@ -52,14 +52,21 @@ WHISPER_CPU_THREADS = int(os.getenv("WHISPER_CPU_THREADS", str(min(8, max(2, (os
 WHISPER_BEAM_SIZE = int(os.getenv("WHISPER_BEAM_SIZE", "3"))
 WHISPER_BEST_OF = int(os.getenv("WHISPER_BEST_OF", "3"))
 CALL_FINAL_WHISPER_MODEL = os.getenv("CALL_FINAL_WHISPER_MODEL", "base.en")
-CALL_TRAILING_SILENCE_SECONDS = float(os.getenv("CALL_TRAILING_SILENCE_SECONDS", "1.2"))
+CALL_FINAL_ASR_ENGINE = os.getenv("CALL_FINAL_ASR_ENGINE", "whisper")
+CALL_FINAL_SHERPA_MODEL = os.getenv(
+    "CALL_FINAL_SHERPA_MODEL",
+    "sherpa-onnx-zipformer-gigaspeech-2023-12-12"
+)
+CALL_TRAILING_SILENCE_SECONDS = float(os.getenv("CALL_TRAILING_SILENCE_SECONDS", "0.60"))
 CALL_VAD_MIN_RMS = float(os.getenv("CALL_VAD_MIN_RMS", "0.003"))
 CALL_VAD_MIN_PEAK = float(os.getenv("CALL_VAD_MIN_PEAK", "0.008"))
 CALL_VAD_NOISE_MULTIPLIER = float(os.getenv("CALL_VAD_NOISE_MULTIPLIER", "1.8"))
 CALL_VAD_START_FRAMES = int(os.getenv("CALL_VAD_START_FRAMES", "2"))
 CALL_VAD_MIN_SPEECH_MS = float(os.getenv("CALL_VAD_MIN_SPEECH_MS", "120"))
+CALL_VAD_MIN_FINAL_CONFIDENCE = float(os.getenv("CALL_VAD_MIN_FINAL_CONFIDENCE", "0.45"))
 CALL_VAD_MIN_SPEECH_BAND_RATIO = float(os.getenv("CALL_VAD_MIN_SPEECH_BAND_RATIO", "0.15"))
 CALL_VAD_MAX_SPECTRAL_FLATNESS = float(os.getenv("CALL_VAD_MAX_SPECTRAL_FLATNESS", "0.95"))
+CALL_TTS_MIN_CLAUSE_WORDS = int(os.getenv("CALL_TTS_MIN_CLAUSE_WORDS", "3"))
 _hallucination_words = os.getenv("STT_HALLUCINATION_SINGLE_WORDS", "ACT,DEAD")
 STT_HALLUCINATION_SINGLE_WORDS = frozenset(
     word.strip().casefold()
@@ -79,8 +86,8 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 SHERPA_MODEL_DIR = os.getenv("SHERPA_MODEL_DIR", str(ROOT_DIR / "sherpa-onnx-streaming-zipformer-en-2023-06-26"))
 SHERPA_USE_INT8 = os.getenv("SHERPA_USE_INT8", "true").lower() in ("true", "1", "yes")
 SHERPA_NUM_THREADS = int(os.getenv("SHERPA_NUM_THREADS", str(min(8, max(2, (os.cpu_count() or 4) // 2)))))
-SHERPA_RULE1_MIN_TRAILING_SILENCE = float(os.getenv("SHERPA_RULE1_MIN_TRAILING_SILENCE", "2.0"))
-SHERPA_RULE2_MIN_TRAILING_SILENCE = float(os.getenv("SHERPA_RULE2_MIN_TRAILING_SILENCE", "1.2"))
+SHERPA_RULE1_MIN_TRAILING_SILENCE = float(os.getenv("SHERPA_RULE1_MIN_TRAILING_SILENCE", "1.5"))
+SHERPA_RULE2_MIN_TRAILING_SILENCE = float(os.getenv("SHERPA_RULE2_MIN_TRAILING_SILENCE", "0.80"))
 SHERPA_RULE3_MIN_UTTERANCE_LENGTH = float(os.getenv("SHERPA_RULE3_MIN_UTTERANCE_LENGTH", "20.0"))
 SHERPA_PROVIDER = os.getenv("SHERPA_PROVIDER", "cpu")
 
