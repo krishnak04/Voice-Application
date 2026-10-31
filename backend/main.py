@@ -6,6 +6,7 @@ import logging
 import uuid
 import asyncio
 import re
+from difflib import SequenceMatcher
 import numpy as np
 from contextlib import asynccontextmanager
 from typing import Optional, List
@@ -40,6 +41,7 @@ from tts_service import get_tts_engine
 from sherpa_service import get_sherpa_engine
 from sherpa_models_catalog import OFFICIAL_SHERPA_ENGLISH_MODELS
 from accent_service import get_accent_detector
+from deepgram_service import DeepgramStream
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("voice_api")
@@ -48,6 +50,11 @@ def _is_single_word_hallucination(text: str) -> bool:
     """Reject only configured, exact single-token decoder artifacts."""
     normalized = re.sub(r"[^a-z0-9]+", "", text.casefold())
     return bool(normalized) and normalized in config.STT_HALLUCINATION_SINGLE_WORDS and len(text.split()) == 1
+
+def _transcript_similarity(left: str, right: str) -> float:
+    """Token-normalized similarity for reconciling streaming and final ASR."""
+    normalize = lambda value: " ".join(re.findall(r"[a-z0-9]+", value.casefold()))
+    return SequenceMatcher(None, normalize(left), normalize(right)).ratio()
 
 def _speech_frame_features(audio_samples: np.ndarray, sample_rate: int) -> tuple[float, float]:
     """Return speech-band energy ratio and spectral flatness for one PCM frame."""
@@ -489,6 +496,8 @@ async def voice_call_turn(
     tts = get_tts_engine()
     sherpa = get_sherpa_engine()
     accent_detector = get_accent_detector()
+    deepgram_stream: Optional[DeepgramStream] = None
+    deepgram_final_text = ""
 
     audio_bytes = await audio.read()
     if not audio_bytes:
@@ -741,7 +750,7 @@ async def websocket_call_endpoint(websocket: WebSocket):
             if config.CALL_FINAL_ASR_ENGINE == "sherpa"
             else config.CALL_FINAL_WHISPER_MODEL
         ),
-        "stt_language": "auto",
+        "stt_language": "en",
         "tts_voice": "en-IN-NeerjaNeural",
         "tts_engine": "edge_tts",
         "tts_pitch": "+0Hz",
@@ -771,6 +780,8 @@ async def websocket_call_endpoint(websocket: WebSocket):
     first_audio_received_time = None
     first_sherpa_feed_time = None
     first_sherpa_decode_complete_time = None
+    sherpa_feed_ms_total = 0.0
+    sherpa_decode_ms_total = 0.0
     first_partial_sent_time = None
 
     history: List[dict] = []
@@ -782,6 +793,14 @@ async def websocket_call_endpoint(websocket: WebSocket):
         nonlocal event_seq
         event_seq += 1
         return event_seq
+
+    async def emit_conversation_state(state: str, turn_id: Optional[int] = None, **details) -> None:
+        """Keep the client lifecycle in sync with the server-side call state."""
+        payload = {"type": "conversation_state", "state": state, "seq": next_seq()}
+        if turn_id is not None:
+            payload["turn_id"] = turn_id
+        payload.update(details)
+        await websocket.send_json(payload)
 
     current_ai_task: Optional[asyncio.Task] = None
     pending_accent_tasks: set[asyncio.Task] = set()
@@ -798,6 +817,7 @@ async def websocket_call_endpoint(websocket: WebSocket):
         "sample_rate": sherpa.sample_rate,
         "model": sherpa.model_name
     })
+    await emit_conversation_state("LISTENING")
 
     async def cancel_active_ai_response(reason: str = "barge_in"):
         nonlocal current_ai_task, is_ai_speaking
@@ -812,10 +832,13 @@ async def websocket_call_endpoint(websocket: WebSocket):
                 logger.error(f"[{session_id}] Error cancelling AI task: {e}")
         is_ai_speaking = False
         current_ai_task = None
+        if reason != "session_closed":
+            await emit_conversation_state("INTERRUPTED", active_turn_id, reason=reason)
 
     async def execute_ai_turn(turn_id: int, user_text: str, t_endpoint: float, stt_metrics: dict = None):
         nonlocal is_ai_speaking
         is_ai_speaking = True
+        await emit_conversation_state("AI_THINKING", turn_id)
         t_llm_start = time.perf_counter()
         first_token_time = None
         first_sentence_time = None
@@ -859,6 +882,7 @@ async def websocket_call_endpoint(websocket: WebSocket):
                         tts_first_chunk_latency = chunk_latency
                     if first_audio_time is None:
                         first_audio_time = round(time.perf_counter() - t_endpoint, 3)
+                        await emit_conversation_state("AI_SPEAKING", turn_id)
 
                     audio_b64 = base64.b64encode(synth_res["audio_bytes"]).decode("utf-8")
                     chunk_idx += 1
@@ -1040,6 +1064,7 @@ async def websocket_call_endpoint(websocket: WebSocket):
                     "voice_to_voice_rtt_ms": voice_to_voice_rtt_ms
                 }
             })
+            await emit_conversation_state("LISTENING", turn_id)
 
         except asyncio.CancelledError:
             logger.info(f"[{session_id}] AI turn {turn_id} cancelled.")
@@ -1055,6 +1080,7 @@ async def websocket_call_endpoint(websocket: WebSocket):
                 "turn_id": turn_id,
                 "message": f"AI response error: {str(e)}"
             })
+            await emit_conversation_state("ERROR", turn_id)
         finally:
             is_ai_speaking = False
 
@@ -1064,6 +1090,34 @@ async def websocket_call_endpoint(websocket: WebSocket):
 
             if "bytes" in message and message["bytes"]:
                 raw_bytes = message["bytes"]
+                is_deepgram = config_state.get("stt_engine", "").lower() == "deepgram"
+                if is_deepgram:
+                    if deepgram_stream is None:
+                        deepgram_stream = DeepgramStream(session_id, sample_rate=16000)
+                        try:
+                            await deepgram_stream.connect()
+                            await websocket.send_json({"type": "recognition_status", "status": "connected", "provider": "deepgram"})
+                        except Exception as dg_error:
+                            # The explicit local fallback keeps the call usable without silently using paid ASR.
+                            config_state["stt_engine"] = "sherpa" if has_sherpa_stream else "whisper"
+                            await websocket.send_json({"type": "recognition_status", "status": "fallback_local", "provider": config_state["stt_engine"], "message": "Deepgram unavailable; using local recognition."})
+                            logger.warning("[%s] Deepgram unavailable: %s", session_id, type(dg_error).__name__)
+                            is_deepgram = False
+                    if is_deepgram:
+                        try:
+                            await deepgram_stream.send_audio(raw_bytes)
+                            for result in deepgram_stream.drain_results():
+                                transcript = result["text"]
+                                if result["is_final"]:
+                                    deepgram_final_text = transcript
+                                if transcript != last_partial:
+                                    last_partial = transcript
+                                    await websocket.send_json({"type": "partial_transcript", "text": transcript, "turn_id": active_turn_id, "seq": next_seq(), "provider": "deepgram"})
+                        except Exception as dg_error:
+                            config_state["stt_engine"] = "sherpa" if has_sherpa_stream else "whisper"
+                            await websocket.send_json({"type": "recognition_status", "status": "fallback_local", "provider": config_state["stt_engine"], "message": "Deepgram connection lost; using local recognition."})
+                            logger.warning("[%s] Deepgram streaming failed: %s", session_id, type(dg_error).__name__)
+                            is_deepgram = False
                 audio_np = np.frombuffer(raw_bytes, dtype=np.int16).astype(np.float32) / 32768.0
                 rms = float(np.sqrt(np.mean(audio_np**2))) if len(audio_np) > 0 else 0.0
                 peak = float(np.max(np.abs(audio_np))) if len(audio_np) > 0 else 0.0
@@ -1114,6 +1168,7 @@ async def websocket_call_endpoint(websocket: WebSocket):
                     if vad_active_frames >= config.CALL_VAD_START_FRAMES:
                         speech_started = True
                         active_turn_id += 1
+                        await emit_conversation_state("USER_SPEAKING", active_turn_id)
                         speech_start_time = now_t
                         last_speech_time = now_t
                         vad_speech_frames = vad_active_frames
@@ -1136,12 +1191,19 @@ async def websocket_call_endpoint(websocket: WebSocket):
 
                 # Feed audio chunk to Sherpa streaming recognizer if active
                 partial = ""
-                if has_sherpa_stream:
+                feed_result = {}
+                if has_sherpa_stream and not is_deepgram:
                     if first_sherpa_feed_time is None:
                         first_sherpa_feed_time = time.perf_counter()
-                    feed_result = sherpa.feed_audio(session_id, audio_np)
+                    feed_result = await asyncio.to_thread(
+                        sherpa.feed_audio,
+                        session_id,
+                        audio_np
+                    )
                     if first_sherpa_decode_complete_time is None:
                         first_sherpa_decode_complete_time = time.perf_counter()
+                    sherpa_feed_ms_total += feed_result.get("feed_ms", 0.0)
+                    sherpa_decode_ms_total += feed_result.get("decode_ms", 0.0)
                     partial = feed_result.get("text", "")
 
                 # Decoder output is never speech evidence. It is gated by audio VAD
@@ -1199,7 +1261,7 @@ async def websocket_call_endpoint(websocket: WebSocket):
                 ) * 1000.0
                 is_vad_endpoint = (
                     has_speech
-                    and sherpa.is_endpoint(session_id)
+                    and bool(feed_result.get("is_endpoint"))
                     and bool(last_partial.strip())
                     and (vad_silence_duration_ms >= trailing_silence_threshold_ms)
                 ) if has_sherpa_stream else False
@@ -1241,9 +1303,10 @@ async def websocket_call_endpoint(websocket: WebSocket):
 
                         active_engine = config_state.get("stt_engine", "whisper").lower()
                         active_model = config_state.get("stt_model")
-                        target_lang = config_state.get("stt_language")
+                        target_lang = config_state.get("stt_language", "en")
 
                         final_text = ""
+                        streaming_candidate = last_partial.strip()
                         stt = get_stt_engine()
                         sherpa = get_sherpa_engine()
 
@@ -1262,6 +1325,11 @@ async def websocket_call_endpoint(websocket: WebSocket):
                         # Causal acoustic tail padding (140ms silence) prevents truncation of final phonemes
                         tail_padding = b"\x00\x00" * int(16000 * 0.14)
                         padded_utterance = utterance_audio + tail_padding
+
+                        # 0. Deepgram Nova-3 is authoritative when selected; local ASR remains fallback.
+                        if active_engine == "deepgram" and deepgram_final_text:
+                            final_text = deepgram_final_text
+                            deepgram_final_text = ""
 
                         # 1. Offline Sherpa finalization (when an offline model was explicitly selected)
                         if is_offline_sherpa and active_engine == "sherpa":
@@ -1288,29 +1356,45 @@ async def websocket_call_endpoint(websocket: WebSocket):
                                 else config.CALL_FINAL_WHISPER_MODEL
                             )
                             try:
-                                whisper_res = await asyncio.to_thread(
-                                    stt.transcribe_audio_bytes,
-                                    audio_bytes=padded_utterance,
-                                    file_ext=".wav",
-                                    language=target_lang if target_lang not in ("auto", "none", None) else None,
-                                    model_name=whisper_model
+                                whisper_res = await asyncio.wait_for(
+                                    asyncio.to_thread(
+                                        stt.transcribe_audio_bytes,
+                                        audio_bytes=padded_utterance,
+                                        file_ext=".wav",
+                                        language="en",
+                                        model_name=whisper_model or config.CALL_FINAL_WHISPER_MODEL
+                                    ),
+                                    timeout=config.CALL_FINAL_WHISPER_TIMEOUT_SECONDS
                                 )
                                 final_text = whisper_res.get("transcript", "").strip()
                                 logger.info(f"[{session_id}] Authoritative Whisper ({whisper_model}) final transcript: '{final_text}'")
+                                # Do not replace a substantial streaming result with an unrelated final result.
+                                if (
+                                    streaming_candidate
+                                    and len(streaming_candidate.split()) >= 3
+                                    and final_text
+                                    and _transcript_similarity(streaming_candidate, final_text) < config.CALL_TRANSCRIPT_MIN_SIMILARITY
+                                ):
+                                    logger.warning("[%s] Keeping coherent streaming transcript after low ASR agreement", session_id)
+                                    final_text = streaming_candidate
+                            except asyncio.TimeoutError:
+                                logger.warning("[%s] Whisper finalization timed out; using streaming fallback", session_id)
                             except Exception as w_err:
                                 logger.warning(f"[{session_id}] Authoritative Whisper finalization error: {w_err}")
 
                         # 3. Fallback to streaming Sherpa transcript if Whisper produced empty
                         if not final_text and has_sherpa_stream:
-                            streaming_final = sherpa.get_final_transcript(session_id).strip()
-                            final_text = streaming_final or last_partial.strip()
+                            streaming_final = (
+                                await asyncio.to_thread(
+                                    sherpa.get_final_transcript,
+                                    session_id
+                                )
+                            ).strip()
+                            final_text = streaming_final or streaming_candidate
                             if final_text:
                                 logger.info(f"[{session_id}] Fallback Sherpa streaming final ({active_model}): '{final_text}'")
 
                         # Clean reset of online stream for next conversation turn
-                        if has_sherpa_stream:
-                            sherpa.reset_stream(session_id)
-
                         if _is_single_word_hallucination(final_text):
                             logger.info(
                                 f"[{session_id}] Suppressing configured single-token STT artifact: "
@@ -1319,12 +1403,16 @@ async def websocket_call_endpoint(websocket: WebSocket):
                             final_text = ""
 
                         if sherpa.is_available() and sherpa.is_streaming_available():
-                            sherpa.reset_stream(session_id)
+                            await asyncio.to_thread(sherpa.reset_stream, session_id)
+                        turn_sherpa_feed_ms = sherpa_feed_ms_total
+                        turn_sherpa_decode_ms = sherpa_decode_ms_total
                         last_partial = ""
                         first_partial_sent = False
                         first_audio_received_time = None
                         first_sherpa_feed_time = None
                         first_sherpa_decode_complete_time = None
+                        sherpa_feed_ms_total = 0.0
+                        sherpa_decode_ms_total = 0.0
                         first_partial_sent_time = None
 
                         if final_text:
@@ -1381,7 +1469,9 @@ async def websocket_call_endpoint(websocket: WebSocket):
                                 "decode_to_partial_sent_ms": (
                                     round((first_partial_sent_for_metrics - first_sherpa_decode_for_metrics) * 1000, 1)
                                     if first_partial_sent_for_metrics and first_sherpa_decode_for_metrics else None
-                                )
+                                ),
+                                "sherpa_feed_ms_total": round(turn_sherpa_feed_ms, 3),
+                                "sherpa_decode_ms_total": round(turn_sherpa_decode_ms, 3)
                             }
 
                             last_first_partial_latency = None
@@ -1405,6 +1495,8 @@ async def websocket_call_endpoint(websocket: WebSocket):
                                 "sherpa_feed_to_decode_complete_ms": stt_metrics["sherpa_feed_to_decode_complete_ms"],
                                 "decode_to_partial_sent_ms": stt_metrics["decode_to_partial_sent_ms"]
                             })
+
+                            await emit_conversation_state("PROCESSING", turn_id)
 
                             # Cancel any previous active task
                             await cancel_active_ai_response("new_turn_start")
@@ -1472,7 +1564,13 @@ async def websocket_call_endpoint(websocket: WebSocket):
                     if "tts_speed" in data: config_state["tts_speed"] = float(data["tts_speed"])
                     if "silence_timeout_sec" in data: config_state["silence_timeout_sec"] = max(0.25, float(data["silence_timeout_sec"]))
                     if "auto_adapt_voice" in data: config_state["auto_adapt_voice"] = bool(data["auto_adapt_voice"])
-                    if "stt_engine" in data: config_state["stt_engine"] = data["stt_engine"]
+                    if "stt_engine" in data:
+                        config_state["stt_engine"] = data["stt_engine"]
+                        if str(data["stt_engine"]).lower() != "deepgram" and deepgram_stream:
+                            await deepgram_stream.close()
+                            deepgram_stream = None
+                    if str(config_state.get("stt_engine", "")).lower() == "deepgram":
+                        config_state["stt_language"] = "en"
                     if "stt_model" in data:
                         new_m = data["stt_model"]
                         config_state["stt_model"] = new_m
@@ -1489,7 +1587,25 @@ async def websocket_call_endpoint(websocket: WebSocket):
                                 stt.select_model(new_m)
                             except Exception as wm_err:
                                 logger.warning(f"Failed to switch Whisper model to {new_m}: {wm_err}")
-                    if "stt_language" in data: config_state["stt_language"] = data["stt_language"]
+                    if "stt_language" in data:
+                        requested_language = str(data["stt_language"]).strip().lower()
+                        if requested_language != "en":
+                            await websocket.send_json({
+                                "type": "error",
+                                "message": "Voice calls support English recognition only; using language 'en'."
+                            })
+                        else:
+                            config_state["stt_language"] = "en"
+                    if "conversation_history" in data and isinstance(data["conversation_history"], list):
+                        # Only accept completed, text-only turns; this prevents partial/stale UI events
+                        # from becoming model context after a connection recovery.
+                        history[:] = [
+                            {"role": item["role"], "content": str(item["content"]).strip()}
+                            for item in data["conversation_history"][-config.GROQ_MAX_HISTORY_MESSAGES:]
+                            if isinstance(item, dict)
+                            and item.get("role") in {"user", "assistant"}
+                            and str(item.get("content", "")).strip()
+                        ]
                     logger.info(f"[{session_id}] Updated config: {config_state}")
 
                 elif msg_type == "set_auto_adapt_voice":
@@ -1535,6 +1651,8 @@ async def websocket_call_endpoint(websocket: WebSocket):
         logger.error(f"[{session_id}] WebSocket error: {e}")
     finally:
         await cancel_active_ai_response("session_closed")
+        if deepgram_stream:
+            await deepgram_stream.close()
         sherpa.close_stream(session_id)
         accent_detector.clear_session(session_id)
         logger.info(f"[{session_id}] Cleaned up session stream and accent session.")

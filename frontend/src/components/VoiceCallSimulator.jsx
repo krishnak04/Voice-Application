@@ -52,6 +52,8 @@ export const EXTENDED_STT_MODELS = [
   ...WHISPER_MODELS.map(m => ({ id: m.id, label: `🎙️ [Whisper] ${m.label}` }))
 ];
 
+const DEEPGRAM_MODELS = [{ id: 'nova-3', label: 'Nova-3 Real-Time', status: 'Cloud' }];
+
 export const TTS_MODELS = [
   {
     id: 'auto',
@@ -451,6 +453,8 @@ export default function VoiceCallSimulator({
   const [callState, setCallState] = useState('idle');
   // Call Status: 'listening' | 'speaking' | 'processing' | 'ai_speaking' | 'muted'
   const [callStatus, setCallStatus] = useState('listening');
+  const [conversationState, setConversationState] = useState('IDLE');
+  const [recognitionStatus, setRecognitionStatus] = useState('Local recognition ready');
   const [callDuration, setCallDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
 
@@ -474,7 +478,7 @@ export default function VoiceCallSimulator({
       ? saved
       : (initialModel && initialModel !== 'sherpa-streaming' ? initialModel : 'base.en');
   });
-  const [sttLanguage, setSttLanguage] = useState(() => initialLanguage || localStorage.getItem('whisper_language') || 'auto');
+  const [sttLanguage, setSttLanguage] = useState(() => initialLanguage || localStorage.getItem('whisper_language') || 'en');
 
   // Text-to-Voice (TTS) Model & Human Voice State
   const [ttsModel, setTtsModel] = useState(() => localStorage.getItem('call_tts_model') || 'auto');
@@ -639,6 +643,8 @@ export default function VoiceCallSimulator({
   const isProcessingRef = useRef(false);
   const isAiSpeakingRef = useRef(false);
   const isMutedRef = useRef(false);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimerRef = useRef(null);
   const chatHistoryRef = useRef(chatHistory);
   chatHistoryRef.current = chatHistory;
 
@@ -693,7 +699,7 @@ export default function VoiceCallSimulator({
     }
     const defaultModel = newEngine === 'sherpa'
       ? 'sherpa-onnx-streaming-zipformer-en-2023-06-26'
-      : 'base.en';
+      : newEngine === 'deepgram' ? 'nova-3' : 'base.en';
     handleSttModelChange(defaultModel);
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
@@ -1001,6 +1007,10 @@ export default function VoiceCallSimulator({
     if (bargeInTimerRef.current) {
       clearTimeout(bargeInTimerRef.current);
       bargeInTimerRef.current = null;
+    }
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
     }
 
     stopActiveAudio();
@@ -1357,11 +1367,15 @@ export default function VoiceCallSimulator({
   /**
    * Initiate Call: Request mic, connect audio context, play AI greeting, and start continuous loop
    */
-  const handleStartCall = async () => {
+  const handleStartCall = async ({ reconnecting = false } = {}) => {
     cleanupCallAudio();
     stopAudioPlayback();
     setCallState('calling');
-    setCallDuration(0);
+    setConversationState(reconnecting ? 'RECONNECTING' : 'CONNECTING');
+    if (!reconnecting) {
+      reconnectAttemptsRef.current = 0;
+      setCallDuration(0);
+    }
     setIsMuted(false);
     isMutedRef.current = false;
     setLivePartial('');
@@ -1370,7 +1384,7 @@ export default function VoiceCallSimulator({
 
     const isStreamingSherpa = sttEngine === 'sherpa' && (!sttModel || sttModel === 'sherpa-streaming' || sttModel.includes('streaming'));
 
-    setChatHistory([]);
+    if (!reconnecting) setChatHistory([]);
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -1427,6 +1441,7 @@ export default function VoiceCallSimulator({
 
         ws.onopen = () => {
           setCallState('active');
+          setConversationState('LISTENING');
           callActiveRef.current = true;
           startVADLoop();
 
@@ -1444,11 +1459,18 @@ export default function VoiceCallSimulator({
               auto_adapt_voice: autoAdaptVoice,
               stt_engine: sttEngine,
               stt_model: sttModel,
-              stt_language: sttLanguage,
-              silence_timeout_sec: silenceTimeoutMs / 1000
+              stt_language: 'en',
+              silence_timeout_sec: silenceTimeoutMs / 1000,
+              conversation_history: reconnecting
+                ? chatHistoryRef.current
+                  .filter((message) => (message.role === 'user' || message.role === 'assistant') && !message.isPartial)
+                  .map(({ role, content }) => ({ role, content }))
+                : []
             })
           );
 
+          // Greet only new calls. A reconnect restores prior context instead.
+          if (!reconnecting) {
           // Initial greeting
           const isHindi = selectedVoice.startsWith('hi-') || sttLanguage === 'hi';
           const greeting = isHindi
@@ -1483,6 +1505,7 @@ export default function VoiceCallSimulator({
               isAiSpeakingRef.current = false;
               setCallStatus('listening');
             });
+          }
         };
 
         ws.onmessage = (event) => {
@@ -1490,7 +1513,23 @@ export default function VoiceCallSimulator({
           try {
             const data = JSON.parse(event.data);
 
-            if (data.type === 'partial_transcript') {
+            if (data.type === 'conversation_state') {
+              const nextState = data.state || 'ERROR';
+              setConversationState(nextState);
+              const statusByState = {
+                LISTENING: 'listening',
+                USER_SPEAKING: 'speaking',
+                PROCESSING: 'processing',
+                AI_THINKING: 'processing',
+                AI_SPEAKING: 'ai_speaking',
+                INTERRUPTED: 'speaking'
+              };
+              if (statusByState[nextState]) setCallStatus(statusByState[nextState]);
+              if (nextState === 'INTERRUPTED') {
+                stopActiveAudio();
+                audioQueueRef.current = [];
+              }
+            } else if (data.type === 'partial_transcript') {
               const turnId = data.turn_id ?? currentTurnIdRef.current;
               const userMsgId = `user_${turnId}`;
               const seq = data.seq ?? 0;
@@ -1542,6 +1581,14 @@ export default function VoiceCallSimulator({
                   }
                 });
               }
+            } else if (data.type === 'recognition_status') {
+              setRecognitionStatus(
+                data.status === 'connected'
+                  ? 'Deepgram Nova-3 connected'
+                  : data.status === 'fallback_local'
+                    ? `Deepgram unavailable — ${data.provider} fallback active`
+                    : 'Recognition status updated'
+              );
             } else if (data.type === 'accent_detected') {
               setDetectedAccent({
                 accent: data.accent,
@@ -1823,7 +1870,26 @@ export default function VoiceCallSimulator({
         ws.onclose = (event) => {
           console.log(`[VoiceCall] WebSocket closed (code=${event.code}, reason='${event.reason}')`);
           if (callActiveRef.current) {
-            handleEndCall();
+            const canReconnect = reconnectAttemptsRef.current < 3 && event.code !== 1000;
+            if (canReconnect) {
+              reconnectAttemptsRef.current += 1;
+              const delayMs = 500 * reconnectAttemptsRef.current;
+              setConversationState('RECONNECTING');
+              setCallStatus('processing');
+              setChatHistory((prev) => [
+                ...prev,
+                { id: `sys_reconnect_${Date.now()}`, role: 'system_notification', content: `Connection lost. Reconnecting (${reconnectAttemptsRef.current}/3)…` }
+              ]);
+              reconnectTimerRef.current = setTimeout(() => {
+                if (callActiveRef.current) handleStartCall({ reconnecting: true });
+              }, delayMs);
+            } else {
+              setConversationState('ERROR');
+              setCallStatus('listening');
+              setChatHistory((prev) => [...prev, { id: `sys_ws_error_${Date.now()}`, role: 'system_notification', content: 'Connection could not be restored. Please start a new call.' }]);
+              cleanupCallAudio();
+              setCallState('idle');
+            }
           }
         };
 
@@ -1892,6 +1958,7 @@ export default function VoiceCallSimulator({
     } catch (err) {
       alert(`Call failed: ${err.message}`);
       setCallState('idle');
+      setConversationState('ERROR');
       cleanupCallAudio();
     }
   };
@@ -1903,6 +1970,7 @@ export default function VoiceCallSimulator({
   const handleEndCall = () => {
     cleanupCallAudio();
     setCallState('ended');
+    setConversationState('ENDED');
     setTimeout(() => {
       setCallState('idle');
     }, 2000);
@@ -2349,6 +2417,9 @@ export default function VoiceCallSimulator({
               </button>
             </div>
 
+              <button type="button" onClick={() => handleSttEngineChange('deepgram')} style={{ flex: 1, padding: '0.35rem 0.5rem', borderRadius: '6px', border: 'none', background: sttEngine === 'deepgram' ? 'rgba(16, 185, 129, 0.16)' : 'transparent', color: sttEngine === 'deepgram' ? '#059669' : 'var(--text-muted)', fontWeight: sttEngine === 'deepgram' ? 700 : 500, fontSize: '0.75rem', cursor: 'pointer' }}>
+                <span>Deepgram Nova-3</span>
+              </button>
             {/* Model & Language Dropdowns */}
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               {/* STT Model Dropdown (Filtered by Engine) */}
@@ -2376,6 +2447,8 @@ export default function VoiceCallSimulator({
                       {m.type === 'streaming' ? '⚡' : '📦'} {m.label} • {m.status || 'Ready'}
                     </option>
                   ))
+                ) : sttEngine === 'deepgram' ? (
+                  DEEPGRAM_MODELS.map((m) => <option key={m.id} value={m.id}>Deepgram {m.label} • {m.status}</option>)
                 ) : (
                   WHISPER_MODELS.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -2403,7 +2476,7 @@ export default function VoiceCallSimulator({
                   cursor: 'pointer'
                 }}
               >
-                {STT_LANGUAGES.map((l) => (
+                {STT_LANGUAGES.filter((l) => sttEngine !== 'deepgram' || l.code === 'en').map((l) => (
                   <option key={l.code} value={l.code}>
                     {l.label}
                   </option>
@@ -2420,7 +2493,9 @@ export default function VoiceCallSimulator({
                 alignItems: 'center',
                 gap: '0.3rem'
               }}>
-                {(sttEngine === 'sherpa' && (!sttModel || sttModel.includes('streaming')))
+                {sttEngine === 'deepgram'
+                  ? 'Deepgram Nova-3 Streaming (English)'
+                  : (sttEngine === 'sherpa' && (!sttModel || sttModel.includes('streaming')))
                   ? '⚡ Streaming Full-Duplex (WebSocket sub-100ms)'
                   : '📦 Turn-Based Offline Pipeline'}
               </span>
@@ -2429,6 +2504,9 @@ export default function VoiceCallSimulator({
                   ⚠️ Sherpa is English-only. Switch to Whisper for Indic.
                 </span>
               )}
+            </div>
+            <div style={{ fontSize: '0.68rem', color: sttEngine === 'deepgram' ? '#059669' : 'var(--text-muted)' }}>
+              Recognition: {sttEngine === 'deepgram' ? recognitionStatus : 'Local recognition ready'}
             </div>
           </div>
 
@@ -2700,6 +2778,11 @@ export default function VoiceCallSimulator({
                 {callState === 'active' && `Call in Progress • ${formatCallTime(callDuration)}`}
                 {callState === 'ended' && 'Call Ended'}
               </span>
+              {callState === 'active' && (
+                <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginLeft: '0.45rem' }}>
+                  {conversationState.replaceAll('_', ' ')}
+                </span>
+              )}
             </div>
 
             {/* Center Telephony Avatar with Dynamic Audio Rings */}
@@ -3573,7 +3656,7 @@ export default function VoiceCallSimulator({
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <span className="badge badge-green">Model: {sttModel}</span>
               <span className="badge badge-blue">
-                Lang: {sttLanguage}
+                Lang: English-only (en)
               </span>
             </div>
           </div>

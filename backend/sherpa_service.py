@@ -4,6 +4,7 @@ import gc
 import time
 import subprocess
 import logging
+import threading
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 import numpy as np
@@ -45,6 +46,9 @@ class SherpaStreamingEngine:
 
         # Active streaming sessions (for session isolation & safe switching)
         self.active_streams: Dict[str, Any] = {}
+        # OnlineRecognizer instances are shared by all sessions. Sherpa stream
+        # objects remain isolated, while decode calls are serialized safely.
+        self._recognizer_lock = threading.RLock()
 
         # Preload the default baseline model
         self.load_model(self.active_model_id)
@@ -366,18 +370,23 @@ class SherpaStreamingEngine:
         if stream is None:
             stream = self.create_stream(session_id)
 
-        stream.accept_waveform(sample_rate, audio_samples)
-
-        while rec.is_ready(stream):
-            rec.decode_stream(stream)
-
-        is_endpoint = rec.is_endpoint(stream)
-        current_text = rec.get_result(stream)
+        feed_start = time.perf_counter()
+        with self._recognizer_lock:
+            stream.accept_waveform(sample_rate, audio_samples)
+            feed_elapsed = time.perf_counter() - feed_start
+            decode_start = time.perf_counter()
+            while rec.is_ready(stream):
+                rec.decode_stream(stream)
+            decode_elapsed = time.perf_counter() - decode_start
+            is_endpoint = rec.is_endpoint(stream)
+            current_text = rec.get_result(stream)
 
         return {
             "text": current_text.strip() if current_text else "",
             "is_endpoint": is_endpoint,
-            "is_ready": True
+            "is_ready": True,
+            "feed_ms": round(feed_elapsed * 1000, 3),
+            "decode_ms": round(decode_elapsed * 1000, 3)
         }
 
     def reset_stream(self, session_id: str):
@@ -385,14 +394,16 @@ class SherpaStreamingEngine:
         stream = self.active_streams.get(session_id)
         rec = self.get_streaming_recognizer()
         if stream and rec:
-            rec.reset(stream)
+            with self._recognizer_lock:
+                rec.reset(stream)
 
     def get_partial_transcript(self, session_id: str) -> str:
         """Retrieve current partial transcript."""
         stream = self.active_streams.get(session_id)
         rec = self.get_streaming_recognizer()
         if stream and rec:
-            res = rec.get_result(stream)
+            with self._recognizer_lock:
+                res = rec.get_result(stream)
             return res.strip() if res else ""
         return ""
 
@@ -401,7 +412,8 @@ class SherpaStreamingEngine:
         stream = self.active_streams.get(session_id)
         rec = self.get_streaming_recognizer()
         if stream and rec:
-            return rec.is_endpoint(stream)
+            with self._recognizer_lock:
+                return rec.is_endpoint(stream)
         return False
 
     def get_final_transcript(self, session_id: str) -> str:
@@ -414,14 +426,16 @@ class SherpaStreamingEngine:
         rec = self.get_streaming_recognizer()
         if stream and rec:
             try:
-                silence_tail = np.zeros(int(self.sample_rate * 0.2), dtype=np.float32)
-                stream.accept_waveform(self.sample_rate, silence_tail)
-                stream.input_finished()
-                while rec.is_ready(stream):
-                    rec.decode_stream(stream)
+                with self._recognizer_lock:
+                    silence_tail = np.zeros(int(self.sample_rate * 0.2), dtype=np.float32)
+                    stream.accept_waveform(self.sample_rate, silence_tail)
+                    stream.input_finished()
+                    while rec.is_ready(stream):
+                        rec.decode_stream(stream)
+                    res = rec.get_result(stream)
             except Exception as e:
                 logger.warning(f"Error flushing Sherpa stream for {session_id}: {e}")
-            res = rec.get_result(stream)
+                res = ""
             return res.strip() if res else ""
         return ""
 

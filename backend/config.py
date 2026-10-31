@@ -11,6 +11,13 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b")
 GROQ_MAX_HISTORY_MESSAGES = int(os.getenv("GROQ_MAX_HISTORY_MESSAGES", "50"))
 
+# Deepgram Nova real-time streaming. The key must exist only in backend/.env.
+DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY", "")
+DEEPGRAM_MODEL = os.getenv("DEEPGRAM_MODEL", "nova-3")
+DEEPGRAM_LANGUAGE = os.getenv("DEEPGRAM_LANGUAGE", "en")
+DEEPGRAM_CONNECT_TIMEOUT_SECONDS = float(os.getenv("DEEPGRAM_CONNECT_TIMEOUT_SECONDS", "8"))
+DEEPGRAM_MAX_RECONNECTS = int(os.getenv("DEEPGRAM_MAX_RECONNECTS", "1"))
+
 # Hardware & Device Detection
 def _detect_hardware():
     has_cuda = False
@@ -67,6 +74,8 @@ CALL_VAD_MIN_FINAL_CONFIDENCE = float(os.getenv("CALL_VAD_MIN_FINAL_CONFIDENCE",
 CALL_VAD_MIN_SPEECH_BAND_RATIO = float(os.getenv("CALL_VAD_MIN_SPEECH_BAND_RATIO", "0.15"))
 CALL_VAD_MAX_SPECTRAL_FLATNESS = float(os.getenv("CALL_VAD_MAX_SPECTRAL_FLATNESS", "0.95"))
 CALL_TTS_MIN_CLAUSE_WORDS = int(os.getenv("CALL_TTS_MIN_CLAUSE_WORDS", "3"))
+CALL_FINAL_WHISPER_TIMEOUT_SECONDS = float(os.getenv("CALL_FINAL_WHISPER_TIMEOUT_SECONDS", "4.0"))
+CALL_TRANSCRIPT_MIN_SIMILARITY = float(os.getenv("CALL_TRANSCRIPT_MIN_SIMILARITY", "0.30"))
 _hallucination_words = os.getenv("STT_HALLUCINATION_SINGLE_WORDS", "ACT,DEAD")
 STT_HALLUCINATION_SINGLE_WORDS = frozenset(
     word.strip().casefold()

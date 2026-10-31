@@ -336,7 +336,7 @@ class STTEngine:
         language: Optional[str] = None,
         model_name: Optional[str] = None
     ):
-        # Normalize language: None or "auto" triggers Whisper's automatic language detection
+        # Explicit language is used for call mode; REST callers may still omit it.
         lang_param = None
         if language and language.strip().lower() not in ("auto", "none", "0", ""):
             clean_lang = language.strip().lower()
@@ -356,12 +356,10 @@ class STTEngine:
                 logger.warning(f"Sherpa file transcription failed ({e}). Falling back to {self.default_model_name}...")
             req_model = self.default_model_name
 
-        # If an English-only model (e.g. base.en) is active but a non-English language is requested,
-        # automatically adapt to the multilingual counterpart (e.g. base)
         if req_model.endswith(".en") and lang_param and lang_param != "en":
-            multilingual_alt = req_model[:-3]  # strip .en -> base, small, etc.
-            logger.info(f"Language '{lang_param}' requested with English-only model '{req_model}'. Switching to multilingual '{multilingual_alt}'.")
-            req_model = multilingual_alt
+            raise ValueError(
+                f"English-only Whisper model '{req_model}' cannot transcribe language '{lang_param}'."
+            )
 
         if req_model.endswith(".en") and not lang_param:
             lang_param = "en"
@@ -475,18 +473,8 @@ class STTEngine:
                     condition_on_previous_text=False
                 )
                 segment_list = list(segments)
-            except ValueError as ve:
-                logger.warning(f"Language code '{lang_param}' raised ValueError ({ve}). Retrying with auto-detect...")
-                segments, info = model.transcribe(
-                    transcribe_target,
-                    language=None,
-                    beam_size=beam_size,
-                    patience=1.0,
-                    vad_filter=True,
-                    vad_parameters=vad_params,
-                    condition_on_previous_text=False
-                )
-                segment_list = list(segments)
+            except ValueError:
+                raise
 
             # Fallback if VAD filter was overly aggressive on soft audible speech
             if not any(s.text.strip() for s in segment_list) and isinstance(samples_np, np.ndarray) and len(samples_np) > 4000:
@@ -518,16 +506,7 @@ class STTEngine:
                     )
                     segment_list = list(segments)
                 except ValueError:
-                    segments, info = model.transcribe(
-                        transcribe_target,
-                        language=None,
-                        beam_size=beam_size,
-                        patience=1.0,
-                        vad_filter=True,
-                        vad_parameters=vad_params,
-                        condition_on_previous_text=False
-                    )
-                    segment_list = list(segments)
+                    raise
             else:
                 raise e
 
@@ -567,4 +546,3 @@ def get_stt_engine() -> STTEngine:
     if stt_engine is None:
         stt_engine = STTEngine()
     return stt_engine
-
